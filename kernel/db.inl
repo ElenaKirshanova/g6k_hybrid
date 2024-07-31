@@ -150,6 +150,7 @@ Entry Siever::sample(unsigned int large)
     for (unsigned int trial=0;;++trial)
     {
         ++j;
+        if (i==j) continue;
         unsigned int w = 0;
         for (size_t k = 0; k < XPC_WORD_LEN; ++k)
         {
@@ -158,7 +159,6 @@ Entry Siever::sample(unsigned int large)
 
         if (w< XPC_SAMPLING_THRESHOLD || w > (XPC_BIT_LEN - XPC_SAMPLING_THRESHOLD) || trial > max_trial)
         {
-            if (i==j) continue;
             ZT sign = w < XPC_SAMPLING_THRESHOLD/2 ? -1 : 1;
             e.x = db[cdb[i].i].x;
             addsub_vec(e.x,  db[cdb[j].i].x, static_cast<ZT>(sign));
@@ -167,7 +167,49 @@ Entry Siever::sample(unsigned int large)
             return e;
         }
     }
+}
 
+
+Entry Siever::sample_shift(unsigned int large, const Entry &shift)
+{
+    //ATOMIC_CPUCOUNT(213)
+    Entry e;
+
+    size_t fullS = cdb.size();
+
+    size_t max_trial = 2 + std::pow(fullS, .3);
+
+    CompressedEntry* fast_cdb = &(cdb.front());
+
+    size_t partial = 5 * std::pow(fullS, .6);
+
+    size_t i = (rng() % partial);
+    size_t j = (rng() % partial);
+
+    for (unsigned int trial=0;;++trial)
+    {
+        ++j;
+        unsigned int w1 = 0;
+        unsigned int w2 = 0;
+        for (size_t k = 0; k < XPC_WORD_LEN; ++k)
+        {
+            w1 += __builtin_popcountl(fast_cdb[i].c[k] ^ fast_cdb[j].c[k]);
+        }
+
+        //TODO: adjust XPC_SAMPLING_THRESHOLD for this sampling
+        //TODO: make proper check for short triple (or not)?
+        if (w1< XPC_SAMPLING_THRESHOLD || w1 > (XPC_BIT_LEN - XPC_SAMPLING_THRESHOLD) || trial > max_trial)
+        {
+            if (i==j) continue;
+            ZT sign = w1 < XPC_SAMPLING_THRESHOLD/2 ? -1 : 1;
+            e.x = db[cdb[i].i].x;
+            addsub_vec(e.x,  db[cdb[j].i].x, static_cast<ZT>(sign));
+            addsub_vec(e.x, shift.x, static_cast<ZT>(1)) //TODO: change to -1 depending XPC btw e and shift
+
+            recompute_data_for_entry<Recompute::recompute_all>(e); // no need to compute otf data
+            return e;
+        }
+    }
 }
 
 // x_full is a pointer to a (temporary) buffer, len is the non-normalized length.
