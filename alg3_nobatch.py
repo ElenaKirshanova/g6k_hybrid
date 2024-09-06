@@ -40,7 +40,7 @@ def gen_lats(n, n_lats=1, k=None, q=None, n_guess_coord=0, seed=None):
             for j in range(n):
                 B[n+i,j]=int( A[i,j] )
 
-        ft = "ld" if n<193 else "dd"
+        ft = "ld" if B.nrows<193 else "dd"
         int_type = B.int_type
 
         U = IntegerMatrix(dim-n_guess_coord,dim-n_guess_coord,int_type=int_type)
@@ -50,7 +50,8 @@ def gen_lats(n, n_lats=1, k=None, q=None, n_guess_coord=0, seed=None):
             G = GSO.Mat(B0, float_type=ft)
         except: #if "dd" is not available
             FPLLL.set_precision(208)
-            G = GSO.Mat(B0, float_type="mpfr")
+            ft = "mpfr"
+            G = GSO.Mat(B0, float_type=ft)
         G.update_gso()
         C = IntegerMatrix.from_matrix([b for b in B0]+[b for b in B1], int_type=int_type)
         try:
@@ -72,6 +73,7 @@ def alg2_nobatch(G,t,n_sli_coord,dist_sq_bnd):
     param dist_sq_bnd: BDD distance's radius if > 0, else no bound on distance
     """
     ft = G.float_type
+
     param_sieve = SieverParams()
     param_sieve['threads'] = 5
     param_sieve['default_sieve'] = "bgj1"
@@ -101,7 +103,6 @@ def alg2_nobatch(G,t,n_sli_coord,dist_sq_bnd):
     N.update_gso()
     # steps 4-5 in Alg2
     bab_1 = G.babai(t-np.array(out),start=G.d-n_sli_coord) #last n_sli_coord coordinates of s
-    print("dbg_")
     tmp = t - np.array( G.B[-n_sli_coord:].multiply_left(bab_1) )
     #TODO: babai can work with canonical repr. but I'm not sure if the scaled or unscaled one
     tmp = N.to_canonical( G.from_canonical( tmp, start=0, dimension=G.d-n_sli_coord ) ) #project onto span(B[-n_sli_coord:])
@@ -113,8 +114,7 @@ def alg2_nobatch(G,t,n_sli_coord,dist_sq_bnd):
 
 def alg3_nobatch(G,t,n_guess_coord,n_sli_coord,guess_coords,bkzbeta,dist_sq_bnd=0):
     """
-    Returns heuristically closest to t vector of a lattice defined by G. The vector is given as the
-    coordinats w.r.t. G.B.
+    Returns heuristically closest to t vector of a lattice defined by G.
     param G: GSO.Mat object of dimension dim - n_guess_coord
     param t: np.array or sage vector object (if invoked in sage)
     param n_guess_coord: number of "guessed" coordinates
@@ -123,6 +123,7 @@ def alg3_nobatch(G,t,n_guess_coord,n_sli_coord,guess_coords,bkzbeta,dist_sq_bnd=
     param bkzbeta: bkz blocksize
     """
     dim = G.d
+    dim_ = dim-n_guess_coord
     ft, int_type = G.float_type, G.int_type
     H11 = IntegerMatrix.from_matrix(G.B[:dim-n_guess_coord], int_type="long")
     LR = LatticeReduction( H11 )
@@ -133,58 +134,96 @@ def alg3_nobatch(G,t,n_guess_coord,n_sli_coord,guess_coords,bkzbeta,dist_sq_bnd=
         we just BKZ-beta reduce it.
         """
         then = perf_counter()
-        LR.BKZ(beta=beta) #,start=0, end=dim-n_sli_coord-n_guess_coord
+        LR.BKZ(beta)
         print(f"BKZ-{beta} done in {perf_counter()-then}")
 
     H11 = LR.basis
     Bbkz = IntegerMatrix.from_matrix( list(H11) + list(G.B[G.d-n_guess_coord:]), int_type=int_type )
+    # print(Bbkz)
     G = GSO.Mat( Bbkz,float_type=ft,U=IntegerMatrix.identity(dim,int_type=int_type), UinvT=IntegerMatrix.identity(dim,int_type=int_type) )
     G.update_gso()
-    t1 = np.concatenate( [t[:dim-n_guess_coord] , n_guess_coord*[0]] ) #step 2
-    t2 = np.concatenate( [(dim-n_guess_coord)*[0] , t[dim-n_guess_coord:]] ) #step 2
-
-    dim_ = dim-n_guess_coord
-    print(f"dim_: {dim_}")
-    v2_ = t2 - np.concatenate( [ dim_*[0] , guess_coords ] )
-    v2_ = np.concatenate( [ np.array( G.from_canonical( v2_, start=0, dimension=dim-n_guess_coord ) ), n_guess_coord*[0] ] )
-    t1_ = (t1 - G.to_canonical(v2_)) #line 7
+    # t1 = np.concatenate( [t[:dim-n_guess_coord] , n_guess_coord*[0]] ) #step 2
+    t1 = np.array( G.from_canonical( ( list(G.to_canonical(t))[:dim_] + n_guess_coord*[0] ) ) )
+    t2 = np.array( G.from_canonical( dim_*[0] + list( G.to_canonical(t) )[dim_:] ) )
+    # print(r)
+    # t2 = np.concatenate( [(dim-n_guess_coord)*[0] , t[dim-n_guess_coord:]] ) #step 2
 
     G_ = GSO.Mat( H11,float_type=ft,U=IntegerMatrix.identity(dim_,int_type=int_type), UinvT=IntegerMatrix.identity(dim_,int_type=int_type) )
     G_.update_gso()
-    bab = alg2_nobatch(G_,t,n_sli_coord,dist_sq_bnd)
-    print("dbg_")
-    print(H11.nrows,len(bab))
-    v1_ = np.array( H11.multiply_left( bab ) )
-    v = v1_+v2_
+    lll = LLL.Reduction( G_ )
+    lll()
+    # v2 = t2 - np.concatenate( [ dim_*[0] , guess_coords ] )
+    # v2_ = list( G.to_canonical(v2) )[:dim_]
+    # v2_ = np.array( list(v2_) + n_guess_coord*[0] ) #projection onto span H11 = Q^{dim_}
+    # v2_ = G.from_canonical( v2_ )
+    # t1_ = (t1 - v2_) #line 7  G.to_canonical(v2_)?
+    # print(f"v2_: {v2_}")
 
-    return v
-    # raise NotImplementedError("No Alg3 atm")
+    v2 = t2 - np.concatenate( [ dim_*[0] , guess_coords ], dtype=np.float64 )
+    print(f"vs: {v2}")
+    t1_ = t - np.array(G.B[dim_:].multiply_left(v2[dim_:])) - np.concatenate( [ dim_*[0] , guess_coords ], dtype=np.float64 )
+    # t1_ = G.from_canonical( np.concatenate([G.to_canonical(t1_)[:dim_],n_guess_coord*[0]]) )
+    t1_ = np.concatenate( [ t1_[:dim_], n_guess_coord*[0] ] )
+
+    print(f"t: {t}")
+    print(f"t1: {[float(tt) for tt in list(t1_)]}")
+
+
+    bab = alg2_nobatch(G_,t1_,n_sli_coord,dist_sq_bnd)
+    v1 = np.array( G_.B.multiply_left( bab ) )
+    print(v1, v2)
+    v = v1+v2
+    # v = G.B.multiply_left( G.babai(v) )
+
+    return v1+np.array(G.B[dim_:].multiply_left(v2[dim_:]))
 
 if __name__=="__main__":
-    n, k, bkzbeta, n_guess_coord, n_sli_coord = 32, 1, 20, 10, 25
+    n, k, bkzbeta, n_guess_coord, n_sli_coord = 90, 1, 40, 10, 42
+    eta, q = 3, 3329
     dim = 2*n*k
     int_type="long"
-    G, A = gen_lats(n, n_lats=1, k=k, q=3329, n_guess_coord=n_guess_coord, seed=None)[0]
+    G, A = gen_lats(n, n_lats=1, k=k, q=q, n_guess_coord=n_guess_coord, seed=None)[0]
     B = G.B
 
 
-    c = [ randrange(-3,4) for j in range(n) ]
-    e = np.array( [ uniform(-2,3) for j in range(dim) ],dtype=np.int64 )
-    b = np.array( G.B.multiply_left( c ) )
-    b_ = np.array( np.array(b,dtype=np.int64) )
-    t_ = e+b_
-    t = [ int(tt) for tt in t_ ]
-    print(f"lent {len(t)}")
+    # c = [ randrange(-3,4) for j in range(dim) ]
+    # e = np.array( [ uniform(-2,3) for j in range(dim) ],dtype=np.int64 )
+    # b = np.array( G.B.multiply_left( c ) )
+    # b_ = np.array( np.array(b,dtype=np.int64) )
+    # t_ = e+b_
+    # t = [ int(tt) for tt in t_ ]
+    # print(f"lent {len(t)}")
+    # x, err = b, e
+
+    s = binomial_vec(dim//2, eta)
+    e = binomial_vec(dim//2, eta)
+    b = (s.dot(A) + e) % q
+    nrows,ncols = A.shape
+    t = np.concatenate([b,[0]*nrows]) #BDD target
+    t = [ int(tt) for tt in t ]
+    # x = np.concatenate([b-e,s]) #BBD solution
+    err = np.concatenate([e,-s])
+    x = t - err
+    # print( B.multiply_left(G.babai(x))==x )
 
     lll = LLL.Reduction(G)
     lll(kappa_end=dim-n_guess_coord)
 
-    guess_coords = e[dim-n_guess_coord:]
+    guess_coords = err[dim-n_guess_coord:]
     dist_sq_bnd = 1.01*(e@e)
-    ans =  alg3_nobatch(G,t,n_guess_coord,n_sli_coord,guess_coords,bkzbeta,dist_sq_bnd)
-    print(f"ans: {ans}")
+    print(f"lt: {len(t)}")
+    ans =  np.array( alg3_nobatch(G,t,n_guess_coord,n_sli_coord,guess_coords,bkzbeta,dist_sq_bnd) )
+    print(f"x: {[int(xx) for xx in x]}")
+    print(f"ans: {[int(aa) for aa in ans]}")
     print(f"diff:")
-    print([ round(tmp) for tmp in np.array(b)-np.array(ans) ])
+    ans = np.array(ans)
+    # print([ round(tmp) for tmp in x-ans ])
+    print(f"Succ: {ans==x}")
+
+
+    # print( B.multiply_left(G.babai(ans))==ans )
+    # print(G.babai(ans))
+    # print(G.babai(x))
 
     # - - - testing alg2 - - -
         # B.randomize("qary", k=n//2, bits=11.705)
