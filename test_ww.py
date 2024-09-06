@@ -21,7 +21,7 @@ from utils import *
 
 
 if __name__ == "__main__":
-    n, betamax, sieve_dim = 75, 45, 50
+    n, betamax, sieve_dim = 128, 24, 65
     B = IntegerMatrix(n,n)
     B.randomize("qary", k=n//2, bits=11.705)
     ft = "ld" if n<193 else "dd"

@@ -130,28 +130,28 @@ def batchCVPP_prob(d, alpha, gamma):
     return prob
 
 if __name__ == "__main__":
-    n_workers = 2
+    n_workers = 4
     n_lats = 2
     n_instances_per_lattice = 2
-    n, bits, betamax = 50, 13.8, 35
+    n, bits, betamax = 70, 13.8, 55
     k = n//2
 
     # - - - Generate lattices - - -
-    pool = Pool(processes = n_workers )
-    tasks = []
-    for seed in range(n_lats):
-        tasks.append( pool.apply_async(
-            gen_and_pickle_lattice, (n, k, bits, betamax, seed)
-        ) )
-
-    for t in tasks:
-        t.get()
-    pool.close()
+    # pool = Pool(processes = n_workers )
+    # tasks = []
+    # for seed in range(n_lats):
+    #     tasks.append( pool.apply_async(
+    #         gen_and_pickle_lattice, (n, k, bits, betamax, seed)
+    #     ) )
+    #
+    # for t in tasks:
+    #     t.get()
+    # pool.close()
     # - - - Run experiments - - -
     lats = load_lattices(n)
     l = []
     for g6k_obj in lats:
-        for XPC_SLICER_SAMPLING_THRESHOLD in [105]: #100, 105, 110
+        for XPC_SLICER_SAMPLING_THRESHOLD in [100, 105, 110 ]: #100, 105, 110б
             l.append( run_exp(g6k_obj, approx_fact=0.98, n_targets=n_instances_per_lattice, debug_directives = XPC_SLICER_SAMPLING_THRESHOLD+0x300) )
 
     for ll in l:
