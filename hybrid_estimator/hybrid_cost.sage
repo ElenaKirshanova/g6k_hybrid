@@ -14,7 +14,7 @@ def plot_gso(r, *args, **kwds):
 
 #Thm. 4.1
 def find_beta(d, n, q, st_dev_e):
-    minbeta = 50 if d<513 else n//2
+    minbeta = 30 if d<513 else n//2
     for beta in range(minbeta, d//2, 1): #90, 450, 1
         r_log = ZGSA(d, n, q, beta)
         #r_log = ZGSA_old(d, n, q, beta)

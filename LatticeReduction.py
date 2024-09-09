@@ -40,18 +40,17 @@ class LatticeReduction:
     self.basis = M.B
     self.gso = M
 
-  def BKZ(self, beta, start=0, end=-1, tours=8):
+  def BKZ(self, beta, start=0, end=-1, tours=4):
 
     par = BKZ_FPYLLL.Param(
       beta,
       strategies=BKZ_FPYLLL.DEFAULT_STRATEGY,
-      max_loops=1,
+      max_loops=tours,
       flags=BKZ_FPYLLL.MAX_LOOPS
     )
 
     if start==0 and end<0:
-        for t in range(tours):
-            self.__bkz(par)
+        self.__bkz(par)
           # if beta <= 65:
             # self.__bkz(par)
           # else:

@@ -128,6 +128,7 @@ def alg3_nobatch(G,t,n_guess_coord,n_sli_coord,guess_coords,bkzbeta,dist_sq_bnd=
     H11 = IntegerMatrix.from_matrix(G.B[:dim-n_guess_coord], int_type="long")
     LR = LatticeReduction( H11 )
 
+    bkzbetapre = min(50,bkzbeta-5)
     for beta in range(5,bkzbeta+1):
         """
         Notice if G[:2*n-n_guess_coord] is BKZ-(beta-1) reduced,
@@ -137,6 +138,9 @@ def alg3_nobatch(G,t,n_guess_coord,n_sli_coord,guess_coords,bkzbeta,dist_sq_bnd=
         LR.BKZ(beta)
         print(f"BKZ-{beta} done in {perf_counter()-then}")
 
+    then = perf_counter()
+    LR.BKZ(beta)
+    print(f"BKZ-{beta} done in {perf_counter()-then}")
     H11 = LR.basis
     Bbkz = IntegerMatrix.from_matrix( list(H11) + list(G.B[G.d-n_guess_coord:]), int_type=int_type )
     # print(Bbkz)
@@ -172,53 +176,228 @@ def alg3_nobatch(G,t,n_guess_coord,n_sli_coord,guess_coords,bkzbeta,dist_sq_bnd=
     bab = alg2_nobatch(G_,t1_,n_sli_coord,dist_sq_bnd)
     v1 = np.array( G_.B.multiply_left( bab ) )
     print(v1, v2)
-    v = v1+v2
+    v = v1+np.array(G.B[dim_:].multiply_left(v2[dim_:]))
+    diff = t-v
+    # cur_sq_norm = diff@diff
+    # if cur_sq_norm <= dist_sq_bnd:
+    #     print(f"BKZ-{beta} succseeded")
+    #     break
     # v = G.B.multiply_left( G.babai(v) )
 
-    return v1+np.array(G.B[dim_:].multiply_left(v2[dim_:]))
+    return v #v1+np.array(G.B[dim_:].multiply_left(v2[dim_:]))
+
+def alg3_nobatch_find_beta(G,T,n_guess_coord,GUESS_COORDS,bkzbetapre,bkzbeta,DIST_SQ_BND=0,ANSWER=None, tracer=None):
+    """
+    Returns heuristically closest to t vector of a lattice defined by G.
+    param G: GSO.Mat object of dimension dim - n_guess_coord
+    param T: list of( np.array or sage vector object (if invoked in sage) )
+    param n_guess_coord: number of "guessed" coordinates
+    param n_sli_coord: slicer dimension
+    param guess_coords: the n_guess_coord values of the "guessed" coordinates
+    param bkzbeta: bkz blocksize
+    """
+    dim = G.d
+    dim_ = dim-n_guess_coord
+    ft, int_type = G.float_type, G.int_type
+    H11 = IntegerMatrix.from_matrix(G.B[:dim-n_guess_coord], int_type="long")
+    LR = LatticeReduction( H11 )
+
+    # bkzbetapre = min(50,bkzbeta-20)
+    for beta in range(5,bkzbetapre+1):
+        """
+        Notice if G[:2*n-n_guess_coord] is BKZ-(beta-1) reduced,
+        we just BKZ-beta reduce it.
+        """
+        then = perf_counter()
+        LR.BKZ(beta)
+        print(f"BKZ-{beta} done in {perf_counter()-then}")
+    for beta in range(bkzbetapre,bkzbeta+1):
+        then = perf_counter()
+        LR.BKZ(beta)
+        print(f"BKZ-{beta} done in {perf_counter()-then}")
+        H11 = LR.basis
+        Bbkz = IntegerMatrix.from_matrix( list(H11) + list(G.B[G.d-n_guess_coord:]), int_type=int_type )
+        # print(Bbkz)
+        G = GSO.Mat( Bbkz,float_type=ft,U=IntegerMatrix.identity(dim,int_type=int_type), UinvT=IntegerMatrix.identity(dim,int_type=int_type) )
+        G.update_gso()
+        G_ = GSO.Mat( H11,float_type=ft,U=IntegerMatrix.identity(dim_,int_type=int_type), UinvT=IntegerMatrix.identity(dim_,int_type=int_type) )
+        G_.update_gso()
+
+        succ_num = 0
+        V = []
+        index = 0
+        while index < len(T):
+            t = T[index]
+            answer = ANSWER[index]
+            guess_coords = GUESS_COORDS[index]
+            dist_sq_bnd = DIST_SQ_BND[index]
+            n_sli_coord = beta
+
+            # t1 = np.concatenate( [t[:dim-n_guess_coord] , n_guess_coord*[0]] ) #step 2
+            t1 = np.array( G.from_canonical( ( list(G.to_canonical(t))[:dim_] + n_guess_coord*[0] ) ) )
+            t2 = np.array( G.from_canonical( dim_*[0] + list( G.to_canonical(t) )[dim_:] ) )
+            # print(r)
+            # t2 = np.concatenate( [(dim-n_guess_coord)*[0] , t[dim-n_guess_coord:]] ) #step 2
+
+
+
+            # v2 = t2 - np.concatenate( [ dim_*[0] , guess_coords ] )
+            # v2_ = list( G.to_canonical(v2) )[:dim_]
+            # v2_ = np.array( list(v2_) + n_guess_coord*[0] ) #projection onto span H11 = Q^{dim_}
+            # v2_ = G.from_canonical( v2_ )
+            # t1_ = (t1 - v2_) #line 7  G.to_canonical(v2_)?
+            # print(f"v2_: {v2_}")
+
+            v2 = t2 - np.concatenate( [ dim_*[0] , guess_coords ], dtype=np.float64 )
+            print(f"vs: {v2}")
+            t1_ = t - np.array(G.B[dim_:].multiply_left(v2[dim_:])) - np.concatenate( [ dim_*[0] , guess_coords ], dtype=np.float64 )
+            # t1_ = G.from_canonical( np.concatenate([G.to_canonical(t1_)[:dim_],n_guess_coord*[0]]) )
+            t1_ = np.concatenate( [ t1_[:dim_], n_guess_coord*[0] ] )
+
+            print(f"t: {t}")
+            print(f"t1: {[float(tt) for tt in list(t1_)]}")
+
+
+            bab = alg2_nobatch(G_,t1_,n_sli_coord,dist_sq_bnd)
+            v1 = np.array( G_.B.multiply_left( bab ) )
+            # print(v1, v2)
+            v = v1+np.array(G.B[dim_:].multiply_left(v2[dim_:]))
+            diff = t-v
+            cur_sq_norm = diff@diff
+            dbg = (v==answer)
+            print(tracer)
+            succ=all(dbg)
+            if succ:
+                if not (tracer is None):
+                    tracer.append( {(G.d//2): [n_guess_coord,beta,succ]} )
+                    succ=True
+                print(f"BKZ-{beta} succseeded")
+                V.append(v)
+                succ_num+=1
+                T.pop(index)
+                ANSWER.pop( index )
+                GUESS_COORDS.pop( index )
+                DIST_SQ_BND.pop( index )
+            else:
+                if beta>=bkzbeta:
+                    if not (tracer is None):
+                        tracer.append( {(G.d//2): [n_guess_coord,beta,succ]} )
+                        succ=True
+                index+=1
+            if len(T)<=0:
+                break
+
+        # v = G.B.multiply_left( G.babai(v) )
+        if len(T)==0:
+            print(f"All {succ_num} targets found")
+            break
+        else:
+            print(f"{succ_num} targets found {len(T)} left ")
+    return v #v1+np.array(G.B[dim_:].multiply_left(v2[dim_:]))
 
 if __name__=="__main__":
-    n, k, bkzbeta, n_guess_coord, n_sli_coord = 90, 1, 40, 10, 42
+    n, k, bkzbetapre, bkzbeta, n_guess_coord = 150, 1, 40, 67, 15 #(120, 1, 35, 15, 35) and (130, 1, 51, 15, 60) should work
     eta, q = 3, 3329
     dim = 2*n*k
     int_type="long"
-    G, A = gen_lats(n, n_lats=1, k=k, q=q, n_guess_coord=n_guess_coord, seed=None)[0]
-    B = G.B
+    n_lats, n_exp = 2, 20
+    Lats = gen_lats(n, n_lats=n_lats, k=k, q=q, n_guess_coord=n_guess_coord, seed=None)
+    tracer = []
+    for L in Lats:
+        Gcom,A = L
 
 
-    # c = [ randrange(-3,4) for j in range(dim) ]
-    # e = np.array( [ uniform(-2,3) for j in range(dim) ],dtype=np.int64 )
-    # b = np.array( G.B.multiply_left( c ) )
-    # b_ = np.array( np.array(b,dtype=np.int64) )
-    # t_ = e+b_
-    # t = [ int(tt) for tt in t_ ]
-    # print(f"lent {len(t)}")
-    # x, err = b, e
+        # c = [ randrange(-3,4) for j in range(dim) ]
+        # e = np.array( [ uniform(-2,3) for j in range(dim) ],dtype=np.int64 )
+        # b = np.array( G.B.multiply_left( c ) )
+        # b_ = np.array( np.array(b,dtype=np.int64) )
+        # t_ = e+b_
+        # t = [ int(tt) for tt in t_ ]
+        # print(f"lent {len(t)}")
+        # x, err = b, e
+        T, GC, X, DIST_SQ_BND = [], [], [], []
+        for _ in range(n_exp):
+            G = gsomat_copy(Gcom)
+            B = G.B
+            s = binomial_vec(dim//2, eta)
+            e = binomial_vec(dim//2, eta)
+            b = (s.dot(A) + e) % q
+            nrows,ncols = A.shape
+            t = np.concatenate([b,[0]*nrows]) #BDD target
+            t = [ int(tt) for tt in t ]
+            # x = np.concatenate([b-e,s]) #BBD solution
+            err = np.concatenate([e,-s])
+            x = t - err
+            # print( B.multiply_left(G.babai(x))==x )
+            T.append(t)
+            X.append(x)
+            guess_coords = err[dim-n_guess_coord:]
+            dist_sq_bnd = 1.01*(e@e)
+            GC.append(guess_coords)
+            DIST_SQ_BND.append(dist_sq_bnd)
 
-    s = binomial_vec(dim//2, eta)
-    e = binomial_vec(dim//2, eta)
-    b = (s.dot(A) + e) % q
-    nrows,ncols = A.shape
-    t = np.concatenate([b,[0]*nrows]) #BDD target
-    t = [ int(tt) for tt in t ]
-    # x = np.concatenate([b-e,s]) #BBD solution
-    err = np.concatenate([e,-s])
-    x = t - err
-    # print( B.multiply_left(G.babai(x))==x )
 
-    lll = LLL.Reduction(G)
-    lll(kappa_end=dim-n_guess_coord)
 
-    guess_coords = err[dim-n_guess_coord:]
-    dist_sq_bnd = 1.01*(e@e)
-    print(f"lt: {len(t)}")
-    ans =  np.array( alg3_nobatch(G,t,n_guess_coord,n_sli_coord,guess_coords,bkzbeta,dist_sq_bnd) )
-    print(f"x: {[int(xx) for xx in x]}")
-    print(f"ans: {[int(aa) for aa in ans]}")
-    print(f"diff:")
-    ans = np.array(ans)
-    # print([ round(tmp) for tmp in x-ans ])
-    print(f"Succ: {ans==x}")
+        print(f"lt: {len(t)}")
+        ans =  np.array( alg3_nobatch_find_beta(G,T,n_guess_coord,GC,bkzbetapre,bkzbeta,DIST_SQ_BND,ANSWER=X,tracer=tracer) )
+        # print(f"x: {[int(xx) for xx in x]}")
+        # print(f"ans: {[int(aa) for aa in ans]}")
+        # print(f"diff:")
+        # ans = np.array(ans)
+        # print(x-ans)
+        # # print([ round(tmp) for tmp in x-ans ])
+        # print(f"Succ: {ans==x}")
+        print(tracer)
+    print(f"Done..")
+    print(tracer)
+
+    K, B, S = [], [], []
+    for t in tracer:
+        kappa, beta, succ = t[n]
+        K.append( kappa )
+        B.append( beta )
+        S.append( succ )
+    print("\n - - - beta - - -")
+    print(f"avg: {np.average( B )}, med:{np.median( B )}, std:{np.std( B )}")
+    # - - - Testing alg3_nobatch - - -
+    # G, A = gen_lats(n, n_lats=1, k=k, q=q, n_guess_coord=n_guess_coord, seed=None)[0]
+    # B = G.B
+    #
+    #
+    # # c = [ randrange(-3,4) for j in range(dim) ]
+    # # e = np.array( [ uniform(-2,3) for j in range(dim) ],dtype=np.int64 )
+    # # b = np.array( G.B.multiply_left( c ) )
+    # # b_ = np.array( np.array(b,dtype=np.int64) )
+    # # t_ = e+b_
+    # # t = [ int(tt) for tt in t_ ]
+    # # print(f"lent {len(t)}")
+    # # x, err = b, e
+    #
+    # s = binomial_vec(dim//2, eta)
+    # e = binomial_vec(dim//2, eta)
+    # b = (s.dot(A) + e) % q
+    # nrows,ncols = A.shape
+    # t = np.concatenate([b,[0]*nrows]) #BDD target
+    # t = [ int(tt) for tt in t ]
+    # # x = np.concatenate([b-e,s]) #BBD solution
+    # err = np.concatenate([e,-s])
+    # x = t - err
+    # # print( B.multiply_left(G.babai(x))==x )
+    #
+    # lll = LLL.Reduction(G)
+    # lll(kappa_end=dim-n_guess_coord)
+    #
+    # guess_coords = err[dim-n_guess_coord:]
+    # dist_sq_bnd = 1.01*(e@e)
+    # print(f"lt: {len(t)}")
+    # ans =  np.array( alg3_nobatch(G,t,n_guess_coord,n_sli_coord,guess_coords,bkzbeta,dist_sq_bnd) )
+    # print(f"x: {[int(xx) for xx in x]}")
+    # print(f"ans: {[int(aa) for aa in ans]}")
+    # print(f"diff:")
+    # ans = np.array(ans)
+    # print(x-ans)
+    # # print([ round(tmp) for tmp in x-ans ])
+    # print(f"Succ: {ans==x}")
 
 
     # print( B.multiply_left(G.babai(ans))==ans )
