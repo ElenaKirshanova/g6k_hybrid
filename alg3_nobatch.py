@@ -296,7 +296,7 @@ def alg3_nobatch_find_beta(G,T,n_guess_coord,GUESS_COORDS,bkzbetapre,bkzbeta,DIS
     return v #v1+np.array(G.B[dim_:].multiply_left(v2[dim_:]))
 
 if __name__=="__main__":
-    n, k, bkzbetapre, bkzbeta, n_guess_coord = 150, 1, 40, 67, 15 #(120, 1, 35, 15, 35) and (130, 1, 51, 15, 60) should work
+    n, k, bkzbetapre, bkzbeta, n_guess_coord = 140, 1, 28, 67, 15 #(120, 1, 35, 15, 35) and (130, 1, 51, 15, 60) should work
     eta, q = 3, 3329
     dim = 2*n*k
     int_type="long"
