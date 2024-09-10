@@ -21,7 +21,7 @@ def find_beta(d, n, q, st_dev_e):
         # if beta%32==0:
         #     plot_gso(r_log).save(f"bkz{beta}.png")
         lhs  = 0.5*log(beta)+log(st_dev_e)
-        rhs  = r_log[2*n-beta] #counting from 0
+        rhs  = r_log[d-beta] #counting from 0
         if lhs < rhs:
             return beta
         #print(beta, lhs.n(), rhs.n())
