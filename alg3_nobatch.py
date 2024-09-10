@@ -16,6 +16,7 @@ from g6k.siever_params import SieverParams
 from math import sqrt, ceil, floor
 from copy import deepcopy
 from random import shuffle, randrange, uniform
+import pickle
 
 from utils import *
 from lwe_gen import *
@@ -202,6 +203,8 @@ def alg3_nobatch_find_beta(G,T,n_guess_coord,GUESS_COORDS,bkzbetapre,bkzbeta,DIS
     H11 = IntegerMatrix.from_matrix(G.B[:dim-n_guess_coord], int_type="long")
     LR = LatticeReduction( H11 )
 
+    REDPROFS = []
+
     # bkzbetapre = min(50,bkzbeta-20)
     for beta in range(5,bkzbetapre+1):
         """
@@ -215,6 +218,9 @@ def alg3_nobatch_find_beta(G,T,n_guess_coord,GUESS_COORDS,bkzbetapre,bkzbeta,DIS
         then = perf_counter()
         LR.BKZ(beta)
         print(f"BKZ-{beta} done in {perf_counter()-then}")
+
+        REDPROFS.append( (G.d//2,n_guess_coord,beta,LR.gso.r()) ) #accumulate the profile
+
         H11 = LR.basis
         Bbkz = IntegerMatrix.from_matrix( list(H11) + list(G.B[G.d-n_guess_coord:]), int_type=int_type )
         # print(Bbkz)
@@ -293,28 +299,61 @@ def alg3_nobatch_find_beta(G,T,n_guess_coord,GUESS_COORDS,bkzbetapre,bkzbeta,DIS
             break
         else:
             print(f"{succ_num} targets found {len(T)} left ")
+
+    with open(f"gsodump_n{G.d//2}_ng{n_guess_coord}_{hex(randrange(2**16))[2:]}.pkl","wb") as f:
+        pickle.dump(REDPROFS,f)
+
     return v #v1+np.array(G.B[dim_:].multiply_left(v2[dim_:]))
 
+def uSVP_attack(G,T,ANSWER,bkzbetapre=5,bkzbeta=14,tracer_usvp=None):
+    print(f"Starting uSVP")
+    LR = LatticeReduction(G.B)
+    for beta in range(5,bkzbetapre+1):
+        then = perf_counter()
+        LR.BKZ(beta)
+        print(f"BKZ-{beta} done in {perf_counter()-then}")
+
+    for index in range(len(T)):
+        t = T[index]
+        x = ANSWER[index]
+        err = t-x
+        print("debug_1")
+        tarnrmsq = 1.01*(err@err)
+
+        B_ = [ [LR.basis[i,j] for j in range(LR.basis.nrows)] for i in range(LR.basis.ncols) ]
+        B_ = np.array( B_,dtype=np.int64 )
+        B_ = np.insert(B_,B_.shape[0],t,0)
+        B_ = np.insert( B_, B_.shape[1], np.concatenate([2*n*[0],[1]]), 1 )
+
+        B = IntegerMatrix.from_matrix( B_, int_type="long" )
+        L = LatticeReduction( B )
+        for beta in range(5,15): #slight BKZ reduction for further bkz tours not to stuck
+            L.BKZ(beta)
+            succ=False
+        for beta in range(bkzbetapre,bkzbeta+1):
+            then = perf_counter()
+            L.BKZ(beta)
+            print(f"BKZ-{beta} done in {perf_counter()-then}", end=" ")
+            b0 = np.array( L.basis[0] )
+            b0b0 = b0@b0
+            if b0b0<=tarnrmsq:
+                succ=True
+                print(f"\nSuccsess! {b0b0,tarnrmsq}")
+                break
+            print(f"||err||={b0b0}, tarnrmsq={tarnrmsq}")
+        tracer_usvp.append({(G.d//2): [beta,succ]})
+
 if __name__=="__main__":
-    n, k, bkzbetapre, bkzbeta, n_guess_coord = 140, 1, 28, 67, 15 #(120, 1, 35, 15, 35) and (130, 1, 51, 15, 60) should work
+    n, k, bkzbetapre, bkzbeta, n_guess_coord = 120, 1, 25, 45, 10 #(120, 1, 35, 15, 35) and (130, 1, 51, 15, 60) should work
+    bkzbetapre_usvp, bkzbeta_usvp = 34, 51
     eta, q = 3, 3329
     dim = 2*n*k
     int_type="long"
-    n_lats, n_exp = 2, 20
+    n_lats, n_exp = 2, 10
     Lats = gen_lats(n, n_lats=n_lats, k=k, q=q, n_guess_coord=n_guess_coord, seed=None)
-    tracer = []
+    tracer, tracer_usvp = [], []
     for L in Lats:
         Gcom,A = L
-
-
-        # c = [ randrange(-3,4) for j in range(dim) ]
-        # e = np.array( [ uniform(-2,3) for j in range(dim) ],dtype=np.int64 )
-        # b = np.array( G.B.multiply_left( c ) )
-        # b_ = np.array( np.array(b,dtype=np.int64) )
-        # t_ = e+b_
-        # t = [ int(tt) for tt in t_ ]
-        # print(f"lent {len(t)}")
-        # x, err = b, e
         T, GC, X, DIST_SQ_BND = [], [], [], []
         for _ in range(n_exp):
             G = gsomat_copy(Gcom)
@@ -336,20 +375,17 @@ if __name__=="__main__":
             GC.append(guess_coords)
             DIST_SQ_BND.append(dist_sq_bnd)
 
-
+        T_copy, X_copy = deepcopy(T), deepcopy(X)
 
         print(f"lt: {len(t)}")
         ans =  np.array( alg3_nobatch_find_beta(G,T,n_guess_coord,GC,bkzbetapre,bkzbeta,DIST_SQ_BND,ANSWER=X,tracer=tracer) )
-        # print(f"x: {[int(xx) for xx in x]}")
-        # print(f"ans: {[int(aa) for aa in ans]}")
-        # print(f"diff:")
-        # ans = np.array(ans)
-        # print(x-ans)
-        # # print([ round(tmp) for tmp in x-ans ])
-        # print(f"Succ: {ans==x}")
         print(tracer)
+
+        ans_usvp = uSVP_attack(G,T_copy,X_copy,bkzbetapre_usvp, bkzbeta_usvp, tracer_usvp=tracer_usvp)
     print(f"Done..")
     print(tracer)
+    print("- - -")
+    print(tracer_usvp)
 
     K, B, S = [], [], []
     for t in tracer:
@@ -357,8 +393,17 @@ if __name__=="__main__":
         K.append( kappa )
         B.append( beta )
         S.append( succ )
-    print("\n - - - beta - - -")
+    print("\n - - - beta BDD - - -")
     print(f"avg: {np.average( B )}, med:{np.median( B )}, std:{np.std( B )}")
+
+    Bu, Su = [], []
+    for t in tracer_usvp:
+        beta, succ = t[n]
+        Bu.append( beta )
+        Su.append( succ )
+
+    print("\n - - - beta uSVP - - -")
+    print(f"avg: {np.average( Bu )}, med:{np.median( Bu )}, std:{np.std( Bu )}")
     # - - - Testing alg3_nobatch - - -
     # G, A = gen_lats(n, n_lats=1, k=k, q=q, n_guess_coord=n_guess_coord, seed=None)[0]
     # B = G.B
