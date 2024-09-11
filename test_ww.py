@@ -21,7 +21,7 @@ from utils import *
 
 
 if __name__ == "__main__":
-    n, betamax, sieve_dim = 128, 24, 65
+    n, betamax, sieve_dim = 40, 15, 30
     B = IntegerMatrix(n,n)
     B.randomize("qary", k=n//2, bits=11.705)
     ft = "ld" if n<193 else "dd"
@@ -71,9 +71,11 @@ if __name__ == "__main__":
     then = perf_counter()
 
     debug_directives = 768 + 105
-    out_gs = g6k.randomized_iterative_slice([float(tt) for tt in t_gs],samples=1000, debug_directives=debug_directives)
+    stats_accumulator = {}
+    out_gs = g6k.randomized_iterative_slice([float(tt) for tt in t_gs],samples=3000, stats_accumulator=stats_accumulator, debug_directives=debug_directives)
 
     print(f"Slicer done in: {perf_counter()-then}")
+    print(stats_accumulator)
 
     if sieve_dim==n:
         out = to_canonical_scaled( G,out_gs,offset=sieve_dim )

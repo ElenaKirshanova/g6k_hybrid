@@ -102,6 +102,10 @@ struct cpuperf_init_t {
         perfmanager.add_performance_counter(perfcounters[691], "TS_triple_sieve");
         perfmanager.add_performance_counter(perfcounters[692], "TS_triple_sieve");
 
+        /* Slicer */
+        // perfmanager.add_performance_counter(perfcounters[704], "randomized_iterative_slice");
+        // perfmanager.add_performance_counter(perfcounters[705], "randomize_target_small");
+
     }
 } cpuperf_init;
 

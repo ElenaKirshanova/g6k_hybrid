@@ -933,6 +933,14 @@ cdef class Siever(object):
     def _stat_c_memory_snapshots(self):
         return self._core.statistics.collect_statistics_memory_snapshots
 
+    @property
+    def _stat_get_c_n_rerand_sli(self):
+        return self._core.statistics.get_stats_n_rerand_sli()
+
+    @property
+    def _stat_c_n_rerand_sli(self):
+        return self._core.statistics.collect_statistics_n_rerand_sli
+
 
     # This dictionary controls how statistics are exported / displayed.
     #
@@ -1001,6 +1009,7 @@ cdef class Siever(object):
         "memory_buckets"        : [160, "MemB:", "Total number of bucket elements we reserved memory for",              {        "triple_mt"}, "max"],
         "memory_transactions"   : [161, "MemT:", "Total number of transactions we reserved memory for",                 {        "triple_mt"}, "max"],
         "memory_snapshots"      : [162, "MemS:", "Maximum number of concurrent CDB snapshots",                          {        "triple_mt"}, "max"], # Note: For bgj1, this value is always 2 (and hence not collected). For other sieves, it is 1.
+        "n_rerand_sli"          : [9,   "NRSli:","Number of rerandomizations",                                          {"randomized_iterative_slice"}],
     }
 
     @property
@@ -1328,7 +1337,8 @@ cdef class Siever(object):
         for i in xrange(self.n):
             return_yr[i] = t_yr[i]
         if not stats_accumulator is None:
-            stats_accumulator["n_rerand_sli"] = self._core.n_rerand_sli
+            n_rerand_sli = self._stat_get_c_n_rerand_sli
+            stats_accumulator["n_rerand_sli"] = n_rerand_sli
         return return_yr
 
     def dump_on_disk(self, filename):

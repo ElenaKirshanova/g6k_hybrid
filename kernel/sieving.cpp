@@ -372,13 +372,13 @@ CompressedEntry* Siever::reduce_in_db(CompressedEntry *ce1, CompressedEntry *ce2
 }
 
 
-FT Siever::iterative_slice( std::array<LFT,MAX_SIEVING_DIM>& t_yr, size_t max_entries_used ) {
+FT Siever::iterative_slice( std::array<LFT,MAX_SIEVING_DIM>& t_yr, size_t max_entries_used, FT target_len ) {
     if( max_entries_used == 0)
         max_entries_used = cdb.size();
     CompressedEntry* const fast_cdb = cdb.data(); // atomic load
 
     //TODO: already computed inside the caller, pass to the function
-    FT target_len = 0;
+    // FT target_len = 0;
     for( size_t i = 0; i < n; i++ )
         target_len += t_yr[i] * t_yr[i];
 
@@ -511,7 +511,13 @@ void Siever::randomize_target_small(std::array<LFT, MAX_SIEVING_DIM> &t_yr, size
 }
 
 void Siever::randomized_iterative_slice( float* t_yr, size_t max_entries_used, size_t samples, float dist_sq_bnd, unsigned int debug_directives ) {
-  n_rerand_sli = 0;
+  // n_rerand_sli = 0;
+  #if COLLECT_STATISTICS_SLICER
+  auto &&local_stat_n_rerand_sli = merge_on_exit<unsigned long long>([this](unsigned long long val)
+  {
+      statistics.inc_stats_n_rerand_sli(val);
+  } );
+  #endif
   bool check_dist = dist_sq_bnd > 0;
     if( max_entries_used == 0 )
         max_entries_used = cdb.size();
@@ -542,9 +548,11 @@ void Siever::randomized_iterative_slice( float* t_yr, size_t max_entries_used, s
 
     std::copy(best_yr.begin(), best_yr.begin()+n, temp_yr.begin());
 
-    for( size_t s = 0; s < samples; s++ ) {
-        n_rerand_sli++;
-        tmp_length = iterative_slice(temp_yr, max_entries_used);
+    size_t s = 0; //this would be the new value of n_rerand_sli
+    for( ; s < samples; s++ ) {
+        // n_rerand_sli++;
+        FT target_len = dist_sq_bnd;
+        tmp_length = iterative_slice(temp_yr, max_entries_used, target_len);
         //std::cout << "tmp_length after slicer " << tmp_length << " best_length " << best_length << std::endl;
         if ( UNLIKELY(tmp_length < (best_length - 0.00001))) {
             best_length = tmp_length;
@@ -562,6 +570,9 @@ void Siever::randomized_iterative_slice( float* t_yr, size_t max_entries_used, s
           randomize_target_small(temp_yr, k, debug_directives);
         }
     }
+    #if COLLECT_STATISTICS_SLICER
+    local_stat_n_rerand_sli = s;
+    #endif
 
     for( size_t i = 0; i < n; i++ )
         t_yr[i] = best_yr[i];

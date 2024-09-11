@@ -540,7 +540,8 @@ public:
         if 0 < b < 256, use randomize_target_small with size_t k = b
 **/
 
-    FT iterative_slice( std::array<LFT,MAX_SIEVING_DIM>& t_yr, size_t max_entries_used=0); //in sieving.cpp
+    FT iterative_slice( std::array<LFT,MAX_SIEVING_DIM>& t_yr, size_t max_entries_used=0, FT target_len=16535.99); //in sieving.cpp
+    // TODO: change 16535.99 to something like FT.max_value()
     void randomize_target(std::array<LFT, MAX_SIEVING_DIM>& t_yr, size_t k );
     void randomize_target_small(std::array<LFT, MAX_SIEVING_DIM> &t_yr, size_t k, unsigned int debug_directives);
     void randomized_iterative_slice( float* t_yr, size_t max_entries_used=0, size_t samples=1, float dist_sq_bnd=-1.0, unsigned int debug_directives = 873 );

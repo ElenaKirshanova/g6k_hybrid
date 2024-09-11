@@ -82,7 +82,7 @@
         - Add it to siever.pyx (as a @property)
         - Optionally: Add it to the print routines, if desired
         - Optionally: Add it to the tracer, if special treatment is neccessary.
-
+        - Optionally: Add new performance_counter in cpuperf.cpp if stat is about performance
 */
 
 #if defined ENABLE_EXTENDED_STATS
@@ -228,6 +228,12 @@
 #endif
 #endif
 
+// SLICER stores slicer related info such as the number of rerandomizations during the last
+// call of randomized_iterative_slice or 0 if not called before.
+#ifndef COLLECT_STATISTICS_SLICER
+#define COLLECT_STATISTICS_SLICER COLLECT_STATISTICS
+#endif
+
 /**
     ENABLE_IF_STATS_*(x) is equal to x if COLLECT_STATISTICS_* is != 0
     This is intended to make more concise statements in the rest of the code that are conditional
@@ -311,6 +317,12 @@
     #define ENABLE_IF_STATS_MEMORY(s) s
 #else
     #define ENABLE_IF_STATS_MEMORY(s)
+#endif
+
+#if COLLECT_STATISTICS_SLICER
+#define ENABLE_IF_STATS_SLICER(s) s
+#else
+#define ENABLE_IF_STATS_SLICER(s)
 #endif
 
 /**
@@ -480,6 +492,12 @@ private:
     static constexpr unsigned long stats_memory_buckets = 0;
     static constexpr unsigned long stats_memory_transactions = 0;
     static constexpr unsigned long stats_memory_snapshots = 0; // we might meaningfully write 2 here for bgj1
+#endif
+
+#if COLLECT_STATISTICS_SLICER
+    std::atomic_ullong stats_n_rerand_sli;
+#else
+    static constexpr unsigned long long stats_n_rerand_sli = 0;
 #endif
 
 /**
@@ -730,6 +748,11 @@ public:
     MAKE_SETTER(memory_transactions,                    COLLECT_STATISTICS_MEMORY)
     MAKE_SETTER(memory_snapshots,                       COLLECT_STATISTICS_MEMORY)
 
+/** SLICER */
+    static constexpr bool collect_statistics_n_rerand_sli = (COLLECT_STATISTICS_SLICER >= 1);
+    MAKE_GETTER_AND_INCREMENTER(n_rerand_sli,         COLLECT_STATISTICS_SLICER)
+    MAKE_SETTER(n_rerand_sli,                         COLLECT_STATISTICS_SLICER) //this is here to reset to zero at each begining of randomized_iterative_slice
+
     inline void clear_statistics() noexcept
     {
     #if COLLECT_STATISTICS_REDS
@@ -815,6 +838,10 @@ public:
         stats_memory_buckets = 0;
         stats_memory_transactions = 0;
         stats_memory_snapshots = 0;
+    #endif
+
+    #if COLLECT_STATISTICS_SLICER
+        stats_n_rerand_sli = 0;
     #endif
     }
 
