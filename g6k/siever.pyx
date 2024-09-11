@@ -1339,7 +1339,7 @@ cdef class Siever(object):
         if not stats_accumulator is None:
             n_rerand_sli = self._stat_get_c_n_rerand_sli
             stats_accumulator["n_rerand_sli"] = n_rerand_sli
-            print(f"Stats enabled: {self._stat_c_n_rerand_sli}")
+            print(f"Stats enabled: {self._stat_c_n_rerand_sli, self._stat_c_redsuccess_total}")
         return return_yr
 
     def dump_on_disk(self, filename):
