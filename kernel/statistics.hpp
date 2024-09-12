@@ -320,9 +320,9 @@
 #endif
 
 #if COLLECT_STATISTICS_SLICER
-#define ENABLE_IF_STATS_SLICER(s) s
+  #define ENABLE_IF_STATS_SLICER(s) s
 #else
-#define ENABLE_IF_STATS_SLICER(s)
+  #define ENABLE_IF_STATS_SLICER(s)
 #endif
 
 /**

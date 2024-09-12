@@ -934,7 +934,7 @@ cdef class Siever(object):
         return self._core.statistics.collect_statistics_memory_snapshots
 
     @property
-    def _stat_get_c_n_rerand_sli(self):
+    def _stat_get_n_rerand_sli(self):
         return self._core.statistics.get_stats_n_rerand_sli()
 
     @property
@@ -1337,7 +1337,7 @@ cdef class Siever(object):
         for i in xrange(self.n):
             return_yr[i] = t_yr[i]
         if not stats_accumulator is None:
-            n_rerand_sli = self._stat_get_c_n_rerand_sli
+            n_rerand_sli = self._stat_get_n_rerand_sli
             stats_accumulator["n_rerand_sli"] = n_rerand_sli
             print(f"Stats enabled: {self._stat_c_n_rerand_sli, self._stat_c_redsuccess_total}")
         return return_yr

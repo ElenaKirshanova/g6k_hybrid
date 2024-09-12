@@ -21,9 +21,9 @@ from utils import *
 
 
 if __name__ == "__main__":
-    n, betamax, sieve_dim = 40, 15, 30
+    n, betamax, sieve_dim = 200, 40, 60
     B = IntegerMatrix(n,n)
-    B.randomize("qary", k=n//2, bits=11.705)
+    B.randomize("qary", k=n//2, bits=13.705)
     ft = "ld" if n<193 else "dd"
     G = GSO.Mat(B, float_type=ft)
     G.update_gso()
@@ -72,7 +72,9 @@ if __name__ == "__main__":
 
     debug_directives = 768 + 105
     stats_accumulator = {}
-    out_gs = g6k.randomized_iterative_slice([float(tt) for tt in t_gs],samples=3000, stats_accumulator=stats_accumulator, debug_directives=debug_directives)
+    e_ = np.array( from_canonical_scaled(g6k.M,e,offset=sieve_dim) )
+    print(f"e_: {e_}")
+    out_gs = g6k.randomized_iterative_slice([float(tt) for tt in t_gs],samples=3000, stats_accumulator=stats_accumulator, debug_directives=debug_directives, dist_sq_bnd=(1.01*(e_@e_))) #
 
     print(f"Slicer done in: {perf_counter()-then}")
     print(stats_accumulator)

@@ -512,6 +512,7 @@ void Siever::randomize_target_small(std::array<LFT, MAX_SIEVING_DIM> &t_yr, size
 
 void Siever::randomized_iterative_slice( float* t_yr, size_t max_entries_used, size_t samples, float dist_sq_bnd, unsigned int debug_directives ) {
   // n_rerand_sli = 0;
+  std::cout << "COLLECT_STATISTICS: " << COLLECT_STATISTICS << std::endl;
   #if COLLECT_STATISTICS_SLICER
   auto &&local_stat_n_rerand_sli = merge_on_exit<unsigned long long>([this](unsigned long long val)
   {
@@ -553,7 +554,7 @@ void Siever::randomized_iterative_slice( float* t_yr, size_t max_entries_used, s
         // n_rerand_sli++;
         FT target_len = dist_sq_bnd;
         tmp_length = iterative_slice(temp_yr, max_entries_used, target_len);
-        //std::cout << "tmp_length after slicer " << tmp_length << " best_length " << best_length << std::endl;
+        // std::cout << "tmp_length after slicer " << tmp_length << " best_length " << best_length << std::endl;
         if ( UNLIKELY(tmp_length < (best_length - 0.00001))) {
             best_length = tmp_length;
             std::copy(temp_yr.begin(), temp_yr.begin() + n, best_yr.begin());
@@ -564,6 +565,9 @@ void Siever::randomized_iterative_slice( float* t_yr, size_t max_entries_used, s
         }
         if (SAMPLER_VECT){ //if SAMPLER_VECT==0, use WW sampler
           randomize_target( temp_yr, k );
+          // #if COLLECT_STATISTICS_SLICER
+          // ++local_stat_n_rerand_sli;
+          // #endif
         }
         else{ //else 1<= SAMPLER_VECT <256. Set k = SAMPLER_VECT and invoke
           k = SAMPLER_VECT;
@@ -573,6 +577,7 @@ void Siever::randomized_iterative_slice( float* t_yr, size_t max_entries_used, s
     #if COLLECT_STATISTICS_SLICER
     local_stat_n_rerand_sli = s;
     #endif
+    std::cout << "tmp_length after slicer " << s << std::endl;
 
     for( size_t i = 0; i < n; i++ )
         t_yr[i] = best_yr[i];
