@@ -21,9 +21,9 @@ from utils import *
 
 
 if __name__ == "__main__":
-    n, betamax, sieve_dim = 200, 40, 60
+    n, betamax, sieve_dim = 55, 33, 50
     B = IntegerMatrix(n,n)
-    B.randomize("qary", k=n//2, bits=13.705)
+    B.randomize("qary", k=n//2, bits=11.705)
     ft = "ld" if n<193 else "dd"
     G = GSO.Mat(B, float_type=ft)
     G.update_gso()
@@ -68,19 +68,20 @@ if __name__ == "__main__":
     t_gs = from_canonical_scaled( G,t,offset=sieve_dim )
     print(f"t_gs: {t_gs} | norm: {(t_gs@t_gs)}")
 
+    #retrieve the projective sublattice
+    B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim) ) for i in range(G.d - sieve_dim, G.d) ]
+    t_gs_reduced = reduce_to_fund_par_proj(B_gs,t_gs,sieve_dim) #reduce the target w.r.t. B_gs
+    t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
+
     then = perf_counter()
 
-    debug_directives = 768 + 105
-    stats_accumulator = {}
-    e_ = np.array( from_canonical_scaled(g6k.M,e,offset=sieve_dim) )
-    print(f"e_: {e_}")
-    out_gs = g6k.randomized_iterative_slice([float(tt) for tt in t_gs],samples=3000, stats_accumulator=stats_accumulator, debug_directives=debug_directives, dist_sq_bnd=(1.01*(e_@e_))) #
+    #debug_directives = 768 + 105
+    out_gs = g6k.randomized_iterative_slice([float(tt) for tt in t_gs_shift],samples=1000)
 
     print(f"Slicer done in: {perf_counter()-then}")
-    print(stats_accumulator)
 
     if sieve_dim==n:
-        out = to_canonical_scaled( G,out_gs,offset=sieve_dim )
+        out = to_canonical_scaled( G,out_gs+t_gs_shift,offset=sieve_dim )
         out = [round(tt) for tt in out]
 
         print(len(out))
@@ -95,7 +96,7 @@ if __name__ == "__main__":
 
         print(f"Error vector has been found: {all(out==e[-sieve_dim:])}")
     else:
-        out = to_canonical_scaled( G,out_gs,offset=sieve_dim )
+        out = to_canonical_scaled( G,out_gs+t_gs_shift,offset=sieve_dim )
 
         projerr = G.to_canonical( G.from_canonical(e,start=n-sieve_dim), start=n-sieve_dim)
         diff_v =  np.array(projerr)-np.array(out)

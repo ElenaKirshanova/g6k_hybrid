@@ -93,6 +93,12 @@ def gen_and_pickle_lattice(n, k=None, bits=None, betamax=None, seed=None):
         except:
             pass    #still in docker if isExists==False, for some reason folder can exist and this will throw an exception.
 
+def reduce_to_fund_par_proj(B_gs,t_gs,dim):
+    for i in range(dim):
+        for j in range(i,-1,-1):
+            t_gs -= B_gs[j] * round( t_gs[j] / B_gs[j][j] )
+    return t_gs
+
 
     k = n//2+1 if k is None else k
     bits = 11.705 if bits is None else bits
