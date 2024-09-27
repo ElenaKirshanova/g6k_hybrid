@@ -97,7 +97,7 @@ if __name__=='__main__':
     print("finished bkz preprocessing")
 
     #-------- starting bdgl on sublattice [n-sieve_dim, n] -------
-    g6k.initialize_local(g6k.full_n-sieve_dim,g6k.full_n-sieve_dim,g6k.full_n)
+    g6k.initialize_local(m-sieve_dim,m-sieve_dim,m)
     g6k.M.update_gso()
 
     print("starting bdgl2...")
@@ -110,16 +110,13 @@ if __name__=='__main__':
     c = c[:m]
     GSO = g6k.M
 
-    t_gs_non_scaled = GSO.from_canonical(c)[-sieve_dim:]
-    shift_babai_c = GSO.babai((g6k.full_n-sieve_dim)*[0] + list(t_gs_non_scaled), gso=True)
-
-    print(shift_babai_c)
-    babai_coeff = GSO.babai(c)
-    print(GSO.babai(c))
-
-
-    shift_babai = GSO.B.multiply_left( (g6k.full_n-sieve_dim)*[0] + list( shift_babai_c ) )
+    t_gs_non_scaled = GSO.from_canonical(c)[m-sieve_dim:]
+    shift_babai_c =  list( GSO.babai( list(t_gs_non_scaled), start=m-sieve_dim, dimension=sieve_dim, gso=True) )
+    shift_babai = GSO.B.multiply_left( (m-sieve_dim)*[0] + list( shift_babai_c ) )
     t_gs_reduced = from_canonical_scaled( GSO,np.array(c)-shift_babai,offset=sieve_dim )
+
+    assert len(t_gs_reduced) == sieve_dim
+    assert all( abs( t_gs_reduced[m-sieve_dim:] ) <0.501 )
     t_gs_shift = from_canonical_scaled( GSO,shift_babai,offset=sieve_dim )
 
     #print("t_gs_reduced:", t_gs_reduced)
@@ -133,8 +130,11 @@ if __name__=='__main__':
     nrand_, _ = batchCVPP_cost(sieve_dim,100,dbsize_start**(1./sieve_dim),1)
     nrand = math.ceil(1./nrand_)+100
 
+    scaling_vec = np.array( [tmp**0.5 for tmp in GSO.r()[m-sieve_dim:]] )
+
+
     slicer = RandomizedSlicer(g6k)
-    slicer.set_nthreads(2);
+    slicer.set_nthreads(1);
     slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
 
     #To be properly done on the C-lvl
@@ -148,24 +148,25 @@ if __name__=='__main__':
     buckets = max(buckets, 2**(blocks-1))
 
     try:
-        slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], 10)
+        slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], 1.8) #TODO:set up 1.8 correctly
         iterator = slicer.itervalues_t()
         for tmp in iterator:
-            out_gs_reduced = tmp  #cdb[0]
+            out_gs_reduced = np.array(tmp)  #cdb[0]
             break
-        out_gs = out_gs_reduced + t_gs_shift
 
-        out = to_canonical_scaled( G,out_gs,offset=sieve_dim )
-        N = GSO.Mat( GSO.B[:g6k.full_n-sieve_dim], float_type=ft )
-        N.update_gso()
-        bab_1 = GSO.babai(c-np.array(out),start=g6k.full_n-sieve_dim) #last sieve_dim coordinates of s
-        tmp = c - np.array( G.B[-sieve_dim:].multiply_left(bab_1) )
-        tmp = N.to_canonical( G.from_canonical( tmp, start=0, dimension=g6k.full_n-sieve_dim ) ) #project onto span(B[-sieve_dim:])
-        bab_0 = N.babai(tmp)
+        print("out_gs_reduced:", out_gs_reduced)
+        #print(len(c))
+        #print(len(to_canonical_scaled( GSO, np.concatenate( [(m-sieve_dim)*[0], out_gs_reduced] ) )))
+        c = np.array(c)
+        c_new = c - to_canonical_scaled( GSO, np.concatenate( [(m-sieve_dim)*[0], out_gs_reduced] ) )
+        bab_01 = GSO.babai(c_new)
+        print(bab_01)
 
-        bab_01 =  np.array( bab_0+bab_1 ) #shifted answer. Good since it is smaller, thus less rounding error
-        bab_01 += np.array(shift_babai_c)
-        print(f"Success: {all(c==bab_01)}")
+        #shift_babai_c_reduced = GSO.babai((m-sieve_dim)*[0] + list(t_gs_non_scaled), start=dim-sieve_dim,gso=True)
+        #shift_babai_reduced = GSO.B.multiply_left( (m-sieve_dim)*[0] + list( shift_babai_c_reduced ) )
+        #shift_babai_reduced = shift_babai_reduced[m-sieve_dim:]
+        #shift_babai_reduced *= scaling_vec
+        #t_gs_bab = np.array(t_gs_reduced) - shift_babai_reduced
 
 
     except Exception as e: print(f" - - - {e} - - -")
