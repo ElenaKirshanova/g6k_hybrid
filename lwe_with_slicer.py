@@ -1,5 +1,6 @@
 
 import sys
+import math
 
 from fpylll import BKZ as fplll_bkz, GSO, IntegerMatrix, LLL
 from fpylll.algorithms.bkz2 import BKZReduction
@@ -23,7 +24,7 @@ if __name__=='__main__':
     goal_margin = 1.5
     bkz_tours = 2
 
-    alpha = 0.045
+    alpha = 0.01
     n = 40
     A, c, q = load_lwe_challenge(n=n, alpha=alpha)
 
@@ -109,12 +110,15 @@ if __name__=='__main__':
 
 
     #project the target and babai-reduced it
-    t = [ int(cc) for cc in c ]
+    #t = [ int(cc) for cc in c ]
+    print(len(c))
+    c = c[:m]
+    print(len(c), m, B.nrows)
     G = g6k.M
-    t_gs_non_scaled = G.from_canonical(t)[-sieve_dim:]
+    t_gs_non_scaled = G.from_canonical(c)[-sieve_dim:]
     shift_babai_c = G.babai((g6k.full_n-sieve_dim)*[0] + list(t_gs_non_scaled), start=g6k.full_n-sieve_dim,gso=True)
     shift_babai = G.B.multiply_left( (g6k.full_n-sieve_dim)*[0] + list( shift_babai_c ) )
-    t_gs_reduced = from_canonical_scaled( G,np.array(t)-shift_babai,offset=sieve_dim ) #TODO: this line fails, check the dimensions
+    t_gs_reduced = from_canonical_scaled( G,np.array(c)-shift_babai,offset=sieve_dim )
     t_gs_shift = from_canonical_scaled( G,shift_babai,offset=sieve_dim )
 
 
@@ -122,7 +126,7 @@ if __name__=='__main__':
 
     dbsize_start = g6k.db_size()
     nrand_, _ = batchCVPP_cost(sieve_dim,100,dbsize_start**(1./sieve_dim),1)
-    nrand = math.ceil(1./nrand)+100
+    nrand = math.ceil(1./nrand_)+100
 
 
 
