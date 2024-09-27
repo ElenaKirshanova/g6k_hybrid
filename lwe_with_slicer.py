@@ -7,6 +7,7 @@ from fpylll.algorithms.bkz2 import BKZReduction
 from fpylll.tools.quality import basis_quality
 from fpylll.util import gaussian_heuristic
 
+import g6k.siever
 from g6k.algorithms.bkz import pump_n_jump_bkz_tour
 from g6k.siever import Siever
 from g6k.slicer import RandomizedSlicer
@@ -27,6 +28,8 @@ if __name__=='__main__':
     alpha = 0.01
     n = 40
     A, c, q = load_lwe_challenge(n=n, alpha=alpha)
+
+    ft = "ld" if 2*n<145 else ( "dd" if config.have_qd else "mpfr")
 
 
     try:
@@ -57,7 +60,11 @@ if __name__=='__main__':
     B = B[n:]
 
     g6k = Siever(B)
+    g6k.initialize_local(0,0,m)
+
+
     sieve_dim = s - 5
+    print(g6k.full_n - sieve_dim)
 
     if sieve_dim<40:
         raise ValueError("The sieve dim is too small for the slicer")
@@ -98,6 +105,38 @@ if __name__=='__main__':
     print("finished bdgl2...")
 
 
+    #project the target and babai-reduced it
+
+    c = c[:m]
+    GSO = g6k.M
+
+    t_gs_non_scaled = GSO.from_canonical(c)[-sieve_dim:]
+    shift_babai_c = GSO.babai((g6k.full_n-sieve_dim)*[0] + list(t_gs_non_scaled), gso=True)
+
+    print(shift_babai_c)
+    babai_coeff = GSO.babai(c)
+    print(GSO.babai(c))
+
+
+    shift_babai = GSO.B.multiply_left( (g6k.full_n-sieve_dim)*[0] + list( shift_babai_c ) )
+    t_gs_reduced = from_canonical_scaled( GSO,np.array(c)-shift_babai,offset=sieve_dim )
+    t_gs_shift = from_canonical_scaled( GSO,shift_babai,offset=sieve_dim )
+
+    #print("t_gs_reduced:", t_gs_reduced)
+
+
+    #check if Babai was successful
+    #TODO!
+
+
+    dbsize_start = g6k.db_size()
+    nrand_, _ = batchCVPP_cost(sieve_dim,100,dbsize_start**(1./sieve_dim),1)
+    nrand = math.ceil(1./nrand_)+100
+
+    slicer = RandomizedSlicer(g6k)
+    slicer.set_nthreads(2);
+    slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
+
     #To be properly done on the C-lvl
     blocks = 2 # should be the same as in siever
     blocks = min(3, max(1, blocks))
@@ -108,25 +147,34 @@ if __name__=='__main__':
     buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
     buckets = max(buckets, 2**(blocks-1))
 
+    try:
+        slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], 10)
+        iterator = slicer.itervalues_t()
+        for tmp in iterator:
+            out_gs_reduced = tmp  #cdb[0]
+            break
+        out_gs = out_gs_reduced + t_gs_shift
 
-    #project the target and babai-reduced it
-    #t = [ int(cc) for cc in c ]
-    print(len(c))
-    c = c[:m]
-    print(len(c), m, B.nrows)
-    G = g6k.M
-    t_gs_non_scaled = G.from_canonical(c)[-sieve_dim:]
-    shift_babai_c = G.babai((g6k.full_n-sieve_dim)*[0] + list(t_gs_non_scaled), start=g6k.full_n-sieve_dim,gso=True)
-    shift_babai = G.B.multiply_left( (g6k.full_n-sieve_dim)*[0] + list( shift_babai_c ) )
-    t_gs_reduced = from_canonical_scaled( G,np.array(c)-shift_babai,offset=sieve_dim )
-    t_gs_shift = from_canonical_scaled( G,shift_babai,offset=sieve_dim )
+        out = to_canonical_scaled( G,out_gs,offset=sieve_dim )
+        N = GSO.Mat( GSO.B[:g6k.full_n-sieve_dim], float_type=ft )
+        N.update_gso()
+        bab_1 = GSO.babai(c-np.array(out),start=g6k.full_n-sieve_dim) #last sieve_dim coordinates of s
+        tmp = c - np.array( G.B[-sieve_dim:].multiply_left(bab_1) )
+        tmp = N.to_canonical( G.from_canonical( tmp, start=0, dimension=g6k.full_n-sieve_dim ) ) #project onto span(B[-sieve_dim:])
+        bab_0 = N.babai(tmp)
+
+        bab_01 =  np.array( bab_0+bab_1 ) #shifted answer. Good since it is smaller, thus less rounding error
+        bab_01 += np.array(shift_babai_c)
+        print(f"Success: {all(c==bab_01)}")
 
 
-    #checked if Babai was successful
+    except Exception as e: print(f" - - - {e} - - -")
 
-    dbsize_start = g6k.db_size()
-    nrand_, _ = batchCVPP_cost(sieve_dim,100,dbsize_start**(1./sieve_dim),1)
-    nrand = math.ceil(1./nrand_)+100
+
+
+
+
+
 
 
 
