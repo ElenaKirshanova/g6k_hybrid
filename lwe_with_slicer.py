@@ -13,6 +13,7 @@ from g6k.utils.util import load_lwe_challenge
 
 from g6k.utils.lwe_estimation import gsa_params, primal_lattice_basis
 from utils import *
+from hybrid_estimator.batchCVP import batchCVPP_cost
 
 
 
@@ -22,7 +23,7 @@ if __name__=='__main__':
     goal_margin = 1.5
     bkz_tours = 2
 
-    alpha = 0.01
+    alpha = 0.045
     n = 40
     A, c, q = load_lwe_challenge(n=n, alpha=alpha)
 
@@ -33,7 +34,7 @@ if __name__=='__main__':
         print(min_cost_param)
         (b, s, m) = min_cost_param #bkz_dim, svp_dim, num_samples
     except TypeError:
-        raise TypeError("No winning parameters.")
+        raise TypeError("No winning parameters.") #for alpha=0.045 it fails to find the params
 
     target_norm = goal_margin * (alpha*q)**2 * m
 
@@ -115,6 +116,13 @@ if __name__=='__main__':
     shift_babai = G.B.multiply_left( (g6k.full_n-sieve_dim)*[0] + list( shift_babai_c ) )
     t_gs_reduced = from_canonical_scaled( G,np.array(t)-shift_babai,offset=sieve_dim ) #TODO: this line fails, check the dimensions
     t_gs_shift = from_canonical_scaled( G,shift_babai,offset=sieve_dim )
+
+
+    #checked if Babai was successful
+
+    dbsize_start = g6k.db_size()
+    nrand_, _ = batchCVPP_cost(sieve_dim,100,dbsize_start**(1./sieve_dim),1)
+    nrand = math.ceil(1./nrand)+100
 
 
 
