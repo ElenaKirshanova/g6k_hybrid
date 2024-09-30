@@ -251,7 +251,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     #this is a time-memory tradeoff. Since Slicer returns only an error vector, we don\'t
     #know which of the target candidates it corresponds to. TODO: or should we?
     target_list_size = len(g6k)
-    nrand = 150 #min( 5, target_list_size / len(g6k) )
+    nrand = 1150 #min( 5, target_list_size / len(g6k) )
     print(f"len(target_candidates): {len(target_candidates)} nrand: {nrand}")
     t_gs_list = []
     t_gs_reduced_list = []
@@ -270,7 +270,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
         assert all( abs( t_gs_reduced[dim-sieve_dim:] ) <0.501 ) #assert that the last Sieve dim coords are size reduced
 
         # t_gs_shift = from_canonical_scaled( G,shift_babai,offset=sieve_dim )
-        print("t_gs_reduced:", t_gs_reduced)
+        #print("t_gs_reduced:", t_gs_reduced)
 
         t_gs_list.append(t_gs)
         shift_babai_c_list.append(shift_babai_c)
@@ -324,6 +324,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     index = index_best
     t = np.array( target_candidates[index] )
     t_new = t - to_canonical_scaled( G, np.concatenate( [(dim-sieve_dim)*[0], out_gs_reduced] ) )
+    #print('t_new:', t_new)
     assert len(t_new) == dim
     bab_01 = G.babai(t_new)
 
