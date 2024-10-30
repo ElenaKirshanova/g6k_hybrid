@@ -349,35 +349,47 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
         diff_gs_nrm_sq = diff_gs@diff_gs #its norm. Ideally, == norm of error
         """
         print(f"LEN: {len(target_candidates)}")
-        t_full = target_candidates[index]
-        t_full_gs = from_canonical_scaled( G,t_full,offset=dim ) #we could do this to t_gs, but this one is shorter
-        print(f"{len(t_gs), dim-sieve_dim ,len(out_gs_reduced)} - - - -")
-        guess_gs = np.array(t_full_gs - np.concatenate([(dim-sieve_dim)*[0],out_gs_reduced]))
-        guess_c = G.babai( guess_gs, gso=True )
-        guess = G.B.multiply_left( guess_c )
-        guess_gs = np.array( to_canonical_scaled( G,guess,offset=dim ) )
-        diff_gs = t_full_gs - guess_gs
 
-        diff_gs_nrm_sq = diff_gs@diff_gs
+        t = np.array( target_candidates[index] )
+        t_1 = np.array( G.from_canonical( t,start=0 ) )
+        for i in range(dim-sieve_dim):
+            t_1[i] = 0.
+        t_1 = np.array( G.to_canonical( t_1,start=0 ) )
+        t_0 = np.array( G.from_canonical( t,start=0 ) )
+        for i in range(dim-sieve_dim, dim):
+            t_0[i] = 0.
+        t_0 = np.array( G.to_canonical( t_0,start=0 ) )
+        #we substitute the obtaied error from the target and call babai to
+        #account for an fp error
 
-        if diff_gs_nrm_sq < min_norm_err_sq:
-            min_norm_err_sq = diff_gs_nrm_sq
-            index_best = index
-            # b_best = b
+        # out_reduced = to_canonical_scaled( G, np.concatenate([ (dim-sieve_dim)*[0] , out_gs_reduced ]), offset=dim )
+        out_reduced = np.array( to_canonical_scaled( G, out_gs_reduced, offset=sieve_dim ) )
+        t_1 = t_1 - out_reduced
+        bab_1 = G.babai(t_1,start=dim-sieve_dim, dimension=sieve_dim)
 
-    print(f"min_norm_err_sq: {min_norm_err_sq}, index_best:{index_best}")
-    index = index_best
-    t = np.array( target_candidates[index] )
-    #we substitute the obtaied error from the target and call babai to
-    #account for an fp error
-    # t_new = t - to_canonical_scaled( G, np.concatenate( [(dim-sieve_dim)*[0], out_gs_reduced] ) )
-    t_new = t - to_canonical_scaled( G, np.concatenate([ (dim-sieve_dim)*[0] , out_gs_reduced ]) )
-    assert len(t_new) == dim
-    bab_01 = G.babai(t_new)
-    # bab_01 = G.babai(b_best)
+        tmp = G.B[-sieve_dim:].multiply_left( bab_1 )
+        tmp = np.array( G.from_canonical(tmp,start=0) )
+        for i in range(dim-sieve_dim,dim):
+            tmp[i] = 0.
+        tmp = G.to_canonical( tmp, start=0 )
+        t_0 = t_0 - tmp
+        bab_0 = G.babai(t_0,start=0, dimension=dim-sieve_dim)
+        bab_01 = np.concatenate( [bab_0,bab_1] )
+        solution_candidate = np.array( G.B.multiply_left( bab_01 ) )
+
+        diff = t - solution_candidate
+        diff_nrm_sq = diff@diff
+
+        if diff_nrm_sq < min_norm_err_sq:
+            min_norm_err_sq = diff_nrm_sq
+            best_index = index
+            best_solution_candidate = solution_candidate
+            best_bab_01 = bab_01
+    print(f"min_norm_err_sq: {min_norm_err_sq}")
+
 
     print(f"alg2 terminates")
-    return bab_01
+    return best_bab_01
 
 
 if __name__=="__main__":
