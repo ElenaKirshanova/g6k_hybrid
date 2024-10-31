@@ -80,6 +80,7 @@ def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthrea
         print(f"BKZ-{beta} done in {round_time}\n")
         sys.stdout.flush()
     report["bkz_runtime"] = time.perf_counter() - bkz_start
+    H11 = LR.basis
 
     if dump_bkz:
         with open(out_path+f"/kyb_prehybrid_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}_{sieve_dim_max-nsieves+i}", "wb") as f:
