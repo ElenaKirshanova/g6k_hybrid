@@ -142,7 +142,7 @@ if __name__=="__main__":
     tasks = []
     for param in params:
         for latnum in range(lats_per_dim):
-            for kappa in range(param[1]-1, param[1]+2,1):
+            for kappa in range(param[1]-1, param[1]+4,1):
                 tasks.append( pool.apply_async(
                     run_preprocessing, (
                         param[0], #n
