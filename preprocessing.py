@@ -170,4 +170,7 @@ if __name__=="__main__":
         sieve_dim_min = o_["sieve_dim_min"]
         filename = out_path + f"report_prehyb_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}_{sieve_dim_min}_{sieve_dim_max}.pkl"
 
+        with open(filename, "wb") as file:
+            pickle.dump( o_,file )
+
     sys.stdout.flush()
