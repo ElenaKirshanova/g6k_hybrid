@@ -1,11 +1,18 @@
 from fpylll import *
+from fpylll.util import gaussian_heuristic
 from g6k.siever import Siever
 from g6k.siever_params import SieverParams
 from g6k.slicer import RandomizedSlicer
-from utils import *
+from utils import from_canonical_scaled, to_canonical_scaled, random_on_sphere
+import numpy as np
 import argparse
-import sys
+import sys, os
 from hybrid_estimator.batchCVP import batchCVPP_cost
+from math import sqrt, ceil, floor, log, exp
+from random import shuffle, randrange
+import time, pickle
+
+from LatticeReduction import LatticeReduction
 
 try:
     from multiprocess import Pool  # you might need pip install multiprocess
@@ -86,11 +93,10 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
     buckets = max(buckets, 2**(blocks-1))
 
     dbsize_start = g6k.db_size()
-
+    nrand_, _ = batchCVPP_cost(sieve_dim,100,dbsize_start**(1./sieve_dim),1) #100 can be any constant >1
     for j in range(n_shrinkings):
         # slicer = RandomizedSlicer(g6k)
         # slicer.set_nthreads(nthreads);
-        nrand_, _ = batchCVPP_cost(sieve_dim,100,dbsize_start**(1./sieve_dim),1) #100 can be any constant >1
         print("nrand:", (1./nrand_)**sieve_dim)
         print("Running experiment ", j, "out of ", n_shrinkings)
 
@@ -113,7 +119,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
             t_gs_reduced = from_canonical_scaled( G,np.array(t)-shift_babai,offset=sieve_dim ) #this is the actual reduced target
 
             t_gs_shift = from_canonical_scaled( G,shift_babai,offset=sieve_dim)
-            print("t_gs_reduced:",t_gs_reduced)
+            # print("t_gs_reduced:",t_gs_reduced)
 
             print("projected reduced target squared length:", (t_gs_reduced@t_gs_reduced))
             print("projected error squared length:", (e_@e_))
@@ -199,7 +205,7 @@ if __name__ == '__main__':
 
     FPLLL.set_precision(250)
 
-    n, betamax, sieve_dim = 80, 60, 80
+    n, betamax, sieve_dim = 60, 45, 60
 
     nthreads = 50 # number of workers
     slicer_threads = 2 # threads the slicer will use

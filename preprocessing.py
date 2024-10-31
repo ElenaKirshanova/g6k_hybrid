@@ -5,6 +5,7 @@ from fpylll import *
 from g6k.siever import Siever
 from g6k.siever_params import SieverParams
 from utils import *
+from LatticeReduction import LatticeReduction
 
 try:
     from multiprocess import Pool  # you might need pip install multiprocess
