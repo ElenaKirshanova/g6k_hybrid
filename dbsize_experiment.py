@@ -98,8 +98,6 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
     dbsize_start = g6k.db_size()
 
     for j in range(n_shrinkings):
-        # slicer = RandomizedSlicer(g6k)
-        # slicer.set_nthreads(nthreads);
         nrand_, _ = batchCVPP_cost(sieve_dim,100,dbsize_start**(1./sieve_dim),1) #100 can be any constant >1
         print("nrand:", (1./nrand_)**sieve_dim)
         print("Running experiment ", j, "out of ", n_shrinkings)
@@ -119,16 +117,16 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
             #project onto the last projective lattice and babai reduce
             t_gs = from_canonical_scaled( G,t,offset=sieve_dim )
-            # t_gs_non_scaled = G.from_canonical(t)[-sieve_dim:]
-            # shift_babai_c = G.babai((n-sieve_dim)*[0] + list(t_gs_non_scaled), start=n-sieve_dim,gso=True)
-            # shift_babai = G.B.multiply_left( (n-sieve_dim)*[0] + list( shift_babai_c ) )
-            # t_gs_reduced = from_canonical_scaled( G,np.array(t)-shift_babai,offset=sieve_dim ) #this is the actual reduced target
-            # t_gs_shift = from_canonical_scaled( G,shift_babai,offset=sieve_dim )
+            t_gs_non_scaled = G.from_canonical(t)[-sieve_dim:]
+            shift_babai_c = G.babai((n-sieve_dim)*[0] + list(t_gs_non_scaled), start=n-sieve_dim,gso=True)
+            shift_babai = G.B.multiply_left( (n-sieve_dim)*[0] + list( shift_babai_c ) )
+            t_gs_reduced = from_canonical_scaled( G,np.array(t)-shift_babai,offset=sieve_dim ) #this is the actual reduced target
+            t_gs_shift = from_canonical_scaled( G,shift_babai,offset=sieve_dim )
 
-            B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
-            t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
-            t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
-            shift_babai_c = G.babai((n-sieve_dim)*[0] + list(t_gs_shift), start=n-sieve_dim,gso=True)
+            # B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
+            # t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
+            # t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
+            # shift_babai_c = G.babai((n-sieve_dim)*[0] + list(t_gs_shift), start=n-sieve_dim,gso=True)
 
             print("t_gs_reduced:",t_gs_reduced)
             print(f"e_: {e_}")
@@ -162,19 +160,14 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
                     for tmp in iterator:
                         out_gs_reduced = np.array( tmp )  #cdb[0]
                         break
-                    print(f"out_gs_reduced: {out_gs_reduced}")
-                    print(f"out_gs_reduced-e_: {np.abs( out_gs_reduced-e_ )}")
-                    print(f"out_gs_reduced**2: {out_gs_reduced@out_gs_reduced}")
+                    # print(f"out_gs_reduced: {out_gs_reduced}")
+                    # print(f"out_gs_reduced-e_: {np.abs( out_gs_reduced-e_ )}")
+                    # print(f"out_gs_reduced**2: {out_gs_reduced@out_gs_reduced}")
                     out_gs = out_gs_reduced + t_gs_shift
 
                     # - - - Check - - - -
                     out = to_canonical_scaled( G,out_gs,offset=sieve_dim )
-                    # N = GSO.Mat( G.B[:n-sieve_dim], float_type=ft )
-                    # N.update_gso()
                     bab_1 = G.babai(t-np.array(out),start=n-sieve_dim) #last sieve_dim coordinates of s
-                    # tmp = t - np.array( G.B[-sieve_dim:].multiply_left(bab_1) )
-                    # tmp = N.to_canonical( G.from_canonical( tmp, start=0, dimension=n-sieve_dim ) ) #project onto span(B[-sieve_dim:])
-                    # bab_0 = N.babai(tmp)
 
                     bab_01 =  np.array( bab_1 ) #shifted answer. Good since it is smaller, thus less rounding error
                     bab_01 += np.array(shift_babai_c)
@@ -186,7 +179,6 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
                         slicer_fail[j] += 1
                         print(f"FAIL")
                         found_nrm_sq = out_gs@out_gs #meant to be an error modulo Voronoi cell
-                        # assert ( found_nrm_sq>0.999*(e_@e_) ), f"Found impossible vector! {found_nrm_sq} < {(e_@e_)}"
 
                 except Exception as e:
                     print(f" - - - {e} - - -")

@@ -24,7 +24,7 @@ from preprocessing import run_preprocessing
 
 approx_fact = 1.07
 
-max_nsampl = 150 #10**7
+max_nsampl = 1500 #10**7
 inp_path = "lwe instances/saved_lattices/"
 out_path = "lwe instances/reduced_lattices/"
 
@@ -272,7 +272,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     #this is a time-memory tradeoff. Since Slicer returns only an error vector, we don\'t
     #know which of the target candidates it corresponds to. TODO: or should we?
     target_list_size =  2 * g6k.db_size() #len(g6k)
-    nrand = 150 #min( 250, target_list_size / len(target_candidates ) )
+    nrand = 800 #min( 250, target_list_size / len(target_candidates ) )
     print(f"len(target_candidates): {len(target_candidates)} nrand: {nrand}")
     t_gs_list = []
     t_gs_reduced_list = []
@@ -280,18 +280,18 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     for target in target_candidates:
         # print(end=".", flush=True)
         t_gs = from_canonical_scaled( G,target,offset=sieve_dim )
-        # t_gs_non_scaled = G.from_canonical(target)[dim-sieve_dim:]
-        # shift_babai_c =  list( G.babai( list(t_gs_non_scaled), start=dim-sieve_dim, dimension=sieve_dim, gso=True) )
-        # print( f"shift_babai_c: {shift_babai_c}" )
-        # shift_babai = G.B.multiply_left( (dim-sieve_dim)*[0] + list( shift_babai_c ) )
-        # t_gs_reduced = from_canonical_scaled( G,np.array(target)-shift_babai,offset=sieve_dim ) #this is the actual reduced target
+        t_gs_non_scaled = G.from_canonical(target)[dim-sieve_dim:]
+        shift_babai_c =  list( G.babai( list(t_gs_non_scaled), start=dim-sieve_dim, dimension=sieve_dim, gso=True) )
+        print( f"shift_babai_c: {shift_babai_c}" )
+        shift_babai = G.B.multiply_left( (dim-sieve_dim)*[0] + list( shift_babai_c ) )
+        t_gs_reduced = from_canonical_scaled( G,np.array(target)-shift_babai,offset=sieve_dim ) #this is the actual reduced target
         # assert len(t_gs_reduced) == sieve_dim
         # assert all( abs( t_gs_reduced[dim-sieve_dim:] ) <0.501 ) #assert that the last Sieve dim coords are size reduced
 
-        B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
-        t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
-        t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
-        shift_babai_c = G.babai((dim-sieve_dim)*[0] + list(t_gs_shift), start=dim-sieve_dim,gso=True)
+        # B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
+        # t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
+        # t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
+        # shift_babai_c = G.babai((dim-sieve_dim)*[0] + list(t_gs_shift), start=dim-sieve_dim,gso=True)
 
         t_gs_list.append(t_gs)
         shift_babai_c_list.append(shift_babai_c)

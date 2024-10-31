@@ -212,10 +212,10 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads=1, 
     return argminv
 
 if __name__=="__main__":
-    n, k = 130, 1
-    eta = 2
-    n_guess_coord, n_slicer_coord = 4, 55
-    betamax = 54
+    n, k = 140, 1
+    eta = 3
+    n_guess_coord, n_slicer_coord = 12, 75
+    betamax = 62
     sieve_dim_max = n_slicer_coord
     nsieves = 2
     nthreads = 2
@@ -240,7 +240,7 @@ if __name__=="__main__":
         LR = LatticeReduction( H11, nthreads )
         for beta in range(5,betamax+1):
             then = perf_counter()
-            LR.BKZ( beta )
+            LR.BKZ( beta, tours=5 )
             print(f"BKZ-{beta} done in {perf_counter()-then}", flush=True)
         H11 = LR.basis
 
@@ -249,54 +249,61 @@ if __name__=="__main__":
     else:
         with open(filename, "rb") as file:
             Binit, H11, A,q,bse = pickle.load( file)
-        b, s, e = bse[9]
-    answer = np.concatenate( [b-e,s] )
-    # print(f"Solving...")
-    # Bnp = np.array( [ np.array(b) for b in Binit ] )
-    # print(np.linalg.lstsq(Bnp.transpose(),answer))
+        # b, s, e = bse[7]
+    for (b, s, e) in bse:
+        answer = np.concatenate( [b-e,s] )
+        # print(f"Solving...")
+        # Bnp = np.array( [ np.array(b) for b in Binit ] )
+        # print(np.linalg.lstsq(Bnp.transpose(),answer))
 
-    H11r, H11c = H11.nrows, H11.ncols
-    G = GSO.Mat( H11,U=IntegerMatrix.identity(H11r,int_type=H11.int_type), UinvT=IntegerMatrix.identity(H11r,int_type=H11.int_type), float_type=ft )
-    H11r, H11c = H11.nrows, H11.ncols
-    G.update_gso()
-    param_sieve = SieverParams()
-    param_sieve['threads'] = nthreads
-    g6k = Siever(G,param_sieve)
-    g6k.initialize_local(H11r-n_slicer_coord, H11r-n_slicer_coord, H11r)
+        H11r, H11c = H11.nrows, H11.ncols
+        G = GSO.Mat( H11,U=IntegerMatrix.identity(H11r,int_type=H11.int_type), UinvT=IntegerMatrix.identity(H11r,int_type=H11.int_type), float_type=ft )
+        H11r, H11c = H11.nrows, H11.ncols
+        G.update_gso()
+        param_sieve = SieverParams()
+        param_sieve['threads'] = nthreads
+        g6k = Siever(G,param_sieve)
+        g6k.initialize_local(H11r-n_slicer_coord, H11r-n_slicer_coord, H11r)
 
-    t = np.concatenate([b,n*[0]])
-    g6k(alg="bdgl2")
+        t = np.concatenate([b,n*[0]])
+        g6k(alg="bdgl2")
 
-    e_ = np.concatenate([e,-s])[:-n_guess_coord]
-    e_ = from_canonical_scaled( G,e_,offset=n_slicer_coord )[-n_slicer_coord:]
-    dist_sq_bnd = e_@e_
-    gh_sub = gaussian_heuristic(G.r()[-n_slicer_coord:])
-    print(f"dist_sq_bnd: {dist_sq_bnd} | r/gh: {G.r()[-n_slicer_coord] / gh_sub}")
-    print(f"len(e_): {len(e_)} G.M.nrows(): {G.B.nrows}")
+        e_ = np.concatenate([e,-s])[:-n_guess_coord]
+        e_ = from_canonical_scaled( G,e_,offset=n_slicer_coord )[-n_slicer_coord:]
+        dist_sq_bnd = e_@e_
+        gh_sub = gaussian_heuristic(G.r()[-n_slicer_coord:])
+        dist_bnd = dist_sq_bnd**0.5
+        dist_threshold = (G.r()[-n_slicer_coord] / gh_sub)**0.5
+        print(f"dist_bnd: {dist_bnd} | dist_threshold: {dist_threshold} | ratio: {dist_bnd/dist_threshold}")
+        print(f"len(e_): {len(e_)} G.M.nrows(): {G.B.nrows}")
+        rs = np.array( G.r()[-n_slicer_coord:] ) / gh_sub
+        rs = np.array( [ sqrt(rr) for rr in rs ] )
+        print(f"Checking errs:")
+        print(np.abs(e_) / rs)
 
-    B = IntegerMatrix.from_matrix(Binit)
-    # print(B)
+        B = IntegerMatrix.from_matrix(Binit)
+        # print(B)
 
-    # v = alg_3(g6k,B,H11,t,n_guess_coord, eta, dist_sq_bnd=1.01*dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
-                   # (g6k,H11,target,n_guess_coord, eta, dist_sq_bnd=1.0*dist_sq_bnd, nthreads=1, tracer_alg3=None)
-    v = alg_3_debug(g6k,H11,t,n_guess_coord, eta, dist_sq_bnd=0.99*dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
-    print(f" - - - - - - ")
+        # v = alg_3(g6k,B,H11,t,n_guess_coord, eta, dist_sq_bnd=1.01*dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
+                       # (g6k,H11,target,n_guess_coord, eta, dist_sq_bnd=1.0*dist_sq_bnd, nthreads=1, tracer_alg3=None)
+        v = alg_3_debug(g6k,H11,t,n_guess_coord, eta, dist_sq_bnd=0.9*dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
+        print(f" - - - - - - ")
 
-    LR2 = LatticeReduction( B )
-    for beta in range(4,10):
-        LR2.BKZ(beta)
-    cv = LR2.gso.babai( v )
-    v2 = LR2.basis.multiply_left( cv )
+        LR2 = LatticeReduction( B )
+        for beta in range(4,15):
+            LR2.BKZ(beta, tours=2)
+        cv = LR2.gso.babai( v )
+        v2 = LR2.basis.multiply_left( cv )
 
-    print(answer)
-    print(v)
-    print(v2)
-    # print(f"dist_sq_bnd: {dist_sq_bnd}")
-    # print(([-s,e])) #np.concatenate
-    print(answer==v)
-    # print(answer==v2)
+        print(answer)
+        print(v)
+        print(v2)
+        # print(f"dist_sq_bnd: {dist_sq_bnd}")
+        # print(([-s,e])) #np.concatenate
+        print(answer==v)
+        # print(answer==v2)
 
-    print(f"- - - Now Babai - - -")
-    # vbab = np.array( alg_3_debug_bab( g6k,H11,t,n_guess_coord, eta, nthreads=nthreads, tracer_alg3=None ) )
-    # print(answer==vbab)
-    # print(vbab-v)
+        # print(f"- - - Now Babai - - -")
+        # vbab = np.array( alg_3_debug_bab( g6k,H11,t,n_guess_coord, eta, nthreads=nthreads, tracer_alg3=None ) )
+        # print(answer==vbab)
+        # print(vbab-v)
