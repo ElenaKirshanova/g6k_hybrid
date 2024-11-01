@@ -153,7 +153,7 @@ def alg_2_batched_debug( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tra
     return best_bab_01
 
 # n, betamax, sieve_dim = 140, 45, 45 #n=170 is liikely to fail
-n, betamax, sieve_dim = 192, 55, 60 #n=170 is liikely to fail
+n, betamax, sieve_dim = 100, 60, 75 #n=170 is liikely to fail
 
 bits=11.705
 ft = "ld" if n<145 else ( "dd" if config.have_qd else "mpfr")
@@ -211,7 +211,7 @@ print(f"dbsize: {len(g6k)}")
 time.sleep(0.2)
 
 c = [ randrange(-30,31) for j in range(n) ]
-e = np.array( random_on_sphere(n,0.081*gh), dtype=np.float64 )
+e = np.array( random_on_sphere(n,0.33*gh), dtype=np.float64 )
 b = G.B.multiply_left( c )
 b_ = np.array(b,dtype=np.int64)
 t_ = e+b_
