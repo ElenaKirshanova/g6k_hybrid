@@ -100,6 +100,18 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
     dbsize_start = g6k.db_size()
     nrand_, _ = batchCVPP_cost(sieve_dim,100,dbsize_start**(1./sieve_dim),1) #100 can be any constant >1
+
+    cs = []
+    es = []
+    bs = []
+    for i in range(Nexperiments):
+        c = [ randrange(-10,10) for k in range(n) ]
+        e = np.array( random_on_sphere(n, 0.5 * gh) ) #error vector
+        b = G.B.multiply_left( c )
+        cs.append( c )
+        es.append( e )
+        bs.append( b )
+
     for j in range(n_shrinkings):
         # slicer = RandomizedSlicer(g6k)
         # slicer.set_nthreads(nthreads);
@@ -109,12 +121,12 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
         for i in range(Nexperiments):
             if i%10 == 0:
                 print(f"{i} out of {Nexperiments} done...", flush=True)
-            c = [ randrange(-10,10) for k in range(n) ]
-            e = np.array( random_on_sphere(n, 0.5 * gh) ) #error vector
+            c = cs[i] #[ randrange(-10,10) for k in range(n) ]
+            e = es[i] #np.array( random_on_sphere(n, 0.5 * gh) ) #error vector
             print(f"gauss: {gh} vs r_00: {G.get_r(0,0)**0.5} vs ||err||: {(e@e)**0.5}")
             e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim) )
 
-            b = G.B.multiply_left( c )
+            b = bs[i] #G.B.multiply_left( c )
             b_ = np.array(b,dtype=np.int64)
             t_ = e+b_
             t = [ int(tt) for tt in t_ ]
@@ -207,7 +219,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
 if __name__ == '__main__':
 
-    Nexperiments = 20
+    Nexperiments = 50
     Nlats = 10
     path = "saved_lattices/"
     isExist = os.path.exists(path)
@@ -220,7 +232,7 @@ if __name__ == '__main__':
 
     FPLLL.set_precision(250)
 
-    n, betamax, sieve_dim = 52, 45, 52
+    n, betamax, sieve_dim = 60, 45, 60
 
     nthreads = 5 # number of workers
     slicer_threads = 2 # threads the slicer will use

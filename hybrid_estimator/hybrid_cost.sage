@@ -13,7 +13,7 @@ def plot_gso(r, *args, **kwds):
     return line([(i, r_,) for i, r_ in enumerate(r)], *args, **kwds)
 
 #Thm. 4.1
-def find_beta(d, n, q, st_dev_e):
+def find_beta(d, n, q, st_dev_e, approx_fact=0.75):
     minbeta = 50 if d<513 else n//2
     for beta in range(minbeta, d//2, 1): #90, 450, 1
         r_log = ZGSA(d, n, q, beta)
@@ -21,7 +21,7 @@ def find_beta(d, n, q, st_dev_e):
         # if beta%32==0:
         #     plot_gso(r_log).save(f"bkz{beta}.png")
         lhs  = 0.5*log(beta)+log(st_dev_e)
-        rhs  = r_log[2*n-beta] #counting from 0
+        rhs  = r_log[2*n-beta] + log(approx_fact) #counting from 0
         if lhs < rhs:
             return beta
         #print(beta, lhs.n(), rhs.n())

@@ -79,7 +79,7 @@ def run_exp(g6k,ntests,approx_facts):
         for tstnum in range(ntests):
             print(f" - - - {approx_fact} #{tstnum} out of {ntests} - - -")
             c = [ randrange(-2,3) for j in range(n) ]
-            e = np.array( random_on_sphere(n,approx_fact*lambda1/2) )
+            e = np.array( random_on_sphere(n,approx_fact*lambda1) )
             b = np.array( B.multiply_left( c ) )
             t = b+e
             # print(e@e, 0.25*G.get_r(0, 0))
@@ -145,9 +145,15 @@ def run_exp(g6k,ntests,approx_facts):
                     t_gs = from_canonical_scaled( G,t,offset=sieve_dim )
                     #print(f"t_gs: {t_gs} | norm: {(t_gs@t_gs)}")
                     #retrieve the projective sublattice
-                    B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
-                    t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
-                    t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
+                    # B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
+                    # t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
+                    # t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
+
+                    t_gs_non_scaled = G.from_canonical(t)[-sieve_dim:]
+                    shift_babai_c = G.babai((n-sieve_dim)*[0] + list(t_gs_non_scaled), start=n-sieve_dim,gso=True)
+                    shift_babai = G.B.multiply_left( (n-sieve_dim)*[0] + list( shift_babai_c ) )
+                    t_gs_reduced = from_canonical_scaled( G,np.array(t)-shift_babai,offset=sieve_dim ) #this is the actual reduced target
+                    t_gs_shift = from_canonical_scaled( G,shift_babai,offset=sieve_dim )
 
                     slicer = RandomizedSlicer(g6k)
                     slicer.set_nthreads(2);
@@ -215,8 +221,8 @@ def run_exp(g6k,ntests,approx_facts):
 
 if __name__=="__main__":
     ntests = 200
-    n = 64
-    approx_facts = [ 0.8 + 0.05*i for i in range(17) ]
+    n = 70
+    approx_facts = [ 0.4 + 0.025*i for i in range(25) ]
     print(approx_facts)
     try:
         g6k = Siever.restore_from_file(f"cvppg6k_n{n}_test.pkl")
