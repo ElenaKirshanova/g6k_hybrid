@@ -81,6 +81,7 @@ def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthrea
         print(f"BKZ-{beta} done in {round_time}\n")
         sys.stdout.flush()
     report["bkz_runtime"] = time.perf_counter() - bkz_start
+    H11 = LR.basis
 
     if dump_bkz:
         with open(out_path+f"/kyb_prehybrid_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}_{sieve_dim_max-nsieves+i}", "wb") as f:
@@ -142,7 +143,7 @@ if __name__=="__main__":
     tasks = []
     for param in params:
         for latnum in range(lats_per_dim):
-            for kappa in range(param[1]-1, param[1]+2,1):
+            for kappa in range(param[1]-1, param[1]+4,1):
                 tasks.append( pool.apply_async(
                     run_preprocessing, (
                         param[0], #n
@@ -170,5 +171,8 @@ if __name__=="__main__":
         sieve_dim_max = o_["sieve_dim_max"]
         sieve_dim_min = o_["sieve_dim_min"]
         filename = out_path + f"report_prehyb_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}_{sieve_dim_min}_{sieve_dim_max}.pkl"
+
+        with open(filename, "wb") as file:
+            pickle.dump( o_,file )
 
     sys.stdout.flush()

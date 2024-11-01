@@ -57,7 +57,7 @@ def parse_all():
                     brk += 1
                     continue
 
-                if "-eta" in s:
+                if "-eta=" in s:
                     eta = int(s[5:])
                     st_dev_e = st_dev_central_binomial(eta)
                     dist = centeredBinomial(eta).PDF
