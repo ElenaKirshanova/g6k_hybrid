@@ -16,6 +16,8 @@ from math import sqrt, ceil, floor, log, exp
 import time
 import pickle
 
+from LatticeReduction import LatticeReduction
+
 try:
     from multiprocess import Pool  # you might need pip install multiprocess
 except ModuleNotFoundError:
@@ -218,7 +220,7 @@ if __name__ == '__main__':
 
     FPLLL.set_precision(250)
 
-    n, betamax, sieve_dim = 60, 45, 60
+    n, betamax, sieve_dim = 52, 45, 52
 
     nthreads = 5 # number of workers
     slicer_threads = 2 # threads the slicer will use
