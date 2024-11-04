@@ -139,14 +139,6 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
             t_gs_reduced = from_canonical_scaled( G,np.array(t)-shift_babai,offset=sieve_dim ) #this is the actual reduced target
             t_gs_shift = from_canonical_scaled( G,shift_babai,offset=sieve_dim )
 
-            # B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
-            # t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
-            # t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
-            # shift_babai_c = G.babai((n-sieve_dim)*[0] + list(t_gs_shift), start=n-sieve_dim,gso=True)
-
-            # print("t_gs_reduced:",t_gs_reduced)
-            # print(f"e_: {e_}")
-
             print("projected reduced target squared length:", (t_gs_reduced@t_gs_reduced))
             print("projected error squared length:", (e_@e_))
 
@@ -176,9 +168,6 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
                     for tmp in iterator:
                         out_gs_reduced = np.array( tmp )  #cdb[0]
                         break
-                    # print(f"out_gs_reduced: {out_gs_reduced}")
-                    # print(f"out_gs_reduced-e_: {np.abs( out_gs_reduced-e_ )}")
-                    # print(f"out_gs_reduced**2: {out_gs_reduced@out_gs_reduced}")
                     out_gs = out_gs_reduced + t_gs_shift
 
                     # - - - Check - - - -
@@ -194,7 +183,6 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
                     else:
                         slicer_fail[j] += 1
                         print(f"FAIL")
-                        found_nrm_sq = out_gs@out_gs #meant to be an error modulo Voronoi cell
 
                 except Exception as e:
                     print(f" - - - {e} - - -")
@@ -219,7 +207,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
 if __name__ == '__main__':
 
-    Nexperiments = 50
+    Nexperiments = 200
     Nlats = 10
     path = "saved_lattices/"
     isExist = os.path.exists(path)
@@ -232,11 +220,11 @@ if __name__ == '__main__':
 
     FPLLL.set_precision(250)
 
-    n, betamax, sieve_dim = 60, 45, 60
+    n, betamax, sieve_dim = 60, 25, 60 #also 70, 25, 70 and 80, 25, 80
 
     nthreads = 5 # number of workers
     slicer_threads = 2 # threads the slicer will use
-    shrink_factor = 0.7
+    shrink_factor = 0.7071 # ~ 1/sqrt(2)
     n_shrinkings = 10
     pool = Pool(processes = nthreads )
     tasks = []
@@ -255,4 +243,4 @@ if __name__ == '__main__':
         pickle.dump( density_plots, file )
 
     print(density_plots)
-    #print(Nexperiments)
+    sys.stdout.flush()

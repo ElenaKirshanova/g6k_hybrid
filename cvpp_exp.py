@@ -37,7 +37,7 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705):
     for beta in range(5,betamax+1):
         then = perf_counter()
         LR.BKZ(beta)
-        print(f"BKZ-{beta} done in {perf_counter()-then}")
+        print(f"BKZ-{beta} done in {perf_counter()-then}", flush=True)
 
     B = LR.gso.B
     int_type = LR.gso.B.int_type
@@ -56,7 +56,7 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705):
     print(f"dbsize: {len(g6k)}")
     return g6k
 
-def run_exp(g6k,ntests,approx_facts):
+def run_exp(g6k,ntests,approx_facts, n_threads=2):
     G = g6k.M
     B = G.B
     n = G.d
@@ -68,7 +68,7 @@ def run_exp(g6k,ntests,approx_facts):
     sieve_dim = n
     gh = gaussian_heuristic(G.r())**0.5
     param_sieve = SieverParams()
-    param_sieve['threads'] = 4
+    param_sieve['threads'] = n_threads
     g6k = Siever(G,param_sieve) #temporary solution
     g6k.initialize_local(n-sieve_dim,n-sieve_dim,n)
     print("Running bdgl2...")
@@ -77,7 +77,7 @@ def run_exp(g6k,ntests,approx_facts):
     for approx_fact in approx_facts:
         nsucc_enum, nsucc_slic, nsucc_bab = 0, 0, 0
         for tstnum in range(ntests):
-            print(f" - - - {approx_fact} #{tstnum} out of {ntests} - - -")
+            print(f" - - - {approx_fact} #{tstnum} out of {ntests} - - -", flush=True)
             c = [ randrange(-2,3) for j in range(n) ]
             e = np.array( random_on_sphere(n,approx_fact*lambda1) )
             b = np.array( B.multiply_left( c ) )
@@ -131,7 +131,7 @@ def run_exp(g6k,ntests,approx_facts):
             if not succ_bab:
                 sieve_dim = n
                 t_gs = from_canonical_scaled( G,t,offset=sieve_dim )
-                #print(f"t_gs: {t_gs} | norm: {(t_gs@t_gs)}")
+
                 #retrieve the projective sublattice
                 B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
                 t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
@@ -139,29 +139,30 @@ def run_exp(g6k,ntests,approx_facts):
 
                 try:
                     e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim) )
-                    print(f"projected (e_@e_): {(e_@e_)} vs r/4: {G.get_r(n-sieve_dim, n-sieve_dim)/4}")
-                    print("projected target squared length:", 1.01*(e_@e_))
+                    gh_sub = gaussian_heuristic( G.r()[-sieve_dim:] )
+                    print(f"projected (e_@e_): {(e_@e_)} vs r/4: {G.get_r(n-sieve_dim, n-sieve_dim)/4/gh_sub}")
+                    print("projected target squared length:", (e_@e_))
 
                     t_gs = from_canonical_scaled( G,t,offset=sieve_dim )
                     #print(f"t_gs: {t_gs} | norm: {(t_gs@t_gs)}")
                     #retrieve the projective sublattice
-                    # B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
-                    # t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
-                    # t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
+                    B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
+                    t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
+                    t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
 
-                    t_gs_non_scaled = G.from_canonical(t)[-sieve_dim:]
-                    shift_babai_c = G.babai((n-sieve_dim)*[0] + list(t_gs_non_scaled), start=n-sieve_dim,gso=True)
-                    shift_babai = G.B.multiply_left( (n-sieve_dim)*[0] + list( shift_babai_c ) )
-                    t_gs_reduced = from_canonical_scaled( G,np.array(t)-shift_babai,offset=sieve_dim ) #this is the actual reduced target
-                    t_gs_shift = from_canonical_scaled( G,shift_babai,offset=sieve_dim )
+                    # t_gs_non_scaled = G.from_canonical(t)[-sieve_dim:]
+                    # shift_babai_c = G.babai((n-sieve_dim)*[0] + list(t_gs_non_scaled), start=n-sieve_dim,gso=True)
+                    # shift_babai = G.B.multiply_left( (n-sieve_dim)*[0] + list( shift_babai_c ) )
+                    # t_gs_reduced = from_canonical_scaled( G,np.array(t)-shift_babai,offset=sieve_dim ) #this is the actual reduced target
+                    # t_gs_shift = from_canonical_scaled( G,shift_babai,offset=sieve_dim )
 
                     slicer = RandomizedSlicer(g6k)
-                    slicer.set_nthreads(2);
+                    slicer.set_nthreads(n_threads);
 
                     print("target:", [float(tt) for tt in t_gs_reduced])
                     print("dbsize", g6k.db_size())
 
-                    slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=750)
+                    slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=1000)
 
                     blocks = 2 # should be the same as in siever
                     blocks = min(3, max(1, blocks))
@@ -220,20 +221,17 @@ def run_exp(g6k,ntests,approx_facts):
     return Ds
 
 if __name__=="__main__":
+    n_threads = 2
     ntests = 200
-    n = 70
-    approx_facts = [ 0.4 + 0.025*i for i in range(25) ]
+    n = 75
+    approx_facts = [ 0.4 + 0.025*i for i in range(35) ]
     print(approx_facts)
     try:
         g6k = Siever.restore_from_file(f"cvppg6k_n{n}_test.pkl")
     except FileNotFoundError:
-         g6k = gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705)
+         g6k = gen_cvpp_g6k(n,betamax=n,k=None,bits=11.705)
          g6k.dump_on_disk(f"cvppg6k_n{n}_test.pkl")
-    # g6k = gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705)
-    # g6k = gen_cvpp_g6k(n,betamax=50,k=None,bits=24.705)
-    # g6k.dump_on_disk(f"cvppg6k_n{n}_{hex(randrange(2**12))[2:]}.pkl")
-    # g6k.dump_on_disk(f"cvppg6k_n{n}_test.pkl")
-    # g6k = Siever.restore_from_file(f"cvppg6k_n{n}_test.pkl")
-    Ds = run_exp(g6k,ntests,approx_facts)
+
+    Ds = run_exp(g6k,ntests,approx_facts,n_threads=n_threads)
 
     print(Ds)
