@@ -212,16 +212,16 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads=1, 
     return argminv
 
 if __name__=="__main__":
-    n, k = 140, 1
+    n, k = 120, 1
     eta = 3
-    n_guess_coord, n_slicer_coord = 12, 75
-    betamax = 62
+    n_guess_coord, n_slicer_coord = 5, 50
+    betamax = 52
     sieve_dim_max = n_slicer_coord
     nsieves = 2
     nthreads = 2
     dim = 2*k*n
     ft = "ld" if 2*k*n<140 else ( "dd" if config.have_qd else "mpfr")
-    load_flag = True
+    load_flag = False
     filename = f"testlat_{n}_g{n_guess_coord}.pkl"
     if not load_flag:
         A,q,bse = generateLWEInstances(n, q = 3329, eta = eta, k=k, ntar=10)
@@ -276,6 +276,7 @@ if __name__=="__main__":
         dist_threshold = (G.r()[-n_slicer_coord] / gh_sub)**0.5
         print(f"dist_bnd: {dist_bnd} | dist_threshold: {dist_threshold} | ratio: {dist_bnd/dist_threshold}")
         print(f"len(e_): {len(e_)} G.M.nrows(): {G.B.nrows}")
+        print( G.r() )
         rs = np.array( G.r()[-n_slicer_coord:] ) / gh_sub
         rs = np.array( [ sqrt(rr) for rr in rs ] )
         print(f"Checking errs:")
@@ -286,7 +287,7 @@ if __name__=="__main__":
 
         # v = alg_3(g6k,B,H11,t,n_guess_coord, eta, dist_sq_bnd=1.01*dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
                        # (g6k,H11,target,n_guess_coord, eta, dist_sq_bnd=1.0*dist_sq_bnd, nthreads=1, tracer_alg3=None)
-        v = alg_3_debug(g6k,H11,t,n_guess_coord, eta, dist_sq_bnd=0.9*dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
+        v = alg_3_debug(g6k,H11,t,n_guess_coord, eta, dist_sq_bnd=1.02*dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
         print(f" - - - - - - ")
 
         LR2 = LatticeReduction( B )
@@ -300,10 +301,12 @@ if __name__=="__main__":
         print(v2)
         # print(f"dist_sq_bnd: {dist_sq_bnd}")
         # print(([-s,e])) #np.concatenate
+        # print(succsessful)
         print(answer==v)
-        # print(answer==v2)
+        print(answer==v2)
 
-        # print(f"- - - Now Babai - - -")
-        # vbab = np.array( alg_3_debug_bab( g6k,H11,t,n_guess_coord, eta, nthreads=nthreads, tracer_alg3=None ) )
-        # print(answer==vbab)
+        print(f"- - - Now Babai - - -")
+        vbab = np.array( alg_3_debug_bab( g6k,H11,t,n_guess_coord, eta, nthreads=nthreads, tracer_alg3=None ) )
+        print(answer==vbab)
+        print(f"Next vector...")
         # print(vbab-v)

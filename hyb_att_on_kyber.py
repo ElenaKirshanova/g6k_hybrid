@@ -20,6 +20,7 @@ import pickle
 from sample import *
 
 from preprocessing import run_preprocessing
+from hybrid_estimator.batchCVP import batchCVPP_cost
 #def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthreads=1)
 
 approx_fact = 1.07
@@ -265,14 +266,14 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
 
     # - - - prepare Slicer for batch cvp - - -
     slicer = RandomizedSlicer(g6k)
-    slicer.set_nthreads(1);
+    slicer.set_nthreads(nthreads);
     # - - - END prepare Slicer for batch cvp - - -
-    scaling_vec = np.array( [tmp**0.5 for tmp in G.r()[dim-sieve_dim:]] )
     #WARNING: we do not store t_gs_reduced_list since t_gs_list =  t_gs - gs(shift_babai_c*B)
     #this is a time-memory tradeoff. Since Slicer returns only an error vector, we don\'t
     #know which of the target candidates it corresponds to. TODO: or should we?
     target_list_size =  2 * g6k.db_size() #len(g6k)
-    nrand = 800 #min( 250, target_list_size / len(target_candidates ) )
+    nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
+    nrand = ceil(2*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
     print(f"len(target_candidates): {len(target_candidates)} nrand: {nrand}")
     t_gs_list = []
     t_gs_reduced_list = []
@@ -280,11 +281,15 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     for target in target_candidates:
         # print(end=".", flush=True)
         t_gs = from_canonical_scaled( G,target,offset=sieve_dim )
+
         t_gs_non_scaled = G.from_canonical(target)[dim-sieve_dim:]
-        shift_babai_c =  list( G.babai( list(t_gs_non_scaled), start=dim-sieve_dim, dimension=sieve_dim, gso=True) )
+        # shift_babai_c =  list( G.babai( list(t_gs_non_scaled), start=dim-sieve_dim, dimension=sieve_dim, gso=True) )
+        shift_babai_c =  list( G.babai( list(t_gs_non_scaled), start=dim-sieve_dim, gso=True) )
         print( f"shift_babai_c: {shift_babai_c}" )
         shift_babai = G.B.multiply_left( (dim-sieve_dim)*[0] + list( shift_babai_c ) )
         t_gs_reduced = from_canonical_scaled( G,np.array(target)-shift_babai,offset=sieve_dim ) #this is the actual reduced target
+
+
         # assert len(t_gs_reduced) == sieve_dim
         # assert all( abs( t_gs_reduced[dim-sieve_dim:] ) <0.501 ) #assert that the last Sieve dim coords are size reduced
 
@@ -300,7 +305,6 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
         # print(target[dim-sieve_dim:])
         # print(f"Doing grow_db")
         then_gdbwt = perf_counter()
-        print(f"supposed ce.len: {t_gs_reduced@t_gs_reduced}")
         slicer.grow_db_with_target(t_gs_reduced, n_per_target=nrand)
         # slicer.grow_db_with_target((dim-sieve_dim)*[0] + [float(tt) for tt in t_gs_reduced[dim-sieve_dim:]], n_per_target=nrand) #add a candidate to the Slicer
         gdbwt_t = perf_counter() - then_gdbwt #TODO: collect this stat
@@ -315,7 +319,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     buckets = sp["bdgl_bucket_size_factor"]* 2.**((blocks-1.)/(blocks+1.)) * sp["bdgl_multi_hash"]**((2.*blocks)/(blocks+1.)) * (N ** (blocks/(1.0+blocks)))
     buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
     buckets = max(buckets, 2**(blocks-1))
-    # slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], (approx_fact*approx_fact*(dist_sq_bnd)))
+    slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], (approx_fact*approx_fact*(dist_sq_bnd)))
     print(f"t_gs_reduced: {t_gs_reduced}")
     iterator = slicer.itervalues_t()
     for tmp in iterator:
