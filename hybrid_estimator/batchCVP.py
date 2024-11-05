@@ -19,9 +19,7 @@ def batchCVPP_cost(d, M, alpha, gamma):
     b = a**2/(4*a - 4)
     c = gamma**2
     assert(b>c)
-    n = ceil(-1/2 + sqrt((4*b-a)**2-8*c*(2*b-a))/(2*a))
-
-    #print(a, b, c, n)
+    n = ceil(-1/2 + sqrt((4*b-a)**2-8*c*(2*b-a))/(2*a)) + 1 #Eq. 39
 
     #Eq.(12)
     def p(a, x, y):

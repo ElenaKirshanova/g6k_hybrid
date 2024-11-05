@@ -127,6 +127,7 @@ def load_lattices(n):
             # lats.append(L)
         print(filename)
 
+# https://math.stackexchange.com/questions/4705204/uniformly-sampling-from-a-high-dimensional-unit-sphere
 def random_on_sphere(d,r):
     """
     d - dimension of vector
@@ -135,3 +136,19 @@ def random_on_sphere(d,r):
     u = np.random.normal(0,1,d)  # an array of d normally distributed random variables
     d=np.sum(u**2) **(0.5)
     return r*u/d
+
+# Borrowed from https://stackoverflow.com/questions/54544971/how-to-generate-uniform-random-points-inside-d-dimension-ball-sphere
+# Generate "num_points" random points in "dimension" that have uniform
+# probability over the unit ball scaled by "radius" (length of points
+# are in range [0, "radius"]).
+def uniform_in_ball(num_points, dimension, radius=1):
+    from numpy import random, linalg
+    # First generate random directions by normalizing the length of a
+    # vector of random-normal values (these distribute evenly on ball).
+    random_directions = random.normal(size=(dimension,num_points))
+    random_directions /= linalg.norm(random_directions, axis=0)
+    # Second generate a random radius with probability proportional to
+    # the surface area of a ball with a given radius.
+    random_radii = random.random(num_points) ** (1/dimension)
+    # Return the list of random (direction & length) points.
+    return radius * (random_directions * random_radii).T

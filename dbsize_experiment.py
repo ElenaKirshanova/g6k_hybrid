@@ -5,7 +5,7 @@ from fpylll.util import gaussian_heuristic
 from g6k.siever import Siever
 from g6k.siever_params import SieverParams
 from g6k.slicer import RandomizedSlicer
-from utils import save_folder, random_on_sphere, from_canonical_scaled, to_canonical_scaled, reduce_to_fund_par_proj #*
+from utils import save_folder, random_on_sphere, uniform_in_ball, from_canonical_scaled, to_canonical_scaled, reduce_to_fund_par_proj #*
 import numpy as np
 import argparse
 import sys, os
@@ -107,6 +107,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
     for i in range(Nexperiments):
         c = [ randrange(-10,10) for k in range(n) ]
         e = np.array( random_on_sphere(n, 0.5 * gh) ) #error vector
+        # e = uniform_in_ball( 1, n, 0.5 * gh )[0]
         b = G.B.multiply_left( c )
         cs.append( c )
         es.append( e )
