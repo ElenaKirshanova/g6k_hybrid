@@ -19,7 +19,7 @@ def batchCVPP_cost(d, M, alpha, gamma):
     b = a**2/(4*a - 4)
     c = gamma**2
     assert(b>c)
-    n = ceil(-1/2 + sqrt((4*b-a)**2-8*c*(2*b-a))/(2*a)) + 1 #Eq. 39
+    n = ceil(-1/2 + sqrt((4*b-a)**2-8*c*(2*b-a))/(2*a)) #Eq. 39
 
     #Eq.(12)
     def p(a, x, y):
@@ -47,7 +47,8 @@ def batchCVPP_cost(d, M, alpha, gamma):
     for i in range(1, n+1):
         x_[i] = u*i**2+v*i+b
         prob += omega(a, x_[i-1], x_[i])
-        #print(i, x_[i].n(), prob)
+        # print(i, x_[i], prob)
+
 
     T = (a - 2*(a-1)/(1+sqrt(1-1./a)))**(-1/2.)  #base for power-d, runtime per instance!
 
