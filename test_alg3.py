@@ -60,16 +60,14 @@ def batch_babai( g6k,target_candidates, dist_sq_bnd ):
     print(f"best_cb: {best_cb}")
     return best_cb
 
-def alg_3_debug_bab(g6k,H11,target,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
+def alg_3_debug_bab(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
     # raise NotImplementedError
     # - - - prepare targets - - -
     then_start = perf_counter()
     dim = B.nrows
     print(f"dim: {dim}")
-    # t_gs = from_canonical_scaled( G,t,offset=sieve_dim )
 
     t1, t2 = target[:-n_guess_coord], target[-n_guess_coord:]
-    # slicer = RandomizedSlicer(g6k)
     distrib = centeredBinomial(eta)
     #TODO: make/(check if is) practical
     nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord ) )
@@ -92,9 +90,9 @@ def alg_3_debug_bab(g6k,H11,target,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads
         vtilde2 = np.array(t2)-etilde2
         vtilde2s.append( vtilde2  )
         #compute H12*H22^-1 * vtilde2 = H12*vtilde2 since H22 is identity
-        tmp = H12.multiply_left(vtilde2)
-        print(f"vtilde2 babai: {vtilde2}")
-        print(f"tmp babai: {tmp}")
+        tmp = np.array( H12.multiply_left(vtilde2) )
+        print(f"vtilde2 babai norm: {vtilde2@vtilde2}")
+        print(f"tmp babai norm: {tmp@tmp}")
 
         # print(f"len(vtilde2): {len(vtilde2)} len(t1): {len(t1)}")
         # print(f"dim: {dim} n_guess_coord: {n_guess_coord}")
@@ -110,7 +108,7 @@ def alg_3_debug_bab(g6k,H11,target,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads
     #TODO: dist_sq_bnd might have changed at this point (or even in attacker)
     #TODO: deduce what is the betamax
     # betamax = 48
-    ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=0.5, nthreads=nthreads, tracer_alg2=None )
+    ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=None )
     # ctilde1 = batch_babai( g6k,target_candidates, dist_sq_bnd )
     print(f"target_candidates babai = {target_candidates}")
 
@@ -129,7 +127,7 @@ def alg_3_debug_bab(g6k,H11,target,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads
         v_t = v-np.array( target ) #+ tmp
         vv = v_t@v_t
         print(f"vv__: {vv**0.5}")
-        print(f"babshift babai: {babshift}")
+        # print(f"babshift babai: {babshift}")
         print(f"v babai: {v}")
         if vv < minv:
             minv = vv
@@ -137,7 +135,7 @@ def alg_3_debug_bab(g6k,H11,target,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads
         cntr+=1
     return argminv
 
-def alg_3_debug(g6k,H11,target,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
+def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
     # - - - prepare targets - - -
     then_start = perf_counter()
     dim = B.nrows
@@ -166,9 +164,9 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads=1, 
         vtilde2 = np.array(t2)-etilde2
         vtilde2s.append( vtilde2  )
         #compute H12*H22^-1 * vtilde2 = H12*vtilde2 since H22 is identity
-        tmp = H12.multiply_left(vtilde2)
-        # print(f"vtilde2 babai: {vtilde2}")
-        # print(f"tmp babai: {tmp}")
+        tmp = np.array( H12.multiply_left(vtilde2) )
+        print(f"vtilde2 babai norm: {vtilde2@vtilde2}")
+        print(f"tmp babai norm: {tmp@tmp}")
 
         # print(f"len(vtilde2): {len(vtilde2)} len(t1): {len(t1)}")
         # print(f"dim: {dim} n_guess_coord: {n_guess_coord}")
@@ -184,7 +182,7 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads=1, 
     #TODO: dist_sq_bnd might have changed at this point (or even in attacker)
     #TODO: deduce what is the betamax
     # betamax = 48
-    ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=0.5, nthreads=nthreads, tracer_alg2=None )
+    ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=None )
     # ctilde1 = batch_babai( g6k,target_candidates, dist_sq_bnd )
     print(f"target_candidates babai = {target_candidates}")
 
@@ -203,7 +201,7 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads=1, 
         v_t = v-np.array( target ) #+ tmp
         vv = v_t@v_t
         print(f"vv__: {vv**0.5}")
-        print(f"babshift babai: {babshift}")
+        # print(f"babshift babai: {babshift}")
         print(f"v babai: {v}")
         if vv < minv:
             minv = vv
@@ -212,10 +210,10 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads=1, 
     return argminv
 
 if __name__=="__main__":
-    n, k = 120, 1
+    n, k = 140, 1
     eta = 3
-    n_guess_coord, n_slicer_coord = 5, 50
-    betamax = 52
+    n_guess_coord, n_slicer_coord = 12, 65
+    betamax = 57
     sieve_dim_max = n_slicer_coord
     nsieves = 2
     nthreads = 2
@@ -273,21 +271,25 @@ if __name__=="__main__":
         dist_sq_bnd = e_@e_
         gh_sub = gaussian_heuristic(G.r()[-n_slicer_coord:])
         dist_bnd = dist_sq_bnd**0.5
-        dist_threshold = (G.r()[-n_slicer_coord] / gh_sub)**0.5
+        dist_threshold = ( G.r()[-n_slicer_coord] / gh_sub )**0.5
         print(f"dist_bnd: {dist_bnd} | dist_threshold: {dist_threshold} | ratio: {dist_bnd/dist_threshold}")
+        print(f"dist_sq_bnd: {dist_sq_bnd}")
         print(f"len(e_): {len(e_)} G.M.nrows(): {G.B.nrows}")
-        print( G.r() )
+        # print( G.r() )
         rs = np.array( G.r()[-n_slicer_coord:] ) / gh_sub
         rs = np.array( [ sqrt(rr) for rr in rs ] )
-        print(f"Checking errs:")
-        print(np.abs(e_) / rs)
+        # print(f"Checking errs:")
+        # print(np.abs(e_) / rs)
 
         B = IntegerMatrix.from_matrix(Binit)
         # print(B)
 
         # v = alg_3(g6k,B,H11,t,n_guess_coord, eta, dist_sq_bnd=1.01*dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
                        # (g6k,H11,target,n_guess_coord, eta, dist_sq_bnd=1.0*dist_sq_bnd, nthreads=1, tracer_alg3=None)
-        v = alg_3_debug(g6k,H11,t,n_guess_coord, eta, dist_sq_bnd=1.02*dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
+
+        len_bound = dist_sq_bnd
+        # print(f"len_bound sent: {len_bound}")
+        v = alg_3_debug(g6k,H11,t,n_guess_coord, eta, s, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None)
         print(f" - - - - - - ")
 
         LR2 = LatticeReduction( B )
@@ -295,18 +297,16 @@ if __name__=="__main__":
             LR2.BKZ(beta, tours=2)
         cv = LR2.gso.babai( v )
         v2 = LR2.basis.multiply_left( cv )
+        succ_alg_3_debug = all( answer==v2 )
 
-        print(answer)
-        print(v)
-        print(v2)
-        # print(f"dist_sq_bnd: {dist_sq_bnd}")
-        # print(([-s,e])) #np.concatenate
-        # print(succsessful)
-        print(answer==v)
-        print(answer==v2)
+        print(f"slicer:\n {answer==v2}")
 
         print(f"- - - Now Babai - - -")
-        vbab = np.array( alg_3_debug_bab( g6k,H11,t,n_guess_coord, eta, nthreads=nthreads, tracer_alg3=None ) )
-        print(answer==vbab)
+        len_bound = dist_sq_bnd
+        # print(f"len_bound sent: {len_bound}")
+        vbab = np.array( alg_3_debug_bab( g6k,H11,t,n_guess_coord, eta, s, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None ) )
+        # vbab = np.array( alg_3_debug( g6k,H11,t,n_guess_coord, eta, s, nthreads=nthreads, tracer_alg3=None ) )
+        print(f"babai:\n {answer==vbab}")
         print(f"Next vector...")
-        # print(vbab-v)
+        succ_alg_3_debug_bab = all( answer==vbab )
+        print(f"succ_alg_3_debug vs succ_alg_3_debug_bab: {succ_alg_3_debug, succ_alg_3_debug_bab}")

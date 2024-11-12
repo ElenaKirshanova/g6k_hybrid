@@ -23,7 +23,7 @@ from preprocessing import run_preprocessing
 from hybrid_estimator.batchCVP import batchCVPP_cost
 #def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthreads=1)
 
-approx_fact = 1.07
+approx_fact = 1.0001
 
 max_nsampl = 1500 #10**7
 inp_path = "lwe instances/saved_lattices/"
@@ -242,9 +242,8 @@ def alg_3(g6k,B,H11,t,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads=1, tracer_al
         tmp = H12.multiply_left(vtilde2)
         v2 = np.concatenate( [(dim-n_guess_coord)*[0],vtilde2] )
         v = np.concatenate([v1,n_guess_coord*[0]]) + v2 + np.concatenate( [ np.array( H12.multiply_left(vtilde2) ), n_guess_coord*[0] ] )
-        v_t = v - np.array(t) #-np.concatenate([t,n_guess_coord*[0]])
+        v_t = v - np.array(t)
         vv = v_t@v_t
-        # print(f"v: {v}")
         if vv < minv:
             minv = vv
             argminv = v
@@ -254,7 +253,7 @@ def alg_3(g6k,B,H11,t,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads=1, tracer_al
 def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_alg2=None ):
     # raise NotImplementedError
     sieve_dim = g6k.r-g6k.l #n_slicer_coord
-    print(f"in alg2 sieve_dim={sieve_dim}")
+    print(f"in alg2 sieve_dim={sieve_dim}", flush=True)
 
     # dist_sq_bnd = 1.0 #TODO: implement
     G = g6k.M
@@ -262,7 +261,6 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     dim = G.d
     Gsub = GSO.Mat( G.B[:dim-sieve_dim], float_type=G.float_type )
     Gsub.update_gso()
-    # print(f"dim(Gsub): {Gsub.d}")
 
     # - - - prepare Slicer for batch cvp - - -
     slicer = RandomizedSlicer(g6k)
@@ -279,11 +277,9 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     t_gs_reduced_list = []
     shift_babai_c_list = []
     for target in target_candidates:
-        # print(end=".", flush=True)
         t_gs = from_canonical_scaled( G,target,offset=sieve_dim )
 
         t_gs_non_scaled = G.from_canonical(target)[dim-sieve_dim:]
-        # shift_babai_c =  list( G.babai( list(t_gs_non_scaled), start=dim-sieve_dim, dimension=sieve_dim, gso=True) )
         shift_babai_c =  list( G.babai( list(t_gs_non_scaled), start=dim-sieve_dim, gso=True) )
         print( f"shift_babai_c: {shift_babai_c}" )
         shift_babai = G.B.multiply_left( (dim-sieve_dim)*[0] + list( shift_babai_c ) )
@@ -302,11 +298,9 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
         shift_babai_c_list.append(shift_babai_c)
         t_gs_reduced_list.append(t_gs_reduced)
 
-        # print(target[dim-sieve_dim:])
         # print(f"Doing grow_db")
         then_gdbwt = perf_counter()
-        slicer.grow_db_with_target(t_gs_reduced, n_per_target=nrand)
-        # slicer.grow_db_with_target((dim-sieve_dim)*[0] + [float(tt) for tt in t_gs_reduced[dim-sieve_dim:]], n_per_target=nrand) #add a candidate to the Slicer
+        slicer.grow_db_with_target(t_gs_reduced, n_per_target=nrand) #add a candidate to the Slicer
         gdbwt_t = perf_counter() - then_gdbwt #TODO: collect this stat
         # print(f"grow_db done in {gdbwt_t}",flush=True)
     #run slicer
@@ -319,8 +313,11 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     buckets = sp["bdgl_bucket_size_factor"]* 2.**((blocks-1.)/(blocks+1.)) * sp["bdgl_multi_hash"]**((2.*blocks)/(blocks+1.)) * (N ** (blocks/(1.0+blocks)))
     buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
     buckets = max(buckets, 2**(blocks-1))
+
     slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], (approx_fact*approx_fact*(dist_sq_bnd)))
+
     print(f"t_gs_reduced: {t_gs_reduced}")
+    print(f"t_gs_reduced norm: {t_gs_reduced@t_gs_reduced}")
     iterator = slicer.itervalues_t()
     for tmp in iterator:
         out_gs_reduced = np.array(tmp)  #db_t[0] is expected to contain the error vector
@@ -329,6 +326,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
 
     print(f"out_gs_reduced-t_gs_reduced: {out_gs_reduced-t_gs_reduced}")
     print(f"out_gs_reduced: {out_gs_reduced}")
+    print(f"out_gs_reduced norm: {out_gs_reduced@out_gs_reduced} vs {dist_sq_bnd}")
     index = 0
     #Now we deduce which target candidate the error vector corresponds to.
     #The idea is that if t_gs is an answer then t_gs_reduced - out_gs_reduced is in the projective lat
@@ -337,21 +335,6 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     index_best = None
     b_best = None
     for index in range(len(shift_babai_c_list)):
-        """
-        t_gs_reduced = t_gs_reduced_list[index] #we could do this to t_gs, but this one is shorter
-        shift_babai_c_reduced =  shift_babai_c_list[index]
-
-        #We guess what was the shift corresponding to the answer.
-        shift_babai_reduced = G.B.multiply_left( (dim-sieve_dim)*[0] + list( shift_babai_c_reduced ) )
-        shift_babai_reduced_gs = from_canonical_scaled( G,shift_babai_reduced, offset=sieve_dim )
-        guess_gs = np.array(t_gs_reduced - out_gs_reduced) #a supposed BDD solution for t_gs_reduced
-        print(len(guess_gs),len(shift_babai_reduced_gs))
-        guess_gs = guess_gs + shift_babai_reduced_gs
-
-        t_gs = t_gs_list[index]
-        diff_gs = t_gs - guess_gs #an actual error vector we observe == actual error (+ some lattice vector for bad candidates)
-        diff_gs_nrm_sq = diff_gs@diff_gs #its norm. Ideally, == norm of error
-        """
         print(f"LEN: {len(target_candidates)}")
 
         t = np.array( target_candidates[index] )
@@ -366,7 +349,6 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
         #we substitute the obtaied error from the target and call babai to
         #account for an fp error
 
-        # out_reduced = to_canonical_scaled( G, np.concatenate([ (dim-sieve_dim)*[0] , out_gs_reduced ]), offset=dim )
         out_reduced = np.array( to_canonical_scaled( G, out_gs_reduced, offset=sieve_dim ) )
         t_1 = t_1 - out_reduced
         bab_1 = G.babai(t_1,start=dim-sieve_dim, dimension=sieve_dim)
@@ -389,6 +371,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
             best_index = index
             best_solution_candidate = solution_candidate
             best_bab_01 = bab_01
+
     print(f"min_norm_err_sq: {min_norm_err_sq}")
 
 
@@ -406,7 +389,7 @@ if __name__=="__main__":
     lats_per_dim = 2 #1
     inst_per_lat = 2 #10 #how many instances per A, q
     q, eta = 3329, 3
-    #def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthreads=1)
+
     output = []
     pool = Pool(processes = nworkers )
     tasks = []

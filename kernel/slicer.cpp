@@ -496,7 +496,6 @@ void RandomizedSlicer::slicer_process_buckets_task(const size_t t_id,
 bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t multi_hash, LFT len_bound ){
 
     //std::cout << "nr_buckets_aim:" << nr_buckets_aim << " blocks: " << blocks << " multi_hash: " <<multi_hash <<  std::endl;
-
     parallel_sort_cdb();
 
     std::vector<std::vector<Entry_t>> transaction_db(threads, std::vector<Entry_t>());
