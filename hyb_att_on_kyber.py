@@ -187,25 +187,6 @@ def alg_3(g6k,B,H11,t,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads=1, tracer_al
     target_candidates = [t1] #first target is always the original one
     vtilde2s = [np.array(t2) ]
 
-    # B[:dim-n_guess_coord][0][:dim-n_guess_coord] #this does not work
-    # H12 = IntegerMatrix.from_matrix( [list(b)[:dim-n_guess_coord] for b in B[dim-n_guess_coord:]] )
-    # for times in range(nsampl): #Alg 3 steps 4-7
-    #     if times!=0 and times%64 == 0:
-    #         print(f"{times} done out of {nsampl}", end=", ")
-    #     etilde2 = np.array( distrib.sample( n_guess_coord ) ) #= (0 | e2)
-    #     # print(f"len etilde2: {len(etilde2)}")
-    #     vtilde2 = np.array(t2)-etilde2
-    #     tmp = np.concatenate([(dim-n_guess_coord)*[0] , vtilde2])
-    #     vtilde2s.append( vtilde2   )
-    #     #compute H12*H22^-1 * vtilde2 = H12*vtilde2 since H22 is identity
-    #     tmp = H12.multiply_left(vtilde2)
-    #
-    #     # print(f"len(vtilde2): {len(vtilde2)} len(t1): {len(t1)}")
-    #     # print(f"dim: {dim} n_guess_coord: {n_guess_coord}")
-    #     t1_ = t1 - tmp #
-    #     # print(t1_)
-    #     # print(f"len t1_: {len(t1_)}")
-    #     target_candidates.append( t1_ )
     H12 = IntegerMatrix.from_matrix( [list(b)[:dim-n_guess_coord] for b in B[dim-n_guess_coord:]] )
     for times in range(nsampl): #Alg 3 steps 4-7
         if times!=0 and times%64 == 0:
@@ -272,6 +253,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     target_list_size =  2 * g6k.db_size() #len(g6k)
     nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
     nrand = ceil(2*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
+    # nrand = ceil( 0.75*len(g6k) ) #TODO: remove this in a such way that alg3 does not break
     print(f"len(target_candidates): {len(target_candidates)} nrand: {nrand}")
     t_gs_list = []
     t_gs_reduced_list = []
@@ -323,6 +305,15 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
         out_gs_reduced = np.array(tmp)  #db_t[0] is expected to contain the error vector
         cur_nrm_sq = out_gs_reduced@out_gs_reduced
         break
+
+    iterator = slicer.itervalues_t()
+    nrms = []
+    for tmp in iterator:
+        tmp = np.array(tmp)  #db_t[0] is expected to contain the error vector
+        tmp_nrm_sq = ( tmp@tmp )**0.5
+        nrms.append( tmp_nrm_sq )
+    # print(f"Targets nrms post: {[float(tt) for tt in nrms]}")
+    print(f"{len(set(nrms))} out of {len(nrms)} targets are unique", flush=True)
 
     print(f"out_gs_reduced-t_gs_reduced: {out_gs_reduced-t_gs_reduced}")
     print(f"out_gs_reduced: {out_gs_reduced}")

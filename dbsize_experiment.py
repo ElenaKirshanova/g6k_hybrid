@@ -114,8 +114,6 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
         bs.append( b )
 
     for j in range(n_shrinkings):
-        # slicer = RandomizedSlicer(g6k)
-        # slicer.set_nthreads(nthreads);
         print("nrand:", (1./nrand_)**sieve_dim)
         print("Running experiment ", j, "out of ", n_shrinkings)
 
