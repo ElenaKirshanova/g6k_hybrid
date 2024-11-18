@@ -11,6 +11,8 @@ from experiments.lwe_gen import *
 from hyb_att_on_kyber import alg_3, alg_2_batched
 from sample import *
 
+from g6k.siever import SaturationError
+
 inp_path = "lwe instances/saved_lattices/"
 out_path = "lwe instances/reduced_lattices/"
 max_nsampl = 65544
@@ -60,7 +62,7 @@ def batch_babai( g6k,target_candidates, dist_sq_bnd ):
     print(f"best_cb: {best_cb}")
     return best_cb
 
-def alg_3_debug_bab(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
+def alg_3_debug_v2(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
     # raise NotImplementedError
     # - - - prepare targets - - -
     then_start = perf_counter()
@@ -210,17 +212,21 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=
     return argminv
 
 if __name__=="__main__":
-    n, k = 140, 1
+    n, k = 150, 1
     eta = 3
-    n_guess_coord, n_slicer_coord = 12, 65
-    betamax = 57
+    n_guess_coord, n_slicer_coord = 14, 48
+    betamax = 53
     sieve_dim_max = n_slicer_coord
     nsieves = 2
     nthreads = 2
     dim = 2*k*n
     ft = "ld" if 2*k*n<140 else ( "dd" if config.have_qd else "mpfr")
+    print(f"float_type: {ft}")
+    # FPLLL.set_precision(250)
+    # ft = "qd"
+
     load_flag = False
-    filename = f"testlat_{n}_g{n_guess_coord}.pkl"
+    filename = f"testlat_{n}_g{n_guess_coord}_b{betamax}.pkl"
     if not load_flag:
         A,q,bse = generateLWEInstances(n, q = 3329, eta = eta, k=k, ntar=10)
         b, s, e = bse[0]
@@ -248,26 +254,77 @@ if __name__=="__main__":
         with open(filename, "rb") as file:
             Binit, H11, A,q,bse = pickle.load( file)
         # b, s, e = bse[7]
+
+    H11r, H11c = H11.nrows, H11.ncols
+    G = GSO.Mat( H11,U=IntegerMatrix.identity(H11r,int_type=H11.int_type), UinvT=IntegerMatrix.identity(H11r,int_type=H11.int_type), float_type=ft )
+    H11r, H11c = H11.nrows, H11.ncols
+    G.update_gso()
+    param_sieve = SieverParams()
+    param_sieve['threads'] = nthreads
+    param_sieve['db_size_base'] = (4/3.)**0.5 #(4/3.)**0.5 ~ 1.1547
+    param_sieve['db_size_factor'] = 3.35 #3.2
+
+
+    param_sieve['saturation_ratio'] = 0.8
+    param_sieve['saturation_radius'] = 1.33
+    print(f"Running sieving: {param_sieve}", flush=True)
+    g6k = Siever(G,param_sieve)
+    g6k.initialize_local(H11r-n_slicer_coord, H11r-n_slicer_coord, H11r)
+    then = perf_counter()
+    g6k(alg="bdgl2")
+    print(f"Sieving-1 done in {perf_counter() - then}")
+
+    try: #db_size_base
+        param_sieve['saturation_ratio'] = 1.06
+        param_sieve['saturation_radius'] = 1.25
+        # g6k = Siever(G,param_sieve)
+        g6k.params = param_sieve
+        print(f"Running sieving: {param_sieve}")
+        g6k.initialize_local(H11r-n_slicer_coord, H11r-n_slicer_coord, H11r)
+        then = perf_counter()
+        g6k(alg="bdgl2")
+        print(f"Sieving-2 done in {perf_counter() - then}")
+    except SaturationError:
+        print("Saturation error...")
+
+    # - - - checking the database - - -
+    # v_nrms = []
+    # gh = gaussian_heuristic( g6k.M.r()[-n_slicer_coord:] )
+    # cntr = 0
+    # print(f"Dumping {len(g6k)} norms...")
+    # for it in g6k.itervalues():
+    #     if cntr%200 == 0:
+    #         print(f"{cntr} dumped", end=", ", flush=True)
+    #     v = g6k.M.B[-n_slicer_coord:].multiply_left( it )
+    #     v = np.array( from_canonical_scaled( g6k.M,v,offset=n_slicer_coord ) )
+    #     if ( v@v )**0.5 > 1.02 * (4/3.)**0.5:
+    #         break
+    #     cntr+=1
+        # v_nrms.append( ( v@v )**0.5 )
+    # with open("tmp.pkl", "wb") as file:
+    #     pickle.dump(v_nrms, file)
+    # print()
+    # g6k.shrink_db( cntr )
+    # - - - end checking the database - - -
+    print(f"r / r = {(g6k.M.r()[-n_slicer_coord] / g6k.M.r()[-1])**0.5}")
     for (b, s, e) in bse:
         answer = np.concatenate( [b-e,s] )
         # print(f"Solving...")
         # Bnp = np.array( [ np.array(b) for b in Binit ] )
         # print(np.linalg.lstsq(Bnp.transpose(),answer))
 
-        H11r, H11c = H11.nrows, H11.ncols
-        G = GSO.Mat( H11,U=IntegerMatrix.identity(H11r,int_type=H11.int_type), UinvT=IntegerMatrix.identity(H11r,int_type=H11.int_type), float_type=ft )
-        H11r, H11c = H11.nrows, H11.ncols
-        G.update_gso()
-        param_sieve = SieverParams()
-        param_sieve['threads'] = nthreads
-        g6k = Siever(G,param_sieve)
-        g6k.initialize_local(H11r-n_slicer_coord, H11r-n_slicer_coord, H11r)
+        print(f"Database size: {len(g6k)}")
 
         t = np.concatenate([b,n*[0]])
-        g6k(alg="bdgl2")
-
         e_ = np.concatenate([e,-s])[:-n_guess_coord]
         e_ = from_canonical_scaled( G,e_,offset=n_slicer_coord )[-n_slicer_coord:]
+
+        # for it in g6k.itervalues():
+        #     v = g6k.M.B[-n_slicer_coord:].multiply_left( it )
+        #     v = np.array( from_canonical_scaled( g6k.M,v,offset=n_slicer_coord ) )
+        #     lambda1 = ( v@v )**0.5
+        #     break
+
         dist_sq_bnd = e_@e_
         gh_sub = gaussian_heuristic(G.r()[-n_slicer_coord:])
         dist_bnd = dist_sq_bnd**0.5
@@ -275,20 +332,14 @@ if __name__=="__main__":
         print(f"dist_bnd: {dist_bnd} | dist_threshold: {dist_threshold} | ratio: {dist_bnd/dist_threshold}")
         print(f"dist_sq_bnd: {dist_sq_bnd}")
         print(f"len(e_): {len(e_)} G.M.nrows(): {G.B.nrows}")
-        # print( G.r() )
         rs = np.array( G.r()[-n_slicer_coord:] ) / gh_sub
         rs = np.array( [ sqrt(rr) for rr in rs ] )
         # print(f"Checking errs:")
         # print(np.abs(e_) / rs)
 
         B = IntegerMatrix.from_matrix(Binit)
-        # print(B)
-
-        # v = alg_3(g6k,B,H11,t,n_guess_coord, eta, dist_sq_bnd=1.01*dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
-                       # (g6k,H11,target,n_guess_coord, eta, dist_sq_bnd=1.0*dist_sq_bnd, nthreads=1, tracer_alg3=None)
 
         len_bound = dist_sq_bnd
-        # print(f"len_bound sent: {len_bound}")
         v = alg_3_debug(g6k,H11,t,n_guess_coord, eta, s, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None)
         print(f" - - - - - - ")
 
@@ -301,12 +352,15 @@ if __name__=="__main__":
 
         print(f"slicer:\n {answer==v2}")
 
-        print(f"- - - Now Babai - - -")
+        print(f"- - - Now slightly different slicer - - -")
         len_bound = dist_sq_bnd
-        # print(f"len_bound sent: {len_bound}")
-        vbab = np.array( alg_3_debug_bab( g6k,H11,t,n_guess_coord, eta, s, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None ) )
-        # vbab = np.array( alg_3_debug( g6k,H11,t,n_guess_coord, eta, s, nthreads=nthreads, tracer_alg3=None ) )
+        vbab = np.array( alg_3_debug_v2( g6k,H11,t,n_guess_coord, eta, s, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None ) )
         print(f"babai:\n {answer==vbab}")
         print(f"Next vector...")
-        succ_alg_3_debug_bab = all( answer==vbab )
-        print(f"succ_alg_3_debug vs succ_alg_3_debug_bab: {succ_alg_3_debug, succ_alg_3_debug_bab}")
+        succ_alg_3_debug_v2 = all( answer==vbab )
+        print(f"succ_alg_3_debug vs succ_alg_3_debug_v2: {succ_alg_3_debug, succ_alg_3_debug_v2}")
+
+        H11prime = g6k.M.B
+        for ii in range(H11.nrows):
+            for jj in range(H11.ncols):
+                assert( H11[ii][jj] == g6k.M.B[ii][jj] )

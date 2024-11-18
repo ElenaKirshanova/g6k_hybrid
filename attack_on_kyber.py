@@ -139,7 +139,6 @@ def prepare_kyber(n,q,eta,k,betapre,seed=[0,0], nthreads=5): #for debug purposes
 def attack_on_kyber(n,q,eta,k,betapre,betamax,ntours=5,seed=[0,0],nthreads=5):
     # prepeare the lattice
     print( f"launching {n,q,eta,k,seed}" )
-    # A, q, eta, k, bse = load_lwe(n,q,eta,k,seed[0]) #D["A"], D["q"], D["bse"]
     B, A, q, eta,k, bse = prepare_kyber(n,q,eta,k,betapre,seed, nthreads=5)
     dim = B.nrows+1 #dimension of Kannan
 
@@ -160,7 +159,9 @@ def attack_on_kyber(n,q,eta,k,betapre,betamax,ntours=5,seed=[0,0],nthreads=5):
     B = np.array( B )
     tarnrmsq = 1.01*(sol.dot(sol))
 
-    G = GSO.Mat(C,float_type="dd", U=IntegerMatrix.identity(dim,int_type=C.int_type), UinvT=IntegerMatrix.identity(dim,int_type=C.int_type))
+    ft = "dd" if (config.have_qd and B.nrows<450) else "mpfr"
+    FPLLL.set_precision(208)
+    G = GSO.Mat(C,float_type=ft, U=IntegerMatrix.identity(dim,int_type=C.int_type), UinvT=IntegerMatrix.identity(dim,int_type=C.int_type))
     G.update_gso()
 
     print(G.get_r(0,0)**0.5)
@@ -205,9 +206,6 @@ def attack_on_kyber(n,q,eta,k,betapre,betamax,ntours=5,seed=[0,0],nthreads=5):
         print(f"Enum beta: {beta:}, done in: {round_time : 0.4f}, slope: {slope}  log r00: {log( bkz.M.get_r(0,0),2 )/2 : 0.5f} task_id = {seed}")
         report["time"] += round_time
 
-        # ind, projfact, projsec = throw_vec( bkz.M, sol, beta ) #get info on the last projective lattice that contains a short projection
-        # report["projinfo"][beta] = { "i": ind, "projfact": projfact, "projsec": projsec }
-
         if bkz.M.get_r(0,0) <= tarnrmsq:
             print(f"succsess! beta={beta}")
             report["beta"] = beta
@@ -248,6 +246,7 @@ def attack_on_kyber(n,q,eta,k,betapre,betamax,ntours=5,seed=[0,0],nthreads=5):
         pass
 
     return report
+    
 if __name__ == "__main__":
     path = "exp_folder/"
     isExist = os.path.exists(path)

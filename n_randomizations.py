@@ -95,7 +95,6 @@ def run_exp(lat_id, n, betamax, sieve_dim, range_, Nexperiments, nthreads=1):
             sys.stdout.flush()
 
         c = [ randrange(-10,10) for j in range(n) ]
-        #e = np.array( [ randrange(-8,9) for j in range(n) ],dtype=np.int64 )
         e = np.array( random_on_sphere(n, 0.49*gh) )
 
         print(f"gauss: {gh} vs r_00: {G.get_r(0,0)**0.5} vs ||err||: {(e@e)**0.5}")
@@ -161,6 +160,14 @@ def run_exp(lat_id, n, betamax, sieve_dim, range_, Nexperiments, nthreads=1):
                         break
                     out_gs =  out_gs_reduced + t_gs_shift #t_gs_shift + suspected error
 
+                    iterator = slicer.itervalues_t()
+                    nrms = []
+                    for tmp in iterator:
+                        tmp = np.array(tmp)  #db_t[0] is expected to contain the error vector
+                        tmp_nrm_sq = ( tmp@tmp )**0.5
+                        nrms.append( tmp_nrm_sq )
+                    # print(f"Targets nrms post: {[float(tt) for tt in nrms]}")
+                    print(f"{len(set(nrms))} out of {len(nrms)} targets are unique", flush=True)
                     # - - - Check - - - -
                     out = to_canonical_scaled( G,out_gs,offset=sieve_dim )
 
@@ -217,8 +224,8 @@ def run_exp(lat_id, n, betamax, sieve_dim, range_, Nexperiments, nthreads=1):
 #paramset2 = {"n": 120, "b": [i for i in range(42, 56)], "nrands": [i for i in range(600,900,50)] }
 
 if __name__ == '__main__':
-    n_rerand_min, n_rerand_max, step = 20, 171, 50
-    range_ = range(n_rerand_min, n_rerand_max, step)
+    n_rerand_min, n_rerand_max, step = 50, 201, 50
+    range_ = [25] + [ tmp for tmp in range(n_rerand_min, n_rerand_max, step) ]
     # babai_suc = 0
     # slicer_suc = [0]*len(range_)
     # slicer_fail = [0]*len(range_)
