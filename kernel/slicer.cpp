@@ -182,7 +182,16 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
 
         std::array<LFT,MAX_SIEVING_DIM> new_yr = db_t[i1].yr;
         this->sieve.addsub_vec(new_yr,  this->sieve.db[i2].yr, static_cast<ZT>(sign));
-        if(uid_hash_table_t.compute_uid_t(new_yr))
+        UidType new_uid = db_t[i1].uid;
+        if(sign==1)
+        {
+            new_uid += db_t[i2].uid;
+        }
+        else
+        {
+            new_uid -= db_t[i2].uid;
+        }
+        if(uid_hash_table_t.insert_uid(new_uid))
         {
             int64_t index = write_index--; // atomic and signed!
             if( index >= 0 ) {
@@ -203,7 +212,7 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
         else
         {
             // duplicate
-            std::cout << " duplicate !" << std::endl;
+            //std::cout << " duplicate !" << std::endl;
             return 0;
         }
     }
@@ -214,12 +223,38 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
     return -1;
 }
 
+void RandomizedSlicer::slicer_queue_dup_remove_task( std::vector<QEntry> &queue) {
+    const size_t Q = queue.size();
+    for( size_t index = 0; index < Q; index++ ) {
+        size_t i1 = queue[index].i;
+        size_t i2 = queue[index].j;
+        UidType new_uid = db_t[i1].uid;
+        if(queue[index].sign==1)
+        {
+            new_uid += db_t[i2].uid;
+        }
+        else
+        {
+            new_uid -= db_t[i2].uid;
+        }
+        //std::cout << " new_uid: " << new_uid << std::endl;
+        // if already present, use sign as duplicate marker
+        if (uid_hash_table_t.check_uid_unsafe(new_uid) )
+            queue[index].sign = 0;
+            //std::cout << "duplicate detected on positions" << queue[index].i << " " << queue[index].j << std::endl;
+    }
+}
+
 void RandomizedSlicer::slicer_queue_create_task( const size_t t_id, const std::vector<QEntry> &queue, std::vector<Entry_t> &transaction_db, int64_t &write_index) {
     const size_t S = cdb_t.size();
     const size_t Q = queue.size();
 
     //const size_t insert_after = S-1-t_id-threads*write_index;
     for(unsigned int index = 0; index < Q; index++ )  {
+
+        if( queue[index].sign == 0 ){
+            continue;
+        }
 
         slicer_reduce_with_delayed_replace( queue[index].i, queue[index].j,
                                           transaction_db, write_index, queue[index].len, queue[index].sign);
@@ -261,7 +296,7 @@ size_t RandomizedSlicer::slicer_queue_insert_task( const size_t t_id, std::vecto
 
 void RandomizedSlicer::slicer_queue(std::vector<std::vector<QEntry>> &t_queues, std::vector<std::vector<Entry_t>>& transaction_db ) {
     // clear duplicates read only
-    /*
+
     for( size_t t_id = 0; t_id < threads; ++t_id ) {
         threadpool.push([this, t_id, &t_queues](){
             slicer_queue_dup_remove_task(t_queues[t_id]);
@@ -269,8 +304,8 @@ void RandomizedSlicer::slicer_queue(std::vector<std::vector<QEntry>> &t_queues, 
     }
     threadpool.wait_work();
 
-    std::cout << "slicer_queue_dup_remove_task finished" << std::endl;
-    */
+    //std::cout << "slicer_queue_dup_remove_task finished" << std::endl;
+
 
     const size_t S = cdb_t.size();
     size_t Q = 0;
