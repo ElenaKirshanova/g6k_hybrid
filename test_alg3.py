@@ -212,20 +212,20 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=
     return argminv
 
 if __name__=="__main__":
-    n, k = 150, 1
+    n, k = 144, 1
     eta = 3
-    n_guess_coord, n_slicer_coord = 14, 48
-    betamax = 53
+    n_guess_coord, n_slicer_coord = 10, 75
+    betamax = 67
     sieve_dim_max = n_slicer_coord
     nsieves = 2
-    nthreads = 2
+    nthreads = 5
     dim = 2*k*n
     ft = "ld" if 2*k*n<140 else ( "dd" if config.have_qd else "mpfr")
     print(f"float_type: {ft}")
     # FPLLL.set_precision(250)
     # ft = "qd"
 
-    load_flag = False
+    load_flag = True
     filename = f"testlat_{n}_g{n_guess_coord}_b{betamax}.pkl"
     if not load_flag:
         A,q,bse = generateLWEInstances(n, q = 3329, eta = eta, k=k, ntar=10)
@@ -265,7 +265,7 @@ if __name__=="__main__":
     param_sieve['db_size_factor'] = 3.35 #3.2
 
 
-    param_sieve['saturation_ratio'] = 0.8
+    param_sieve['saturation_ratio'] = 0.65
     param_sieve['saturation_radius'] = 1.33
     print(f"Running sieving: {param_sieve}", flush=True)
     g6k = Siever(G,param_sieve)
@@ -275,8 +275,8 @@ if __name__=="__main__":
     print(f"Sieving-1 done in {perf_counter() - then}")
 
     try: #db_size_base
-        param_sieve['saturation_ratio'] = 1.06
-        param_sieve['saturation_radius'] = 1.25
+        param_sieve['saturation_ratio'] = 0.95
+        param_sieve['saturation_radius'] = 1.31
         # g6k = Siever(G,param_sieve)
         g6k.params = param_sieve
         print(f"Running sieving: {param_sieve}")

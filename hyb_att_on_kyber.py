@@ -305,6 +305,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
         out_gs_reduced = np.array(tmp)  #db_t[0] is expected to contain the error vector
         cur_nrm_sq = out_gs_reduced@out_gs_reduced
         break
+    # print(f"cur_nrm ={cur_nrm_sq**0.5}")
 
     iterator = slicer.itervalues_t()
     nrms = []
@@ -313,7 +314,9 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
         tmp_nrm_sq = ( tmp@tmp )**0.5
         nrms.append( tmp_nrm_sq )
     # print(f"Targets nrms post: {[float(tt) for tt in nrms]}")
-    print(f"{len(set(nrms))} out of {len(nrms)} targets are unique", flush=True)
+    setnrms = set(nrms)
+    # print(setnrms)
+    print(f"{len(setnrms)} out of {len(nrms)} targets are unique", flush=True)
 
     print(f"out_gs_reduced-t_gs_reduced: {out_gs_reduced-t_gs_reduced}")
     print(f"out_gs_reduced: {out_gs_reduced}")
