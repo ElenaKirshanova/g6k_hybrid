@@ -320,7 +320,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
 
     print(f"out_gs_reduced-t_gs_reduced: {out_gs_reduced-t_gs_reduced}")
     print(f"out_gs_reduced: {out_gs_reduced}")
-    print(f"out_gs_reduced norm: {out_gs_reduced@out_gs_reduced} vs {dist_sq_bnd}")
+    print(f"out_gs_reduced norm: {(out_gs_reduced@out_gs_reduced)**0.5} vs {dist_sq_bnd**0.5}")
     index = 0
     #Now we deduce which target candidate the error vector corresponds to.
     #The idea is that if t_gs is an answer then t_gs_reduced - out_gs_reduced is in the projective lat

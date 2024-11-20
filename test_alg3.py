@@ -12,6 +12,7 @@ from hyb_att_on_kyber import alg_3, alg_2_batched
 from sample import *
 
 from g6k.siever import SaturationError
+from test_alg2 import alg_2_batched_debug
 
 inp_path = "lwe instances/saved_lattices/"
 out_path = "lwe instances/reduced_lattices/"
@@ -110,7 +111,8 @@ def alg_3_debug_v2(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthrea
     #TODO: dist_sq_bnd might have changed at this point (or even in attacker)
     #TODO: deduce what is the betamax
     # betamax = 48
-    ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=None )
+    # ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=None )
+    ctilde1 = alg_2_batched_debug( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=None )
     # ctilde1 = batch_babai( g6k,target_candidates, dist_sq_bnd )
     print(f"target_candidates babai = {target_candidates}")
 
@@ -214,7 +216,7 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=
 if __name__=="__main__":
     n, k = 144, 1
     eta = 3
-    n_guess_coord, n_slicer_coord = 10, 75
+    n_guess_coord, n_slicer_coord = 10, 65
     betamax = 67
     sieve_dim_max = n_slicer_coord
     nsieves = 2
@@ -265,8 +267,8 @@ if __name__=="__main__":
     param_sieve['db_size_factor'] = 3.35 #3.2
 
 
-    param_sieve['saturation_ratio'] = 0.65
-    param_sieve['saturation_radius'] = 1.33
+    param_sieve['saturation_ratio'] = 0.81
+    param_sieve['saturation_radius'] = 1.32
     print(f"Running sieving: {param_sieve}", flush=True)
     g6k = Siever(G,param_sieve)
     g6k.initialize_local(H11r-n_slicer_coord, H11r-n_slicer_coord, H11r)
@@ -276,7 +278,7 @@ if __name__=="__main__":
 
     try: #db_size_base
         param_sieve['saturation_ratio'] = 0.95
-        param_sieve['saturation_radius'] = 1.31
+        param_sieve['saturation_radius'] = 1.335
         # g6k = Siever(G,param_sieve)
         g6k.params = param_sieve
         print(f"Running sieving: {param_sieve}")
@@ -289,22 +291,24 @@ if __name__=="__main__":
 
     # - - - checking the database - - -
     # v_nrms = []
-    # gh = gaussian_heuristic( g6k.M.r()[-n_slicer_coord:] )
-    # cntr = 0
-    # print(f"Dumping {len(g6k)} norms...")
-    # for it in g6k.itervalues():
-    #     if cntr%200 == 0:
-    #         print(f"{cntr} dumped", end=", ", flush=True)
-    #     v = g6k.M.B[-n_slicer_coord:].multiply_left( it )
-    #     v = np.array( from_canonical_scaled( g6k.M,v,offset=n_slicer_coord ) )
-    #     if ( v@v )**0.5 > 1.02 * (4/3.)**0.5:
-    #         break
-    #     cntr+=1
+    gh = gaussian_heuristic( g6k.M.r()[-n_slicer_coord:] )
+    cntr = 0
+    print(f"Processing {len(g6k)} norms...")
+    for it in g6k.itervalues():
+        # if cntr%200 == 0:
+            # print(f"{cntr} dumped", end=", ", flush=True)
+        v = g6k.M.B[-n_slicer_coord:].multiply_left( it )
+        v = np.array( from_canonical_scaled( g6k.M,v,offset=n_slicer_coord ) )
+        if ( v@v ) > 1.09**2 * (4/3.):
+            break
+        cntr+=1
         # v_nrms.append( ( v@v )**0.5 )
     # with open("tmp.pkl", "wb") as file:
     #     pickle.dump(v_nrms, file)
     # print()
-    # g6k.shrink_db( cntr )
+    print(f"Was: {len(g6k)}", end=", ")
+    g6k.shrink_db( cntr )
+    print(f"Is: {len(g6k)} corr. alpha: {len(g6k)**(1./n_slicer_coord)}")
     # - - - end checking the database - - -
     print(f"r / r = {(g6k.M.r()[-n_slicer_coord] / g6k.M.r()[-1])**0.5}")
     for (b, s, e) in bse:
@@ -317,7 +321,8 @@ if __name__=="__main__":
 
         t = np.concatenate([b,n*[0]])
         e_ = np.concatenate([e,-s])[:-n_guess_coord]
-        e_ = from_canonical_scaled( G,e_,offset=n_slicer_coord )[-n_slicer_coord:]
+        # e_ = from_canonical_scaled( G,e_,offset=n_slicer_coord )[-n_slicer_coord:]
+        e_ = from_canonical_scaled( G,e_,offset=n_slicer_coord )
 
         # for it in g6k.itervalues():
         #     v = g6k.M.B[-n_slicer_coord:].multiply_left( it )

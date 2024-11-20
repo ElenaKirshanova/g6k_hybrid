@@ -124,7 +124,7 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
     ce.c = input_t.c;
     ce.i = start;
     cdb_t[start] = ce;
-    std::cout << "ce.len  is" << ce.len << std::endl;
+    // std::cout << "ce.len  is" << ce.len << std::endl;
 
     for( size_t i = start+1; i < N; i++)
     {
@@ -568,11 +568,11 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
 
 
 
-        if(it%500==0) {
-            std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len  << std::endl;
+        if(it%100==0) {
+            std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << "cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
         }
 
-        size_t MAX_SLICER_ITERS = 2000; //TODO: make it adjustable 
+        size_t MAX_SLICER_ITERS = 1000; //TODO: make it adjustable
         if( it > MAX_SLICER_ITERS ) {
             std::cerr << "Couldn't find a close vector after " << MAX_SLICER_ITERS << " iterations" << std::endl;
             return false;

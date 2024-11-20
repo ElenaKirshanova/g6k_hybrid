@@ -158,7 +158,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
                 #would remain to be in the db_t
                 slicer = RandomizedSlicer(g6k)
                 slicer.set_nthreads(nthreads);
-                n_per_target = ceil( 10*(1./nrand_)**sieve_dim ) #10.8 for dim=55?
+                n_per_target = ceil( (1./nrand_)**sieve_dim ) 
                 print(f"Forcing nrerand = {n_per_target}")
                 slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=n_per_target)
                 try:

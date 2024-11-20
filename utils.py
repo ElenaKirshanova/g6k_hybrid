@@ -23,7 +23,7 @@ try:
 except ModuleNotFoundError:
     from multiprocessing import Pool
 
-
+DTYPE = np.float64 #np.longdouble or np.float64
 save_folder = "./saved_lattices/"
 
 def gsomat_copy(M):
@@ -66,8 +66,8 @@ def from_canonical_scaled(M, t, offset=None):
     if offset is None:
         offset=M.d
     gh = gaussian_heuristic(M.r()[-offset:])
-    t_ = np.array( M.from_canonical(t)[-offset:], dtype=np.float64 )
-    r_ = np.array( [sqrt(tt/gh) for tt in M.r()[-offset:]], dtype=np.float64 )
+    t_ = np.array( M.from_canonical(t)[-offset:], dtype=DTYPE )
+    r_ = np.array( [sqrt(tt/gh) for tt in M.r()[-offset:]], dtype=DTYPE )
 
     return t_*r_
 
@@ -84,7 +84,7 @@ def to_canonical_scaled(M, t, offset=None):
         offset=M.d
 
     gh = gaussian_heuristic(M.r()[-offset:])
-    r_ = np.array( [sqrt(gh/tt) for tt in M.r()[-offset:]], dtype=np.float64 )
+    r_ = np.array( [sqrt(gh/tt) for tt in M.r()[-offset:]], dtype=DTYPE )
     tmp = t*r_
     return M.to_canonical(tmp, start=M.d-offset)
 

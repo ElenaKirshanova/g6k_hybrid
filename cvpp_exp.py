@@ -25,6 +25,7 @@ except ModuleNotFoundError:
 
 from LatticeReduction import LatticeReduction
 from utils import * #random_on_sphere, reduce_to_fund_par_proj
+from hybrid_estimator.batchCVP import batchCVPP_cost
 
 def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705):
     betamax=n if betamax is None else betamax
@@ -162,7 +163,9 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2):
                     print("target:", [float(tt) for tt in t_gs_reduced])
                     print("dbsize", g6k.db_size())
 
-                    slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=1000)
+                    nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
+                    nrand = ceil((1./nrand_)**sieve_dim)
+                    slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
 
                     blocks = 2 # should be the same as in siever
                     blocks = min(3, max(1, blocks))
@@ -222,14 +225,15 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2):
 
 if __name__=="__main__":
     n_threads = 2
-    ntests = 200
+    ntests = 50
     n = 75
-    approx_facts = [ 0.4 + 0.025*i for i in range(35) ]
+    betamax = 55
+    approx_facts = [ 0.4 + 0.05*i for i in range(17) ]
     print(approx_facts)
     try:
         g6k = Siever.restore_from_file(f"cvppg6k_n{n}_test.pkl")
     except FileNotFoundError:
-         g6k = gen_cvpp_g6k(n,betamax=n,k=None,bits=11.705)
+         g6k = gen_cvpp_g6k(n,betamax=betamax,k=None,bits=11.705)
          g6k.dump_on_disk(f"cvppg6k_n{n}_test.pkl")
 
     Ds = run_exp(g6k,ntests,approx_facts,n_threads=n_threads)

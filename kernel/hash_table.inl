@@ -70,6 +70,14 @@ inline UidType UidHashTable::compute_uid(std::array<ZT,MAX_SIEVING_DIM> const &x
     exit(1);
     */
     return std::inner_product(x.cbegin(), x.cbegin()+n, uid_coeffs.cbegin(), static_cast<UidType>(0));
+
+    // UidType res = 0;
+    // for (size_t i=0; i<n; i++){
+    //     res+=(static_cast<int16_t>(128*x[i]))*uid_coeffs[i]; //TODO:use move from https://en.cppreference.com/w/cpp/algorithm/inner_product ?
+    //     //std::cout << " " << static_cast<int16_t>(y[i]) << " " <<uid_coeffs[i] << " " << res << std::endl;
+    // }
+    //
+    // return res;
 }
 
 // Compute the uid of y using the current hash function.
