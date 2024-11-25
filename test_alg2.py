@@ -208,14 +208,14 @@ def alg_2_batched_debug( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tra
         t_gs_reduced_list.append(t_gs_reduced)
 
         then_gdbwt = perf_counter()
-        slicer.grow_db_with_target(t_gs_reduced, n_per_target=1) #add a candidate to the Slicer
+        slicer.grow_db_with_target(t_gs_reduced, n_per_target=nrand) #add a candidate to the Slicer
         gdbwt_t = perf_counter() - then_gdbwt #TODO: collect this stat
-        print(f"Doing grow_db")
-        for _ in range(nrand):
-            delta = [ sample_dgauss(DGAUSS_SIGMA) for tmp in range( sieve_dim ) ]
-            delta = np.array( g6k.M.B[-sieve_dim:].multiply_left( delta ), dtype=DTYPE )
-            delta_gs =  from_canonical_scaled( G,delta,offset=sieve_dim )
-            slicer.grow_db_with_target(t_gs_reduced+delta_gs, n_per_target=1)
+        # print(f"Doing grow_db")
+        # for _ in range(nrand):
+        #     delta = [ sample_dgauss(DGAUSS_SIGMA) for tmp in range( sieve_dim ) ]
+        #     delta = np.array( g6k.M.B[-sieve_dim:].multiply_left( delta ), dtype=DTYPE )
+        #     delta_gs =  from_canonical_scaled( G,delta,offset=sieve_dim )
+        #     slicer.grow_db_with_target(t_gs_reduced+delta_gs, n_per_target=1)
 
         # print(f"grow_db done in {gdbwt_t}",flush=True)
     #run slicer
@@ -307,8 +307,8 @@ def alg_2_batched_debug( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tra
 
 if __name__=="__main__":
     # n, betamax, sieve_dim = 140, 45, 45 #n=170 is liikely to fail
-    nexp = 200
-    n, betamax, sieve_dim = 300, 70, 70 #n=170 is liikely to fail
+    nexp = 120
+    n, betamax, sieve_dim = 90, 75, 55 #n=170 is liikely to fail
     print(f"n, betamax, sieve_dim: {(n, betamax, sieve_dim)}")
 
     bits=11.705
@@ -369,48 +369,49 @@ if __name__=="__main__":
     nsli_succ = 0
     af_fail = []
     af_succ = []
-    for cntrtmp in range(nexp):
-        print(f" - - - processing {cntrtmp+1} of {nexp} - - -", flush=True)
-        c = [ randrange(-30,31) for j in range(n) ]
-        e = np.array( random_on_sphere(n,(0.065)*gh), dtype=DTYPE )
-        b = G.B.multiply_left( c )
-        b_ = np.array(b,dtype=np.int64)
-        t_ = e+b_
-        t = [ float(tt) for tt in t_ ]
-        e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim) , dtype=DTYPE )
-        # egs_ = np.array( G.from_canonical(e)[n-sieve_dim:], dtype=np.float64 )
-        # egs_ = np.array( G.to_canonical(egs_,start=n-sieve_dim), dtype=np.float64 )
-        print(f"sqrt ee_: {(e_@e_)**0.5}")
-        gh_sub = gaussian_heuristic( G.r()[-sieve_dim:] )
-        print(f"sqrt rii: {(G.r()[-sieve_dim] / gh_sub)**0.5 }")
-        # print(f"r: {[rr**0.5 for rr in G.r()]}")
+    for gamma_fact in [0.48+0.05*i for i in range(5)]:
+        for cntrtmp in range(nexp):
+            print(f" - - - processing {cntrtmp+1} of {nexp} - - -", flush=True)
+            c = [ randrange(-30,31) for j in range(n) ]
+            e = np.array( random_on_sphere(n,(gamma_fact)*gh), dtype=DTYPE )
+            b = G.B.multiply_left( c )
+            b_ = np.array(b,dtype=np.int64)
+            t_ = e+b_
+            t = [ float(tt) for tt in t_ ]
+            e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim) , dtype=DTYPE )
+            # egs_ = np.array( G.from_canonical(e)[n-sieve_dim:], dtype=np.float64 )
+            # egs_ = np.array( G.to_canonical(egs_,start=n-sieve_dim), dtype=np.float64 )
+            print(f"sqrt ee_: {(e_@e_)**0.5}")
+            gh_sub = gaussian_heuristic( G.r()[-sieve_dim:] )
+            print(f"sqrt rii: {(G.r()[-sieve_dim] / gh_sub)**0.5 }")
+            # print(f"r: {[rr**0.5 for rr in G.r()]}")
 
-        target_candidates = [t]
-        for _ in range(0):
-            e2 = np.array( random_on_sphere(n,0.1053*gh), dtype=DTYPE ) #np.array( [ randrange(0,1) for j in range(n) ],dtype=np.int64 )
-            tcand_ = e2 + b #e2 + e + b_
-            tcand = [ int(tt) for tt in t_ ]
-            target_candidates.append( tcand )
-        shuffle(target_candidates)
+            target_candidates = [t]
+            for _ in range(0):
+                e2 = np.array( random_on_sphere(n,0.1053*gh), dtype=DTYPE ) #np.array( [ randrange(0,1) for j in range(n) ],dtype=np.int64 )
+                tcand_ = e2 + b #e2 + e + b_
+                tcand = [ int(tt) for tt in t_ ]
+                target_candidates.append( tcand )
+            shuffle(target_candidates)
 
-        #alg_2_batched( g6k,target_candidates,H11, nthreads=1, tracer_alg2=None )
-        # bab_01 = np.array( alg_2_batched( g6k,target_candidates,dist_sq_bnd=1.001*e_@e_  ) )
-        # bab_01 = np.array( alg_2_batched_debug( g6k,target_candidates,dist_sq_bnd=1.001*e_@e_,e=e  ) )
-        bab_01 = np.array( alg_2_batched_debug( g6k,target_candidates,dist_sq_bnd=1.001*e_@e_  ) )
-        print(f"e_: {e_}")
-        print(f"c: {c}")
-        print(f"bab01:{bab_01}")
-        alg_2_batch_succ = (bab_01==c)
-        print(f"alg_2_batch succsess: {alg_2_batch_succ}")
-        alg_2_batch_succ = all( alg_2_batch_succ )
-        if alg_2_batch_succ:
-            nsli_succ+=1
-            af_succ.append((e_@e_)**0.5)
-        else:
-            af_fail.append((e_@e_)**0.5)
+            #alg_2_batched( g6k,target_candidates,H11, nthreads=1, tracer_alg2=None )
+            # bab_01 = np.array( alg_2_batched( g6k,target_candidates,dist_sq_bnd=1.001*e_@e_  ) )
+            # bab_01 = np.array( alg_2_batched_debug( g6k,target_candidates,dist_sq_bnd=1.001*e_@e_,e=e  ) )
+            bab_01 = np.array( alg_2_batched_debug( g6k,target_candidates,dist_sq_bnd=1.001*e_@e_  ) )
+            print(f"e_: {e_}")
+            print(f"c: {c}")
+            print(f"bab01:{bab_01}")
+            alg_2_batch_succ = (bab_01==c)
+            print(f"alg_2_batch succsess: {alg_2_batch_succ}")
+            alg_2_batch_succ = all( alg_2_batch_succ )
+            if alg_2_batch_succ:
+                nsli_succ+=1
+                af_succ.append((e_@e_)**0.5)
+            else:
+                af_fail.append((e_@e_)**0.5)
 
-        tmp = np.array( G.babai(t) )
-        print(f"babai succsess: {(tmp==c)}")
+            tmp = np.array( G.babai(t) )
+            print(f"babai succsess: {(tmp==c)}")
     print(f"nsli_succ: {nsli_succ}")
     print(af_succ)
     print(af_fail)

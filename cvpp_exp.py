@@ -32,7 +32,7 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705):
     k = n//2 if k is None else k
     B = IntegerMatrix(n,n)
     # B.randomize("qary", k=k, bits=bits)
-    B.randomize("uniform", bits=bits)
+    B.randomize("qary", bits=bits, k = k)
 
     LR = LatticeReduction( B )
     for beta in range(5,betamax+1):
@@ -46,6 +46,11 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705):
     G = GSO.Mat( LR.gso.B, U=IntegerMatrix.identity(n,int_type=int_type), UinvT=IntegerMatrix.identity(n,int_type=int_type), float_type=ft )
     param_sieve = SieverParams()
     param_sieve['threads'] = 2
+    param_sieve['db_size_base'] = (4/3.)**0.5 #(4/3.)**0.5 ~ 1.1547
+    param_sieve['db_size_factor'] = 3.2 #3.2
+    param_sieve['saturation_ratio'] = 0.95
+    param_sieve['saturation_radius'] = 1.32
+
     g6k = Siever(G,param_sieve)
     g6k.initialize_local(0,0,n)
     print("Running bdgl2...")
@@ -164,7 +169,7 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2):
                     print("dbsize", g6k.db_size())
 
                     nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
-                    nrand = ceil((1./nrand_)**sieve_dim)
+                    nrand = ceil(5*(1./nrand_)**sieve_dim)
                     slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
 
                     blocks = 2 # should be the same as in siever
@@ -226,15 +231,30 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2):
 if __name__=="__main__":
     n_threads = 2
     ntests = 50
-    n = 75
-    betamax = 55
-    approx_facts = [ 0.4 + 0.05*i for i in range(17) ]
+    n = 55
+    betamax = 53
+    # approx_facts = [ 0.4 + 0.05*i for i in range(17) ]
+    approx_facts = [ 0.5 + 0.05*i for i in range(13) ]
     print(approx_facts)
     try:
         g6k = Siever.restore_from_file(f"cvppg6k_n{n}_test.pkl")
     except FileNotFoundError:
          g6k = gen_cvpp_g6k(n,betamax=betamax,k=None,bits=11.705)
          g6k.dump_on_disk(f"cvppg6k_n{n}_test.pkl")
+
+    # with open("projlat55.pkl","rb") as file:
+    #     B = pickle.load( file )
+    #
+    # G = GSO.Mat( B, U=IntegerMatrix.identity(n,int_type=B.int_type), UinvT=IntegerMatrix.identity(n,int_type=B.int_type), float_type="dd" )
+    # param_sieve = SieverParams()
+    # param_sieve['threads'] = 5
+    # g6k = Siever(G,param_sieve)
+    # g6k.initialize_local(0,0,n)
+    # print("Running bdgl2...")
+    # then=perf_counter()
+    # g6k(alg="bdgl2")
+    # print(f"bdgl2-{n} done in {perf_counter()-then}")
+    # g6k.M.update_gso()
 
     Ds = run_exp(g6k,ntests,approx_facts,n_threads=n_threads)
 

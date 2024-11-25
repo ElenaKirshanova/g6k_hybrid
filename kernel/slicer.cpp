@@ -185,8 +185,8 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
 
         Entry_t new_entry;
         new_entry.yr = new_yr;
-        this->sieve.recompute_data_for_entry_t<Siever::Recompute::recompute_all>(new_entry);
-        UidType new_uid = new_entry.uid;
+        // this->sieve.recompute_data_for_entry_t<Siever::Recompute::recompute_all>(new_entry);
+        UidType new_uid = uid_hash_table_t.compute_uid_t(new_yr);
 
         if( !uid_hash_table_t.check_uid_unsafe(new_uid) && uid_hash_table_t.insert_uid(new_uid) )
         {
