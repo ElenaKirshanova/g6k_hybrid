@@ -24,6 +24,7 @@ from hybrid_estimator.batchCVP import batchCVPP_cost
 #def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthreads=1)
 
 approx_fact = 1.0001
+target_num_fact = 10
 
 max_nsampl = 1500 #10**7
 inp_path = "lwe instances/saved_lattices/"
@@ -183,7 +184,7 @@ def alg_3(g6k,B,H11,t,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads=1, tracer_al
     #TODO: make/(check if is) practical
     nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord ) )
     print(f"nsampl: {nsampl}")
-    nsampl = min(max_nsampl, nsampl)
+    # nsampl = min(max_nsampl, nsampl)
     target_candidates = [t1] #first target is always the original one
     vtilde2s = [np.array(t2) ]
 
@@ -252,7 +253,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     #know which of the target candidates it corresponds to. TODO: or should we?
     target_list_size =  2 * g6k.db_size() #len(g6k)
     nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
-    nrand = ceil(2*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
+    nrand = ceil(target_num_fact*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
     # nrand = ceil( 0.75*len(g6k) ) #TODO: remove this in a such way that alg3 does not break
     print(f"len(target_candidates): {len(target_candidates)} nrand: {nrand}")
     t_gs_list = []

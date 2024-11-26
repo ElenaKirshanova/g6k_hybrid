@@ -193,7 +193,7 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=
     v1 = np.array( H11.multiply_left( ctilde1 ) )
     #keep a track of v2?
     argminv = None
-    minv = 10**12
+    minv = float('inf')
     cntr = 0
     for vtilde2 in vtilde2s:
         v2 = np.concatenate( [(dim-n_guess_coord)*[0],vtilde2] )
@@ -214,10 +214,10 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=
     return argminv
 
 if __name__=="__main__":
-    n, k = 144, 1
+    n, k = 190, 1
     eta = 3
-    n_guess_coord, n_slicer_coord = 10, 65
-    betamax = 67
+    n_guess_coord, n_slicer_coord = 35, 80
+    betamax = 82
     sieve_dim_max = n_slicer_coord
     nsieves = 2
     nthreads = 5
@@ -267,8 +267,8 @@ if __name__=="__main__":
     param_sieve['db_size_factor'] = 3.35 #3.2
 
 
-    param_sieve['saturation_ratio'] = 0.81
-    param_sieve['saturation_radius'] = 1.32
+    param_sieve['saturation_ratio'] = 0.5
+    param_sieve['saturation_radius'] = 4/3.
     print(f"Running sieving: {param_sieve}", flush=True)
     g6k = Siever(G,param_sieve)
     g6k.initialize_local(H11r-n_slicer_coord, H11r-n_slicer_coord, H11r)
@@ -276,39 +276,38 @@ if __name__=="__main__":
     g6k(alg="bdgl2")
     print(f"Sieving-1 done in {perf_counter() - then}")
 
-    try: #db_size_base
-        param_sieve['saturation_ratio'] = 0.95
-        param_sieve['saturation_radius'] = 1.335
-        # g6k = Siever(G,param_sieve)
-        g6k.params = param_sieve
-        print(f"Running sieving: {param_sieve}")
-        g6k.initialize_local(H11r-n_slicer_coord, H11r-n_slicer_coord, H11r)
-        then = perf_counter()
-        g6k(alg="bdgl2")
-        print(f"Sieving-2 done in {perf_counter() - then}")
-    except SaturationError:
-        print("Saturation error...")
+    # try: #db_size_base
+    #     param_sieve['saturation_ratio'] = 0.65
+    #     param_sieve['saturation_radius'] = 1.335
+    #     # g6k = Siever(G,param_sieve)
+    #     g6k.params = param_sieve
+    #     print(f"Running sieving: {param_sieve}", flush=True)
+    #     then = perf_counter()
+    #     g6k(alg="bdgl2")
+    #     print(f"Sieving-2 done in {perf_counter() - then}")
+    # except SaturationError:
+    #     print("Saturation error...")
 
     # - - - checking the database - - -
     # v_nrms = []
-    gh = gaussian_heuristic( g6k.M.r()[-n_slicer_coord:] )
-    cntr = 0
-    print(f"Processing {len(g6k)} norms...")
-    for it in g6k.itervalues():
-        # if cntr%200 == 0:
-            # print(f"{cntr} dumped", end=", ", flush=True)
-        v = g6k.M.B[-n_slicer_coord:].multiply_left( it )
-        v = np.array( from_canonical_scaled( g6k.M,v,offset=n_slicer_coord ) )
-        if ( v@v ) > 1.09**2 * (4/3.):
-            break
-        cntr+=1
-        # v_nrms.append( ( v@v )**0.5 )
-    # with open("tmp.pkl", "wb") as file:
-    #     pickle.dump(v_nrms, file)
-    # print()
-    print(f"Was: {len(g6k)}", end=", ")
-    g6k.shrink_db( cntr )
-    print(f"Is: {len(g6k)} corr. alpha: {len(g6k)**(1./n_slicer_coord)}")
+    # gh = gaussian_heuristic( g6k.M.r()[-n_slicer_coord:] )
+    # cntr = 0
+    # print(f"Processing {len(g6k)} norms...")
+    # for it in g6k.itervalues():
+    #     # if cntr%200 == 0:
+    #         # print(f"{cntr} dumped", end=", ", flush=True)
+    #     v = g6k.M.B[-n_slicer_coord:].multiply_left( it )
+    #     v = np.array( from_canonical_scaled( g6k.M,v,offset=n_slicer_coord ) )
+    #     if ( v@v ) > 1.09**2 * (4/3.):
+    #         break
+    #     cntr+=1
+    #     # v_nrms.append( ( v@v )**0.5 )
+    # # with open("tmp.pkl", "wb") as file:
+    # #     pickle.dump(v_nrms, file)
+    # # print()
+    # print(f"Was: {len(g6k)}", end=", ")
+    # g6k.shrink_db( cntr )
+    # print(f"Is: {len(g6k)} corr. alpha: {len(g6k)**(1./n_slicer_coord)}")
     # - - - end checking the database - - -
     print(f"r / r = {(g6k.M.r()[-n_slicer_coord] / g6k.M.r()[-1])**0.5}")
     for (b, s, e) in bse:
@@ -351,15 +350,19 @@ if __name__=="__main__":
         LR2 = LatticeReduction( B )
         for beta in range(4,15):
             LR2.BKZ(beta, tours=2)
-        cv = LR2.gso.babai( v )
-        v2 = LR2.basis.multiply_left( cv )
+        # cv = LR2.gso.babai( v )
+        # v2 = LR2.basis.multiply_left( cv )
+        v2 = np.round( v )
         succ_alg_3_debug = all( answer==v2 )
 
         print(f"slicer:\n {answer==v2}")
 
-        print(f"- - - Now slightly different slicer - - -")
+        # print(f"- - - Now slightly different slicer - - -")
+        # len_bound = dist_sq_bnd
+        # vbab = np.array( alg_3_debug_v2( g6k,H11,t,n_guess_coord, eta, s, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None ) )
+        print(f"- - - Now the same slicer - - -")
         len_bound = dist_sq_bnd
-        vbab = np.array( alg_3_debug_v2( g6k,H11,t,n_guess_coord, eta, s, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None ) )
+        vbab = np.array( alg_3_debug( g6k,H11,t,n_guess_coord, eta, s, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None ) )
         print(f"babai:\n {answer==vbab}")
         print(f"Next vector...")
         succ_alg_3_debug_v2 = all( answer==vbab )
