@@ -11,6 +11,8 @@ try:
 except ModuleNotFoundError:
     from multiprocessing import Pool
 
+from hybrid_estimator.batchCVP import batchCVPP_cost
+
 def run_exp(lat_id, n, betamax, sieve_dim, range_, Nexperiments, nthreads=1):
     babai_suc = 0
     approx_fact = 1.1
@@ -95,7 +97,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, range_, Nexperiments, nthreads=1):
             sys.stdout.flush()
 
         c = [ randrange(-10,10) for j in range(n) ]
-        e = np.array( random_on_sphere(n, 0.49*gh) )
+        e = np.array( random_on_sphere(n, 0.8*gh) )
 
         print(f"gauss: {gh} vs r_00: {G.get_r(0,0)**0.5} vs ||err||: {(e@e)**0.5}")
         e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim) )
@@ -143,14 +145,16 @@ def run_exp(lat_id, n, betamax, sieve_dim, range_, Nexperiments, nthreads=1):
         if not succ:
             ctr = 0
             #this_instance_succseeded = False
-            for nrand in range_:
+            for nrand_fact in range_:
                 #if this_instance_succseeded: #can only enter here after a succsessful slicer
                 #    slicer_suc[ctr] += 1
                 #    continue
 
                 slicer = RandomizedSlicer(g6k)
                 slicer.set_nthreads(2);
-                slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
+                nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
+                nrand = ceil((1./nrand_)**sieve_dim)
+                slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=ceil(nrand_fact * nrand))
                 try:
                     slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], (approx_fact*approx_fact*(e_@e_)))
 
@@ -224,12 +228,13 @@ def run_exp(lat_id, n, betamax, sieve_dim, range_, Nexperiments, nthreads=1):
 #paramset2 = {"n": 120, "b": [i for i in range(42, 56)], "nrands": [i for i in range(600,900,50)] }
 
 if __name__ == '__main__':
-    n_rerand_min, n_rerand_max, step = 50, 201, 50
-    range_ = [25] + [ tmp for tmp in range(n_rerand_min, n_rerand_max, step) ]
+    n_rerand_min_fact, n_rerand_max_fact, step = 0.5, 10.1, 0.5
+    range_ = [ n_rerand_min_fact + i*step for i in range( ceil( (n_rerand_max_fact-n_rerand_min_fact) / step ) )  ]
+    # range_ = [ tmp for tmp in range(n_rerand_min_fact, n_rerand_max_fact, step) ]
     # babai_suc = 0
     # slicer_suc = [0]*len(range_)
     # slicer_fail = [0]*len(range_)
-    Nexperiments = 200
+    Nexperiments = 50
     Nlats = 5
     path = "saved_lattices/"
     isExist = os.path.exists(path)
