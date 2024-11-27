@@ -219,7 +219,9 @@ def run_exp(lat_id, n, betamax, sieve_dim, range_, Nexperiments, nthreads=1):
 
     density_plot = []
     cntr = 0
-    for nrand in range_:
+    for nrand_fact in range_:
+        nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
+        nrand = ceil(nrand_fact * (1./nrand_)**sieve_dim)
         density_plot.append( (nrand,slicer_suc[cntr]+babai_suc) )
         cntr+=1
     return density_plot
@@ -228,13 +230,13 @@ def run_exp(lat_id, n, betamax, sieve_dim, range_, Nexperiments, nthreads=1):
 #paramset2 = {"n": 120, "b": [i for i in range(42, 56)], "nrands": [i for i in range(600,900,50)] }
 
 if __name__ == '__main__':
-    n_rerand_min_fact, n_rerand_max_fact, step = 0.5, 10.1, 0.5
+    n_rerand_min_fact, n_rerand_max_fact, step = 0.5, 5.1, 0.5
     range_ = [ n_rerand_min_fact + i*step for i in range( ceil( (n_rerand_max_fact-n_rerand_min_fact) / step ) )  ]
     # range_ = [ tmp for tmp in range(n_rerand_min_fact, n_rerand_max_fact, step) ]
     # babai_suc = 0
     # slicer_suc = [0]*len(range_)
     # slicer_fail = [0]*len(range_)
-    Nexperiments = 50
+    Nexperiments = 100
     Nlats = 5
     path = "saved_lattices/"
     isExist = os.path.exists(path)
@@ -254,7 +256,7 @@ if __name__ == '__main__':
     # [[(20, 118), (70, 197), (120, 199), (170, 200)], [(20, 124), (70, 196), (120, 200), (170, 200)], [(20, 121), (70, 195), (120, 200), (170, 200)], [(20, 123), (70, 194), (120, 199), (170, 200)], [(20, 120), (70, 195), (120, 199), (170, 200)]]
     FPLLL.set_precision(250)
 
-    n, betamax, sieve_dim = 60, 48, 60
+    n, betamax, sieve_dim = 70, 48, 70
     nthreads = 5
     slicer_threads = 2
     pool = Pool(processes = nthreads )
@@ -274,6 +276,6 @@ if __name__ == '__main__':
 
     with open(f"nrand_{n}_exp.pkl", "wb") as file:
         pickle.dump( density_plots, file )
-
+    print(f"n, betamax, sieve_dim : {n, betamax, sieve_dim }")
     print(density_plots)
     print(Nexperiments)

@@ -216,7 +216,7 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=
 if __name__=="__main__":
     n, k = 144, 1
     eta = 3
-    n_guess_coord, n_slicer_coord = 10, 65
+    n_guess_coord, n_slicer_coord = 10, 60
     betamax = 67
     sieve_dim_max = n_slicer_coord
     nsieves = 2
@@ -267,7 +267,7 @@ if __name__=="__main__":
     param_sieve['db_size_factor'] = 3.35 #3.2
 
 
-    param_sieve['saturation_ratio'] = 0.81
+    param_sieve['saturation_ratio'] = 0.5
     param_sieve['saturation_radius'] = 1.32
     print(f"Running sieving: {param_sieve}", flush=True)
     g6k = Siever(G,param_sieve)
@@ -276,39 +276,39 @@ if __name__=="__main__":
     g6k(alg="bdgl2")
     print(f"Sieving-1 done in {perf_counter() - then}")
 
-    try: #db_size_base
-        param_sieve['saturation_ratio'] = 0.95
-        param_sieve['saturation_radius'] = 1.335
-        # g6k = Siever(G,param_sieve)
-        g6k.params = param_sieve
-        print(f"Running sieving: {param_sieve}")
-        g6k.initialize_local(H11r-n_slicer_coord, H11r-n_slicer_coord, H11r)
-        then = perf_counter()
-        g6k(alg="bdgl2")
-        print(f"Sieving-2 done in {perf_counter() - then}")
-    except SaturationError:
-        print("Saturation error...")
+    # try: #db_size_base
+    #     param_sieve['saturation_ratio'] = 0.95
+    #     param_sieve['saturation_radius'] = 1.335
+    #     # g6k = Siever(G,param_sieve)
+    #     g6k.params = param_sieve
+    #     print(f"Running sieving: {param_sieve}")
+    #     g6k.initialize_local(H11r-n_slicer_coord, H11r-n_slicer_coord, H11r)
+    #     then = perf_counter()
+    #     g6k(alg="bdgl2")
+    #     print(f"Sieving-2 done in {perf_counter() - then}")
+    # except SaturationError:
+    #     print("Saturation error...")
 
     # - - - checking the database - - -
     # v_nrms = []
     gh = gaussian_heuristic( g6k.M.r()[-n_slicer_coord:] )
-    cntr = 0
-    print(f"Processing {len(g6k)} norms...")
-    for it in g6k.itervalues():
-        # if cntr%200 == 0:
-            # print(f"{cntr} dumped", end=", ", flush=True)
-        v = g6k.M.B[-n_slicer_coord:].multiply_left( it )
-        v = np.array( from_canonical_scaled( g6k.M,v,offset=n_slicer_coord ) )
-        if ( v@v ) > 1.09**2 * (4/3.):
-            break
-        cntr+=1
+    # cntr = 0
+    # print(f"Processing {len(g6k)} norms...")
+    # for it in g6k.itervalues():
+    #     # if cntr%200 == 0:
+    #         # print(f"{cntr} dumped", end=", ", flush=True)
+    #     v = g6k.M.B[-n_slicer_coord:].multiply_left( it )
+    #     v = np.array( from_canonical_scaled( g6k.M,v,offset=n_slicer_coord ) )
+    #     if ( v@v ) > 1.09**2 * (4/3.):
+    #         break
+    #     cntr+=1
         # v_nrms.append( ( v@v )**0.5 )
     # with open("tmp.pkl", "wb") as file:
     #     pickle.dump(v_nrms, file)
     # print()
-    print(f"Was: {len(g6k)}", end=", ")
-    g6k.shrink_db( cntr )
-    print(f"Is: {len(g6k)} corr. alpha: {len(g6k)**(1./n_slicer_coord)}")
+    # print(f"Was: {len(g6k)}", end=", ")
+    # g6k.shrink_db( cntr )
+    # print(f"Is: {len(g6k)} corr. alpha: {len(g6k)**(1./n_slicer_coord)}")
     # - - - end checking the database - - -
     print(f"r / r = {(g6k.M.r()[-n_slicer_coord] / g6k.M.r()[-1])**0.5}")
     for (b, s, e) in bse:
