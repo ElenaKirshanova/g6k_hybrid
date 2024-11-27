@@ -182,10 +182,6 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
 
         std::array<LFT,MAX_SIEVING_DIM> new_yr = db_t[i1].yr;
         this->sieve.addsub_vec(new_yr,  this->sieve.db[i2].yr, static_cast<ZT>(sign));
-
-        Entry_t new_entry;
-        new_entry.yr = new_yr;
-        // this->sieve.recompute_data_for_entry_t<Siever::Recompute::recompute_all>(new_entry);
         UidType new_uid = uid_hash_table_t.compute_uid_t(new_yr);
 
         if( !uid_hash_table_t.check_uid_unsafe(new_uid) && uid_hash_table_t.insert_uid(new_uid) )

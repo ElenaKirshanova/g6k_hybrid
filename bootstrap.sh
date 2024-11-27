@@ -55,7 +55,9 @@ source ./activate
 
 $PIP install -U pip
 $PIP install Cython
-$PIP install cysignals
+# $PIP install cysignals
+# #278 fpylll temp workaround
+$PIP install --force-reinstall -v "cysignals==1.11.4"
 
 
 cat <<EOF >>g6k-env/bin/activate
@@ -127,4 +129,3 @@ echo "Don't forget to activate environment each time:"
 echo " source ./activate"
 echo "This will also add the following aliases:"
 grep "^alias" activate
-
