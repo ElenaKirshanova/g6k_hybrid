@@ -258,12 +258,15 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     t_gs_list = []
     t_gs_reduced_list = []
     shift_babai_c_list = []
+    cntr = 0
     for target in target_candidates:
+        if cntr%200 == 0:
+            print(f"{cntr} grows done", flush=True)
         t_gs = from_canonical_scaled( G,target,offset=sieve_dim )
 
         t_gs_non_scaled = G.from_canonical(target)[dim-sieve_dim:]
         shift_babai_c =  list( G.babai( list(t_gs_non_scaled), start=dim-sieve_dim, gso=True) )
-        print( f"shift_babai_c: {shift_babai_c}" )
+        # print( f"shift_babai_c: {shift_babai_c}" )
         shift_babai = G.B.multiply_left( (dim-sieve_dim)*[0] + list( shift_babai_c ) )
         t_gs_reduced = from_canonical_scaled( G,np.array(target)-shift_babai,offset=sieve_dim ) #this is the actual reduced target
 
@@ -285,6 +288,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
         slicer.grow_db_with_target(t_gs_reduced, n_per_target=nrand) #add a candidate to the Slicer
         gdbwt_t = perf_counter() - then_gdbwt #TODO: collect this stat
         # print(f"grow_db done in {gdbwt_t}",flush=True)
+        cntr += 1
     #run slicer
     print(f"running slicer")
     blocks = 2 # should be the same as in siever
@@ -328,8 +332,8 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     min_norm_err_sq = float("inf")
     index_best = None
     b_best = None
+    print(f"LEN: {len(target_candidates)}")
     for index in range(len(shift_babai_c_list)):
-        print(f"LEN: {len(target_candidates)}")
 
         t = np.array( target_candidates[index] )
         t_1 = np.array( G.from_canonical( t,start=0 ) )

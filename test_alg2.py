@@ -190,7 +190,7 @@ def alg_2_batched_debug( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tra
 
         t_gs_non_scaled = G.from_canonical(target)[dim-sieve_dim:]
         shift_babai_c =  list( G.babai( list(t_gs_non_scaled), start=dim-sieve_dim, gso=True) )
-        print( f"shift_babai_c: {shift_babai_c}" )
+        # print( f"shift_babai_c: {shift_babai_c}" )
         shift_babai = G.B.multiply_left( (dim-sieve_dim)*[0] + list( shift_babai_c ) )
         t_gs_reduced = from_canonical_scaled( G,np.array(target, dtype=DTYPE)-shift_babai,offset=sieve_dim ) #this is the actual reduced target
 
@@ -262,7 +262,7 @@ def alg_2_batched_debug( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tra
     index_best = None
     b_best = None
     for index in range(len(shift_babai_c_list)):
-        print(f"LEN: {len(target_candidates)}")
+        # print(f"LEN: {len(target_candidates)}")
 
         t = np.array( target_candidates[index], dtype=DTYPE )
         t_1 = np.array( G.from_canonical( t,start=0 ), dtype=DTYPE )
