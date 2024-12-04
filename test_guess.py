@@ -5,6 +5,7 @@ from g6k.siever_params import SieverParams
 from g6k.slicer import RandomizedSlicer
 from utils import *
 import sys
+import multiprocessing
 from time import perf_counter
 from experiments.lwe_gen import *
 
@@ -34,6 +35,31 @@ def centeredBinomialDict(eta):
 inp_path = "lwe instances/saved_lattices/"
 out_path = "lwe instances/reduced_lattices/"
 max_nsampl = 2**8
+
+def guess_keys(n_guess_coord, left, right, t1, t2, H12, D, storage, s):
+    then = perf_counter()
+    keys = D.GetKeys(left,right,n_guess_coord)
+    print(f"GetKeys done in {perf_counter()-then}", flush=True)
+    vtilde2s, target_candidates = [], []
+    key_encount = False
+    then = perf_counter()
+    for tmp in keys:
+        etilde2 = np.array( tmp[1] )
+        if all(etilde2 == -s[-n_guess_coord:]):
+            print(f"key encountered! {tmp[0]}")
+            key_encount = True
+
+        vtilde2 = np.array(t2)-etilde2
+        vtilde2s.append( vtilde2  )
+        #compute H12*H22^-1 * vtilde2 = H12*vtilde2 since H22 is identity
+        tmp = np.array( H12.multiply_left(vtilde2) )
+        t1_ = np.array( list(t1) ) - tmp
+        target_candidates.append( t1_ )
+    print(f"Constructing {len(keys)} vectors done in {perf_counter()-then}", flush=True)
+    then = perf_counter()
+    storage[(left,right)] = vtilde2s, target_candidates
+    print(f"Copy done in {perf_counter()-then}", flush=True)
+    return key_encount
 
 def kyberGen(n, q = 3329, eta = 3, k=1):
     polys = []
@@ -90,8 +116,8 @@ def alg_3_debug_v2(g6k,H11,target,n_guess_coord, eta, s, ee, dist_sq_bnd=1.0, nt
     t1, t2 = target[:-n_guess_coord], target[-n_guess_coord:]
     distrib = centeredBinomial(eta)
     #TODO: make/(check if is) practical
-    nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord + 1.02 ) )
-    print(f"nsampl: {nsampl}")
+    nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord - 0.2 ) )
+    print(f"nsampl: {nsampl}", flush=True)
     # nsampl = min(max_nsampl, nsampl)
     target_candidates = []
     vtilde2s = []
@@ -101,8 +127,12 @@ def alg_3_debug_v2(g6k,H11,target,n_guess_coord, eta, s, ee, dist_sq_bnd=1.0, nt
 
     D = centeredBinomialDict(3)
     D = Distribution_Classes.distribution( D )
+    then = perf_counter()
     keys = D.GetKeys(0,nsampl,n_guess_coord)
+    print(f"GetKeys done in {perf_counter()-then}", flush=True)
     for times in range(nsampl): #Alg 3 steps 4-7
+        if times%20000==0:
+            print(f"{times} of {nsampl} targets precomputed")
         # etilde2 = np.array( distrib.sample( n_guess_coord ) ) #= (0 | e2)
         etilde2 = np.array( keys[times][1] )
         if all(etilde2 == -s[-n_guess_coord:]):
@@ -114,14 +144,7 @@ def alg_3_debug_v2(g6k,H11,target,n_guess_coord, eta, s, ee, dist_sq_bnd=1.0, nt
         vtilde2s.append( vtilde2  )
         #compute H12*H22^-1 * vtilde2 = H12*vtilde2 since H22 is identity
         tmp = np.array( H12.multiply_left(vtilde2) )
-        # print(f"vtilde2 babai norm: {vtilde2@vtilde2}")
-        # print(f"tmp babai norm: {tmp@tmp}")
-
-        # print(f"len(vtilde2): {len(vtilde2)} len(t1): {len(t1)}")
-        # print(f"dim: {dim} n_guess_coord: {n_guess_coord}")
         t1_ = np.array( list(t1) ) - tmp
-        # print(t1_)
-        # print(f"len t1_: {len(t1_)}")
         target_candidates.append( t1_ )
     msg = "Key not guessed"
     print(f"Guessed key position: {msg if guessed_key_position<0 else guessed_key_position}")
@@ -134,7 +157,7 @@ def alg_3_debug_v2(g6k,H11,target,n_guess_coord, eta, s, ee, dist_sq_bnd=1.0, nt
             left, right = batches*max_nsampl, min( (batches+1)*max_nsampl, len(target_candidates))
             if not( guessed_key_position >= left and guessed_key_position<right ):
                 continue
-            print(f"left, right, len: {left, right, len(target_candidates)}")
+            print(f"left, right, len: {left, right, len(target_candidates)}", flush=True)
             tar_cand = target_candidates[left:right]
             ctilde1 = alg_2_batched( g6k,tar_cand, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=None )
 
@@ -165,7 +188,7 @@ def alg_3_debug_v2(g6k,H11,target,n_guess_coord, eta, s, ee, dist_sq_bnd=1.0, nt
             return argminv
     return None
 
-def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
+def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, ee, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
     # - - - prepare targets - - -
     then_start = perf_counter()
     dim = B.nrows
@@ -176,73 +199,84 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=
     distrib = centeredBinomial(eta)
     #TODO: make/(check if is) practical
     nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord ) )
-    print(f"nsampl: {nsampl}")
-    nsampl = min(max_nsampl, nsampl)
-    target_candidates = []
-    vtilde2s = []
+    print(f"nsampl: {nsampl}", flush=True)
+    # nsampl = min(max_nsampl, nsampl)
+    vtilde2s, target_candidates = [], []
 
     H12 = IntegerMatrix.from_matrix( [list(b)[:dim-n_guess_coord] for b in B[dim-n_guess_coord:]] )
-    for times in range(1): #Alg 3 steps 4-7
-        if times!=0 and times%64 == 0:
-            print(f"{times} done out of {nsampl}", end=", ")
-        if times>0:
-            etilde2 = np.array( distrib.sample( n_guess_coord ) ) #= (0 | e2)
-        else:
-            etilde2 = np.array(-s[-n_guess_coord:])
-        # print(f"len etilde2: {len(etilde2)}")
-        # print(f"etilde2 babai: {etilde2}")
-        vtilde2 = np.array(t2)-etilde2
-        vtilde2s.append( vtilde2  )
-        #compute H12*H22^-1 * vtilde2 = H12*vtilde2 since H22 is identity
-        tmp = np.array( H12.multiply_left(vtilde2) )
-        print(f"vtilde2 babai norm: {vtilde2@vtilde2}")
-        print(f"tmp babai norm: {tmp@tmp}")
+    guessed_key_position = -1
 
-        # print(f"len(vtilde2): {len(vtilde2)} len(t1): {len(t1)}")
-        # print(f"dim: {dim} n_guess_coord: {n_guess_coord}")
-        t1_ = np.array( list(t1) ) - tmp
-        # print(t1_)
-        # print(f"len t1_: {len(t1_)}")
-        target_candidates.append( t1_ )
-    print()
+    D = centeredBinomialDict(3)
+    D = Distribution_Classes.distribution( D )
+    # - - -
+    processes = []
+    manager = multiprocessing.Manager()
+    storage = manager.dict()
+    # storage["vtilde2s"] = []
+    # storage["target_candidates"] = []
+
+    blocksize = nsampl // nthreads
+    for cntr in range( ceil(nsampl / blocksize) ):
+        left = cntr * blocksize
+        right = min(nsampl, (cntr+1) * blocksize)
+        process = multiprocessing.Process(
+            target=guess_keys, args=(n_guess_coord, left, right, t1, t2, H12, D, storage, s)
+        )
+        processes.append(process)
+        process.start()
+
+    for process in processes:
+        process.join()
+
+    for key in storage.keys():
+        vtilde2s += storage[key][0]
+        target_candidates += storage[key][1]
+
+    # msg = "Key not guessed"
+    # print(f"Guessed key position: {msg if guessed_key_position<0 else guessed_key_position}")
 
     """
     We return (if we succeed) (-s,e)[dim-kappa-betamax:dim-kappa] to avoid fp errors.
     """
-    #TODO: dist_sq_bnd might have changed at this point (or even in attacker)
-    #TODO: deduce what is the betamax
-    # betamax = 48
-    ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=None )
-    # ctilde1 = batch_babai( g6k,target_candidates, dist_sq_bnd )
-    # print(f"target_candidates babai = {target_candidates}")
+    print(f"len: {len(target_candidates)//max_nsampl+1}")
+    for batches in range(len(target_candidates)//max_nsampl+1):
+        left, right = batches*max_nsampl, min( (batches+1)*max_nsampl, len(target_candidates))
+        print(f"left, right, len: {left, right, len(target_candidates)}", flush=True)
+        tar_cand = target_candidates[left:right]
+        ctilde1 = alg_2_batched( g6k,tar_cand, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=None )
 
-    v1 = np.array( H11.multiply_left( ctilde1 ) )
-    #keep a track of v2?
-    argminv = None
-    minv = 10**12
-    cntr = 0
-    for vtilde2 in vtilde2s:
-        v2 = np.concatenate( [(dim-n_guess_coord)*[0],vtilde2] )
-        babshift = np.concatenate( [ np.array( H12.multiply_left(vtilde2) ), n_guess_coord*[0] ] )
-        v = np.concatenate([v1,n_guess_coord*[0]]) + v2 + babshift
+        v1 = np.array( H11.multiply_left( ctilde1 ) )
+        #keep a track of v2?
+        argminv = None
+        minv = 10**12
+        cntr = 0
+        # print("vv__: ", end="")
+        for vtilde2 in vtilde2s:
+            v2 = np.concatenate( [(dim-n_guess_coord)*[0],vtilde2] )
+            babshift = np.concatenate( [ np.array( H12.multiply_left(vtilde2) ), n_guess_coord*[0] ] )
+            v = np.concatenate([v1,n_guess_coord*[0]]) + v2 + babshift
 
-        # print(v)
-        # t = target_candidates[cntr]
-        v_t = v-np.array( target ) #+ tmp
-        vv = v_t@v_t
-        print(f"vv__: {vv**0.5}")
-        # print(f"babshift babai: {babshift}")
-        print(f"v babai: {v}")
-        if vv < minv:
-            minv = vv
-            argminv = v
-        cntr+=1
-    return argminv
+            # print(v)
+            # t = target_candidates[cntr]
+            v_t = v-np.array( target ) #+ tmp
+            vv = v_t@v_t
+            # print(f"{vv**0.5}", end = ", ")
+            if vv < minv:
+                minv = vv
+                argminv = v
+            if minv < ee:
+                print(f"Breaking after success!")
+                break
+            cntr+=1
+        print()
+        print(f"minv: {minv}")
+        return argminv
+    return None
 
 if __name__=="__main__":
     n, k = 125, 1
     eta = 3
-    n_guess_coord, n_slicer_coord = 6, 50
+    n_guess_coord, n_slicer_coord = 6, 60
     betamax = 47
     sieve_dim_max = n_slicer_coord
     nsieves = 2
@@ -338,7 +372,7 @@ if __name__=="__main__":
         B = IntegerMatrix.from_matrix(Binit)
 
         len_bound = dist_sq_bnd
-        v = alg_3_debug(g6k,H11,t,n_guess_coord, eta, s, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None)
+        v = alg_3_debug(g6k,H11,t,n_guess_coord, eta, s, ee=e@e, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None)
         print(f" - - - - - - ")
 
         LR2 = LatticeReduction( B )
@@ -349,14 +383,13 @@ if __name__=="__main__":
         succ_alg_3_debug = all( answer==v2 )
 
         print(f"slicer:\n {answer==v2}")
+        print(f"succ_alg_3_debug: {succ_alg_3_debug}")
 
-        print(f"- - - Now slicer with guessing - - -")
-        len_bound = dist_sq_bnd
-        vbab = np.array( alg_3_debug_v2( g6k,H11,t,n_guess_coord, eta, s, ee=e@e, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None ) )
-
-        print(f"babai:\n {answer==vbab}")
-        print(f"Next vector...")
-        succ_alg_3_debug_v2 = all( answer==vbab )
-        print(f"succ_alg_3_debug vs succ_alg_3_debug_v2: {succ_alg_3_debug, succ_alg_3_debug_v2}")
-
-    print(f"succ_alg_3_debug_v2: {succ_alg_3_debug_v2}")
+        # print(f"- - - Now slicer with guessing - - -")
+        # len_bound = dist_sq_bnd
+        # vbab = np.array( alg_3_debug_v2( g6k,H11,t,n_guess_coord, eta, s, ee=e@e, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None ) )
+        #
+        # print(f"babai:\n {answer==vbab}")
+        # print(f"Next vector...")
+        # succ_alg_3_debug_v2 = all( answer==vbab )
+        # print(f"succ_alg_3_debug vs succ_alg_3_debug_v2: {succ_alg_3_debug, succ_alg_3_debug_v2}")

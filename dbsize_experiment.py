@@ -25,7 +25,7 @@ except ModuleNotFoundError:
 
 import sys, os
 
-def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperiments, nthreads):
+-def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperiments, nthreads):
 
     slack = 1.03
     ft = "ld" if n<50 else ( "dd" if config.have_qd else "mpfr")
@@ -158,7 +158,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
                 #would remain to be in the db_t
                 slicer = RandomizedSlicer(g6k)
                 slicer.set_nthreads(nthreads);
-                n_per_target = ceil( (1./nrand_)**sieve_dim ) 
+                n_per_target = ceil( 5*(1./nrand_)**sieve_dim ) #10.8 for dim=55?
                 print(f"Forcing nrerand = {n_per_target}")
                 slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=n_per_target)
                 try:
@@ -175,13 +175,27 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
                     bab_01 =  np.array( bab_1 ) #shifted answer. Good since it is smaller, thus less rounding error
                     bab_01 += np.array(shift_babai_c)
-                    print(f"Success: {all(c==bab_01)}")
+                    # print(f"Success: {all(c==bab_01)}")
+                    succedeed = False
                     if (all(c==bab_01)):
                         print(f"SUCCESS")
+                        succedeed = True
+                    else:
+                        slicer_fail[j] += 1
+                        succedeed = False
+                        print(f"FAIL")
+                    if succ_criterion_factor>0:
+                        found_nrm = (out_gs_reduced@out_gs_reduced)**0.5
+                        if found_nrm < succ_criterion_factor:
+                            print(f"SUCCESS at approxCVP")
+                            succedeed = True
+                        else:
+                            succedeed = False
+                            print(f"FAIL at approxCVP")
+                    if succedeed:
                         slicer_suc[j] += 1
                     else:
                         slicer_fail[j] += 1
-                        print(f"FAIL")
 
                 except Exception as e:
                     print(f" - - - {e} - - -")
@@ -206,7 +220,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
 if __name__ == '__main__':
 
-    Nexperiments = 80
+    Nexperiments = 50
     Nlats = 5
     path = "saved_lattices/"
     isExist = os.path.exists(path)
@@ -219,19 +233,20 @@ if __name__ == '__main__':
 
     FPLLL.set_precision(250)
 
-    n, betamax, sieve_dim = 60, 45, 60 #also 70, 25, 70 and 80, 25, 80
+    n, betamax, sieve_dim = 70, 50, 70 #also 70, 25, 70 and 80, 25, 80
 
     nthreads = 5 # number of workers
     slicer_threads = 2 # threads the slicer will use
     shrink_factor = 0.7071 # ~ 1/sqrt(2)
     n_shrinkings = 10
+    succ_criterion_factor = 1.0 #0 for uSVP check and >0 for approx_fact check
     pool = Pool(processes = nthreads )
     tasks = []
 
     density_plots = []
     for lat_id in range(Nlats):
         tasks.append( pool.apply_async(
-            run_exp, (lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperiments, slicer_threads)
+            run_exp, (lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperiments, slicer_threads, succ_criterion_factor)
         ) )
 
     for t in tasks:
