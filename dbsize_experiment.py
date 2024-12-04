@@ -25,7 +25,7 @@ except ModuleNotFoundError:
 
 import sys, os
 
--def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperiments, nthreads):
+def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperiments, nthreads, succ_criterion_factor):
 
     slack = 1.03
     ft = "ld" if n<50 else ( "dd" if config.have_qd else "mpfr")
