@@ -252,7 +252,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     #know which of the target candidates it corresponds to. TODO: or should we?
     target_list_size =  2 * g6k.db_size() #len(g6k)
     nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
-    nrand = ceil(10*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
+    nrand = ceil(5.*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
     # nrand = ceil( 0.75*len(g6k) ) #TODO: remove this in a such way that alg3 does not break
     print(f"len(target_candidates): {len(target_candidates)} nrand: {nrand}")
     t_gs_list = []
@@ -300,7 +300,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
     buckets = max(buckets, 2**(blocks-1))
 
-    slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], (approx_fact*approx_fact*(dist_sq_bnd)))
+    slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], (approx_fact*approx_fact*(dist_sq_bnd)), max_slicer_iters=100)
 
     print(f"t_gs_reduced: {t_gs_reduced}")
     print(f"t_gs_reduced norm: {t_gs_reduced@t_gs_reduced}")

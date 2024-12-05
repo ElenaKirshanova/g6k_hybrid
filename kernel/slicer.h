@@ -58,7 +58,7 @@ public:
     void randomize_target_small_task(Entry_t &t);
     void grow_db_with_target(const double t_yr[], size_t n_per_target);
 
-    bool bdgl_like_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t multi_hash, LFT len_bound );
+    bool bdgl_like_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t multi_hash, LFT len_bound, size_t max_slicer_iters );
     void slicer_bucketing(const size_t blocks, const size_t multi_hash, const size_t nr_buckets_aim,
                                             std::vector<uint32_t> &buckets, std::vector<atomic_size_t_wrapper> &buckets_index);
     void slicer_bucketing_task(const size_t t_id, std::vector<uint32_t> &buckets, std::vector<atomic_size_t_wrapper> &buckets_index, ProductLSH &lsh);

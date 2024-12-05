@@ -521,7 +521,7 @@ void RandomizedSlicer::slicer_process_buckets_task(const size_t t_id,
 }
 
 
-bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t multi_hash, LFT len_bound ){
+bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t multi_hash, LFT len_bound, size_t max_slicer_iters ){
 
     //std::cout << "nr_buckets_aim:" << nr_buckets_aim << " blocks: " << blocks << " multi_hash: " <<multi_hash <<  std::endl;
     parallel_sort_cdb();
@@ -565,12 +565,12 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
 
 
         if(it%100==0) {
-            std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << "cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
+            std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << " cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
         }
 
-        size_t MAX_SLICER_ITERS = 1000; //TODO: make it adjustable
-        if( it > MAX_SLICER_ITERS ) {
-            std::cerr << "Couldn't find a close vector after " << MAX_SLICER_ITERS << " iterations" << std::endl;
+        // size_t MAX_SLICER_ITERS = 1000; //TODO: make it adjustable
+        if( it > max_slicer_iters ) {
+            std::cerr << "Couldn't find a close vector after " << max_slicer_iters << " iterations" << std::endl;
             return false;
         }
         it++;

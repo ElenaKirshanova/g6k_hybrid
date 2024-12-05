@@ -116,7 +116,7 @@ def alg_3_debug_v2(g6k,H11,target,n_guess_coord, eta, s, ee, dist_sq_bnd=1.0, nt
     t1, t2 = target[:-n_guess_coord], target[-n_guess_coord:]
     distrib = centeredBinomial(eta)
     #TODO: make/(check if is) practical
-    nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord - 0.2 ) )
+    nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord ) )
     print(f"nsampl: {nsampl}", flush=True)
     # nsampl = min(max_nsampl, nsampl)
     target_candidates = []
@@ -239,6 +239,9 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, ee, dist_sq_bnd=1.0, nthre
     We return (if we succeed) (-s,e)[dim-kappa-betamax:dim-kappa] to avoid fp errors.
     """
     print(f"len: {len(target_candidates)//max_nsampl+1}")
+    argminv = None
+    minv = 10**12
+    cntr = 0
     for batches in range(len(target_candidates)//max_nsampl+1):
         left, right = batches*max_nsampl, min( (batches+1)*max_nsampl, len(target_candidates))
         print(f"left, right, len: {left, right, len(target_candidates)}", flush=True)
@@ -247,9 +250,6 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, ee, dist_sq_bnd=1.0, nthre
 
         v1 = np.array( H11.multiply_left( ctilde1 ) )
         #keep a track of v2?
-        argminv = None
-        minv = 10**12
-        cntr = 0
         # print("vv__: ", end="")
         for vtilde2 in vtilde2s:
             v2 = np.concatenate( [(dim-n_guess_coord)*[0],vtilde2] )
@@ -268,15 +268,14 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, ee, dist_sq_bnd=1.0, nthre
                 print(f"Breaking after success!")
                 break
             cntr+=1
-        print()
-        print(f"minv: {minv}")
-        return argminv
-    return None
+    print()
+    print(f"minv: {minv}")
+    return argminv
 
 if __name__=="__main__":
     n, k = 125, 1
     eta = 3
-    n_guess_coord, n_slicer_coord = 6, 60
+    n_guess_coord, n_slicer_coord = 5, 50
     betamax = 47
     sieve_dim_max = n_slicer_coord
     nsieves = 2
@@ -384,6 +383,7 @@ if __name__=="__main__":
 
         print(f"slicer:\n {answer==v2}")
         print(f"succ_alg_3_debug: {succ_alg_3_debug}")
+        print(f"Next vector...")
 
         # print(f"- - - Now slicer with guessing - - -")
         # len_bound = dist_sq_bnd
