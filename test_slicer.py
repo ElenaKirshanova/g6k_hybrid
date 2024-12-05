@@ -9,7 +9,7 @@ import sys
 if __name__ == "__main__":
 
     FPLLL.set_precision(250)
-    n, betamax, sieve_dim = 300, 55, 70
+    n, betamax, sieve_dim = 100, 50, 60
     ft = "ld" if n<70 else ( "dd" if config.have_qd else "mpfr")
     # - - - try load a lattice - - -
     filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     for _ in range(nexp):
         c = [ randrange(-33,34) for j in range(n) ]
         # e = np.array( [ randrange(-8,9) for j in range(n) ],dtype=np.int64 )
-        e = np.array( random_on_sphere(n,0.1*gh) )
+        e = np.array( random_on_sphere(n,0.51*gh) )
         e = np.round(e)
 
         print(f"gauss: {gh} vs r_00: {G.get_r(0,0)**0.5} vs ||err||: {(e@e)**0.5}")
