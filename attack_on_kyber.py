@@ -261,7 +261,7 @@ if __name__ == "__main__":
     lats_per_dim = 10 #10
     inst_per_lat = 10 #10 #how many instances per A, q
     q, eta = 3329, 3
-    nks = [ (140+10*i,3) for i in range(1) ]
+    nks = [ (140+10*i,3) for i in range(3) ]
     betapre,betamax = 55, 95
 
     output = []
@@ -303,7 +303,7 @@ if __name__ == "__main__":
 
     pool.close()
 
-    name = f"exp{nk}_{q}_{eta}_{k}.pkl"
+    name = f"exp{nks}_{q}_{eta}_{k}.pkl"
     with open( out_path+name, "wb" ) as file:
         pickle.dump( output,file )
 
