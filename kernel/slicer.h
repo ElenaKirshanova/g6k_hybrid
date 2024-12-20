@@ -35,6 +35,19 @@ public:
     friend SimHashes;
     friend UidHashTable;
 
+    enum class RecomputeSlicer // used as a bitmask for the template argument to recompute_data_for_entry below
+    {
+        none = 0,
+        recompute_yr = 1,
+        recompute_len = 2,
+        recompute_c = 4,
+        recompute_uid = 8,
+        recompute_otf_helper = 16,
+        recompute_all = 31,
+        consider_otf_lift = 32,
+        recompute_all_and_consider_otf_lift = 63
+    };
+
     Siever &sieve;
 
     CACHELINE_VARIABLE(std::vector<Entry_t>, db_t);             // database of targets
@@ -77,6 +90,9 @@ public:
     bool slicer_replace_in_db(size_t cdb_index, Entry_t &e);
 
     void set_nthreads(size_t nt){ this->threads = nt;}
+
+    template<RecomputeSlicer what_to_recompute>
+    inline void recompute_data_for_entry_t(Entry_t &e);
 };
 
 #endif //G6K_HYBRID_SLICER_H

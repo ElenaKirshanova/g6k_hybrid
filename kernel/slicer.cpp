@@ -6,6 +6,61 @@
 
 inline bool compare_QEntry(QEntry const& lhs, QEntry const& rhs) { return lhs.len > rhs.len; }
 
+ENABLE_BITOPS_FOR_ENUM(RandomizedSlicer::RecomputeSlicer)
+
+template<RandomizedSlicer::RecomputeSlicer what_to_recompute>
+inline void RandomizedSlicer::recompute_data_for_entry_t(Entry_t &e)
+{
+    //ATOMIC_CPUCOUNT(214);
+    bool constexpr rec_yr = (what_to_recompute & RecomputeSlicer::recompute_yr) != RecomputeSlicer::none;
+    bool constexpr rec_len = (what_to_recompute & RecomputeSlicer::recompute_len) != RecomputeSlicer::none;
+    bool constexpr rec_c = (what_to_recompute & RecomputeSlicer::recompute_c) != RecomputeSlicer::none;
+    bool constexpr rec_uid = (what_to_recompute & RecomputeSlicer::recompute_uid) != RecomputeSlicer::none;
+    bool constexpr consider_lift = (what_to_recompute & RecomputeSlicer::consider_otf_lift) != RecomputeSlicer::none;
+    bool constexpr rec_otf_helper = (what_to_recompute & RecomputeSlicer::recompute_otf_helper) != RecomputeSlicer::none;
+
+
+    CPP17CONSTEXPRIF(rec_len) e.len = 0.;
+    if (rec_len)
+    {
+        for (unsigned int i = 0; i < n; ++i)
+        {
+            e.yr[i] = static_cast<FT>(e.yr[i]);
+            e.len+=e.yr[i] * e.yr[i]; // slightly inefficient if we only compute the length and not yr, but that does not happen anyway.
+        }
+    }
+
+    CPP17CONSTEXPRIF (rec_uid)
+    {
+        e.uid  = uid_hash_table_t.compute_uid_t(e.yr);
+    }
+
+    CPP17CONSTEXPRIF (rec_c)
+    {
+        e.c = sim_hashes_t.compress(e.yr);
+    }
+
+    /*
+    CPP17CONSTEXPRIF (rec_otf_helper)
+    {
+        for (int k = 0; k < OTF_LIFT_HELPER_DIM; ++k)
+        {
+            int const i = l - (k + 1);
+            if (i < static_cast<signed int>(ll)) break;
+            e.otf_helper[k] = std::inner_product(e.x.cbegin(), e.x.cbegin()+n, full_muT[i].cbegin()+l,  static_cast<FT>(0.));
+        }
+    }
+
+    if (consider_lift && params.otf_lift && e.len < params.lift_radius)
+    {
+        lift_and_compare(e);
+    }
+    */
+
+    return;
+}
+
+
 //First element from the list of targets, the second from the siever db
 std::pair<LFT, int8_t> RandomizedSlicer::reduce_to_QEntry_t(CompressedEntry *ce1, CompressedEntry *ce2)
 {
@@ -78,7 +133,7 @@ void RandomizedSlicer::randomize_target_small_task(Entry_t &t)
             sign = inner < 0 ? 1 : -1;
             this->sieve.addsub_vec(t.yr, new_yr, static_cast<ZT>(sign));
 
-            this->sieve.recompute_data_for_entry_t<Siever::Recompute::recompute_all>(t);
+            recompute_data_for_entry_t<RandomizedSlicer::RecomputeSlicer::recompute_all>(t);
             break;
         }
     }
@@ -93,7 +148,7 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
         input_t.yr[i] = t_yr[i];
     }
 
-    this->sieve.recompute_data_for_entry_t<Siever::Recompute::recompute_all>(input_t);
+    recompute_data_for_entry_t<RandomizedSlicer::RecomputeSlicer::recompute_all>(input_t);
 
 
     //std::cout << "length: " << input_t.len << " uid: " <<input_t.uid << std::endl;
@@ -190,7 +245,7 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
             if( index >= 0 ) {
                 Entry_t& new_entry = transaction_db[index];
                 new_entry.yr = new_yr;
-                this->sieve.recompute_data_for_entry_t<Siever::Recompute::recompute_all>(new_entry);
+                recompute_data_for_entry_t<RandomizedSlicer::RecomputeSlicer::recompute_all>(new_entry);
                 //std::cout << "new_entry.len: " << new_entry.len << std::endl;
                 //std::cout << std::endl;
 
@@ -205,7 +260,29 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
         else
         {
             // duplicate
-            //std::cout << " duplicate !" << std::endl;
+
+           // std::cout << uid_hash_table_t.check_uid(new_uid) << " " << uid_hash_table_t.insert_uid(new_uid) << std::endl;
+           // std::cout << " duplicate with new_uid = " << new_uid <<  std::endl;
+//            const size_t S = cdb_t.size();
+//            std::cout << "S = " << S << std::endl;
+//
+//
+//            for(size_t i = 0; i<S; i++)
+//            {
+//                if (db_t[i].uid==new_uid || db_t[i].uid==-new_uid) {
+//                    std::cout << i << "uid_i " << db_t[i].uid <<  " new_uid " << new_uid <<  std::endl;
+//                    for(size_t j = 0; j<n; j++)
+//                        std::cout << db_t[i].yr[j] << " " << new_yr[j] << std::endl;
+//                    break;
+//                }
+//            }
+//            for (const auto & elem: uid_hash_table_t.db_uid[new_uid % uid_hash_table_t.DB_UID_SPLIT])
+//            {
+//                std::cout << elem << " ";
+//            }
+//            std::cout << '\n';
+
+            //assert(false);
             return 0;
         }
     }
@@ -363,7 +440,7 @@ void RandomizedSlicer::slicer_bucketing(const size_t blocks, const size_t multi_
 
     const size_t nr_buckets = lsh.codesize;
     const size_t S = cdb_t.size();
-    size_t bsize = 2 * (S*multi_hash / double(nr_buckets));
+    size_t bsize = 3 * (S*multi_hash / double(nr_buckets));
     buckets.resize( nr_buckets * bsize );
     buckets_index.resize(nr_buckets);
     for( size_t i = 0; i < nr_buckets; i++ )

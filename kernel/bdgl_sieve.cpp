@@ -194,6 +194,7 @@ void Siever::bdgl_bucketing(const size_t blocks, const size_t multi_hash, const 
         // bucket overflow
         if( buckets_index[i].val > bsize ) {
             buckets_index[i].val = bsize;
+            std::cout << "bucket overflow!" << std::endl;
         }
     }
 }

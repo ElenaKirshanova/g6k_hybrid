@@ -71,13 +71,6 @@ inline UidType UidHashTable::compute_uid(std::array<ZT,MAX_SIEVING_DIM> const &x
     */
     return std::inner_product(x.cbegin(), x.cbegin()+n, uid_coeffs.cbegin(), static_cast<UidType>(0));
 
-    // UidType res = 0;
-    // for (size_t i=0; i<n; i++){
-    //     res+=(static_cast<int16_t>(128*x[i]))*uid_coeffs[i]; //TODO:use move from https://en.cppreference.com/w/cpp/algorithm/inner_product ?
-    //     //std::cout << " " << static_cast<int16_t>(y[i]) << " " <<uid_coeffs[i] << " " << res << std::endl;
-    // }
-    //
-    // return res;
 }
 
 // Compute the uid of y using the current hash function.
@@ -85,11 +78,15 @@ inline UidType UidHashTable::compute_uid_t(std::array<LFT,MAX_SIEVING_DIM> const
 {
     //ATOMIC_CPUCOUNT(250);
     UidType res = 0;
+    //int16_t check = 0;
     for (size_t i=0; i<n; i++){
+        //check+=static_cast<int16_t>(128*y[i]);
         res+=(static_cast<int16_t>(128*y[i]))*uid_coeffs[i]; //TODO:use move from https://en.cppreference.com/w/cpp/algorithm/inner_product ?
-        //std::cout << " " << static_cast<int16_t>(y[i]) << " " <<uid_coeffs[i] << " " << res << std::endl;
+        //std::cout << y[i] << " " << static_cast<int16_t>(128*y[i]) << " " << res << std::endl;
     }
 
+    //assert(check>0);
+    //assert(false);
     return res;
 }
 
@@ -108,6 +105,7 @@ inline bool UidHashTable::insert_uid(UidType uid)
     normalize_uid(uid);
     std::lock_guard<std::mutex> lockguard(db_mut[uid % DB_UID_SPLIT]);
     bool success = db_uid[uid % DB_UID_SPLIT].insert(uid).second;
+    //std::cout << "success:" << success << std::endl;
     return success;
 }
 
@@ -117,10 +115,12 @@ inline bool UidHashTable::check_uid_unsafe(UidType uid)
     normalize_uid(uid);
     if (db_uid[uid % DB_UID_SPLIT].count(uid) != 0)
     {
+        //std::cout << "check uid:" << uid << "check uid % " << uid % DB_UID_SPLIT << std::endl;
         return true;
     }
-    else
+    else {
         return false;
+    }
 }
 
 

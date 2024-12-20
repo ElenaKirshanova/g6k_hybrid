@@ -199,7 +199,7 @@ public:
   // If removed_uid == new_uid, returns false [This should only happen with false positive collisions and that way is simpler to implement]
   inline bool replace_uid(UidType removed_uid, UidType new_uid);
 
-private:
+public://private:
     // Note : Implementation is subject to possible changes
 
     // we split the uid hash table into DB_UID_SPLIT many sub-tables, each with their own mutex.
@@ -875,9 +875,6 @@ private:
     template<Recompute what_to_recompute>
     inline void recompute_data_for_entry_babai(Entry &e, int babai_index);
 
-    //TODO: move to Slicer?
-    template<Recompute what_to_recompute>
-    inline void recompute_data_for_entry_t(Entry_t &e);
 
     // Recomputes the data in histo to make sure they are up to date.
     inline void recompute_histo(); // in db.inl
