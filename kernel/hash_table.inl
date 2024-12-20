@@ -86,10 +86,11 @@ inline UidType UidHashTable::compute_uid_t(std::array<LFT,MAX_SIEVING_DIM> const
     //ATOMIC_CPUCOUNT(250);
     UidType res = 0;
     for (size_t i=0; i<n; i++){
-        res+=(static_cast<int16_t>(128*y[i]))*uid_coeffs[i]; //TODO:use move from https://en.cppreference.com/w/cpp/algorithm/inner_product ?
+        // res+=(static_cast<int16_t>(128*y[i]))*uid_coeffs[i]; //TODO:use move from https://en.cppreference.com/w/cpp/algorithm/inner_product ?
+        res+=(static_cast<int16_t>(128*y[i]))*uid_coeffs[i];
         //std::cout << " " << static_cast<int16_t>(y[i]) << " " <<uid_coeffs[i] << " " << res << std::endl;
     }
-
+    normalize_uid(res);
     return res;
 }
 
@@ -108,6 +109,9 @@ inline bool UidHashTable::insert_uid(UidType uid)
     normalize_uid(uid);
     std::lock_guard<std::mutex> lockguard(db_mut[uid % DB_UID_SPLIT]);
     bool success = db_uid[uid % DB_UID_SPLIT].insert(uid).second;
+    // if (!success){
+    //   std::cout << "false in insert_uid: " <<  uid << std::endl;
+    // }
     return success;
 }
 
@@ -115,12 +119,15 @@ inline bool UidHashTable::insert_uid(UidType uid)
 inline bool UidHashTable::check_uid_unsafe(UidType uid)
 {
     normalize_uid(uid);
+    // std::cout << db_uid[uid % DB_UID_SPLIT].count(uid) << ", ";
     if (db_uid[uid % DB_UID_SPLIT].count(uid) != 0)
     {
         return true;
+        // std::cout << "collision in check_uid_unsafe: " <<  uid << std::endl;
     }
-    else
+    else{
         return false;
+      }
 }
 
 

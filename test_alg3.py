@@ -14,6 +14,9 @@ from sample import *
 from g6k.siever import SaturationError
 from test_alg2 import alg_2_batched_debug
 
+from discretegauss import sample_dgauss
+from hybrid_estimator.batchCVP import batchCVPP_cost
+
 inp_path = "lwe instances/saved_lattices/"
 out_path = "lwe instances/reduced_lattices/"
 max_nsampl = 2**10
@@ -185,6 +188,7 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=
     #TODO: deduce what is the betamax
     # betamax = 48
     ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=None )
+    # ctilde1 = alg_2_batched_debug( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=None )
     # ctilde1 = batch_babai( g6k,target_candidates, dist_sq_bnd )
     # print(f"target_candidates babai = {target_candidates}")
 
@@ -211,11 +215,172 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=
         cntr+=1
     return argminv
 
+def alg_2_batched_debug( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_alg2=None ):
+    # raise NotImplementedError
+    approx_fact = 1.0001
+    sieve_dim = g6k.r-g6k.l #n_slicer_coord
+    print(f"in alg2 sieve_dim={sieve_dim}", flush=True)
+
+    # dist_sq_bnd = 1.0 #TODO: implement
+    G = g6k.M
+    B = G.B
+    dim = G.d
+    Gsub = GSO.Mat( G.B[:dim-sieve_dim], float_type=G.float_type )
+    Gsub.update_gso()
+
+    # - - - prepare Slicer for batch cvp - - -
+    slicer = RandomizedSlicer(g6k)
+    slicer.set_nthreads(nthreads);
+    # - - - END prepare Slicer for batch cvp - - -
+    #WARNING: we do not store t_gs_reduced_list since t_gs_list =  t_gs - gs(shift_babai_c*B)
+    #this is a time-memory tradeoff. Since Slicer returns only an error vector, we don\'t
+    #know which of the target candidates it corresponds to. TODO: or should we?
+    target_list_size =  2 * g6k.db_size() #len(g6k)
+    nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
+    nrand = ceil((1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
+    # nrand = ceil( 0.75*len(g6k) ) #TODO: remove this in a such way that alg3 does not break
+    print(f"len(target_candidates): {len(target_candidates)} nrand: {nrand}")
+    t_gs_list = []
+    t_gs_reduced_list = []
+    shift_babai_c_list = []
+    cntr = 0
+    for target in target_candidates:
+        if cntr%200 == 0:
+            print(f"{cntr} grows done", flush=True)
+        t_gs = from_canonical_scaled( G,target,offset=sieve_dim )
+
+        t_gs_non_scaled = G.from_canonical(target)[dim-sieve_dim:]
+        shift_babai_c =  list( G.babai( list(t_gs_non_scaled), start=dim-sieve_dim, gso=True) )
+        # print( f"shift_babai_c: {shift_babai_c}" )
+        shift_babai = G.B.multiply_left( (dim-sieve_dim)*[0] + list( shift_babai_c ) )
+        t_gs_reduced = from_canonical_scaled( G,np.array(target)-shift_babai,offset=sieve_dim ) #this is the actual reduced target
+
+        t_gs_list.append(t_gs)
+        shift_babai_c_list.append(shift_babai_c)
+        t_gs_reduced_list.append(t_gs_reduced)
+
+        print(f"Doing grow_db ({nrand})")
+        slicer.grow_db_with_target(t_gs_reduced, n_per_target=1)
+        sigma2 = 0.9
+
+        cset, csetg = set(), set()
+        for grows in range(nrand):  #disc gauss sampling
+            if grows%500 == 0:
+                print(f"{grows}, ", end="")
+            cgauss = [ sample_dgauss(sigma2,rng=None) for _ in range(sieve_dim) ]
+            cgauss = np.array(cgauss)
+            assert cgauss@cgauss != 0, f"cgauss is zero!"
+            assert not( tuple(cgauss) in csetg), "Gauss duplicate (coeff)"
+            cset.add( tuple(cgauss) )
+
+            vrand = np.array( G.B[-sieve_dim:].multiply_left( cgauss ) )
+            target_ = target + vrand
+            vrand_gs = from_canonical_scaled( G,target_,offset=sieve_dim )
+            vrand_gs_reduced = from_canonical_scaled( G,np.array(target_)-shift_babai,offset=sieve_dim )
+            # vrand_gs_reduced = vrand_gs
+
+            assert not( tuple(vrand_gs_reduced) in cset ), f"Gauss duplicate"
+            cset.add( tuple(vrand_gs_reduced) )
+            slicer.grow_db_with_target(vrand_gs, n_per_target=1)
+        print()
+
+        then_gdbwt = perf_counter()
+        slicer.grow_db_with_target(t_gs_reduced, n_per_target=nrand) #add a candidate to the Slicer
+        gdbwt_t = perf_counter() - then_gdbwt #TODO: collect this stat
+        # print(f"grow_db done in {gdbwt_t}",flush=True)
+        cntr += 1
+    #run slicer
+    print(f"running slicer")
+    blocks = 2 # should be the same as in siever
+    blocks = min(3, max(1, blocks))
+    blocks = min(int(sieve_dim / 28), blocks)
+    sp = g6k.params
+    N = sp["db_size_factor"] * sp["db_size_base"] ** sieve_dim
+    buckets = sp["bdgl_bucket_size_factor"]* 2.**((blocks-1.)/(blocks+1.)) * sp["bdgl_multi_hash"]**((2.*blocks)/(blocks+1.)) * (N ** (blocks/(1.0+blocks)))
+    buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
+    buckets = max(buckets, 2**(blocks-1))
+
+    slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], (approx_fact*approx_fact*(dist_sq_bnd)), max_slicer_iters=128)
+
+    print(f"t_gs_reduced: {t_gs_reduced}")
+    print(f"t_gs_reduced norm: {t_gs_reduced@t_gs_reduced}")
+    iterator = slicer.itervalues_t()
+    for tmp in iterator:
+        out_gs_reduced = np.array(tmp)  #db_t[0] is expected to contain the error vector
+        cur_nrm_sq = out_gs_reduced@out_gs_reduced
+        break
+    # print(f"cur_nrm ={cur_nrm_sq**0.5}")
+
+    iterator = slicer.itervalues_t()
+    nrms = []
+    for tmp in iterator:
+        tmp = np.array(tmp)  #db_t[0] is expected to contain the error vector
+        tmp_nrm_sq = ( tmp@tmp )**0.5
+        nrms.append( tmp_nrm_sq )
+    # print(f"Targets nrms post: {[float(tt) for tt in nrms]}")
+    setnrms = set(nrms)
+    # print(setnrms)
+    print(f"{len(setnrms)} out of {len(nrms)} targets are unique", flush=True)
+
+    print(f"out_gs_reduced-t_gs_reduced: {out_gs_reduced-t_gs_reduced}")
+    print(f"out_gs_reduced: {out_gs_reduced}")
+    print(f"out_gs_reduced norm: {(out_gs_reduced@out_gs_reduced)**0.5} vs {dist_sq_bnd**0.5}")
+    index = 0
+    #Now we deduce which target candidate the error vector corresponds to.
+    #The idea is that if t_gs is an answer then t_gs_reduced - out_gs_reduced is in the projective lat
+    #and is (close to) zero.
+    min_norm_err_sq = float("inf")
+    index_best = None
+    b_best = None
+    print(f"LEN: {len(target_candidates)}")
+    for index in range(len(shift_babai_c_list)):
+
+        t = np.array( target_candidates[index] )
+        t_1 = np.array( G.from_canonical( t,start=0 ) )
+        for i in range(dim-sieve_dim):
+            t_1[i] = 0.
+        t_1 = np.array( G.to_canonical( t_1,start=0 ) )
+        t_0 = np.array( G.from_canonical( t,start=0 ) )
+        for i in range(dim-sieve_dim, dim):
+            t_0[i] = 0.
+        t_0 = np.array( G.to_canonical( t_0,start=0 ) )
+        #we substitute the obtaied error from the target and call babai to
+        #account for an fp error
+
+        out_reduced = np.array( to_canonical_scaled( G, out_gs_reduced, offset=sieve_dim ) )
+        t_1 = t_1 - out_reduced
+        bab_1 = G.babai(t_1,start=dim-sieve_dim, dimension=sieve_dim)
+
+        tmp = G.B[-sieve_dim:].multiply_left( bab_1 )
+        tmp = np.array( G.from_canonical(tmp,start=0) )
+        for i in range(dim-sieve_dim,dim):
+            tmp[i] = 0.
+        tmp = G.to_canonical( tmp, start=0 )
+        t_0 = t_0 - tmp
+        bab_0 = G.babai(t_0,start=0, dimension=dim-sieve_dim)
+        bab_01 = np.concatenate( [bab_0,bab_1] )
+        solution_candidate = np.array( G.B.multiply_left( bab_01 ) )
+
+        diff = t - solution_candidate
+        diff_nrm_sq = diff@diff
+
+        if diff_nrm_sq < min_norm_err_sq:
+            min_norm_err_sq = diff_nrm_sq
+            best_index = index
+            best_solution_candidate = solution_candidate
+            best_bab_01 = bab_01
+
+    print(f"min_norm_err_sq: {min_norm_err_sq}")
+
+
+    print(f"alg2 terminates")
+    return best_bab_01
+
 if __name__=="__main__":
-    n, k = 190, 1
+    n, k = 144, 1
     eta = 3
-    n_guess_coord, n_slicer_coord = 35, 83
-    betamax = 82
+    n_guess_coord, n_slicer_coord = 10, 60
+    betamax = 67
     sieve_dim_max = n_slicer_coord
     nsieves = 2
     nthreads = 5
@@ -265,8 +430,8 @@ if __name__=="__main__":
     param_sieve['db_size_factor'] = 3.35 #3.2
 
 
-    param_sieve['saturation_ratio'] = 0.5
-    param_sieve['saturation_radius'] = 1.32
+    param_sieve['saturation_ratio'] = 0.8
+    param_sieve['saturation_radius'] = 1.33
     print(f"Running sieving: {param_sieve}", flush=True)
     g6k = Siever(G,param_sieve)
     g6k.initialize_local(H11r-n_slicer_coord, H11r-n_slicer_coord, H11r)

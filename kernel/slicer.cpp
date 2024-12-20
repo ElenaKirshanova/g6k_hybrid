@@ -163,6 +163,86 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
 
 }
 
+bool float_is_zero(LFT &a){
+  return std::abs(a)<0.05f? true : false;
+}
+
+bool uids_are_equal(UidType &uid0, UidType &uid1){
+  return (uid0 == uid1);
+}
+
+static void normalize_uid_(UidType &uid)
+{
+    static_assert(std::is_unsigned<UidType>::value, "");
+    if (uid > std::numeric_limits<UidType>::max()/2  + 1)
+    {
+        uid = -uid;
+    }
+}
+
+bool RandomizedSlicer::find_vector(std::array<LFT,MAX_SIEVING_DIM> &entry_to_find){
+  std::cout << "in find_vector" << std::endl;
+  size_t index = 0;
+  unsigned int w1;
+  CompressedEntry centry_to_find;
+  const size_t S = db_t.size();
+
+  UidType new_uid = uid_hash_table_t.compute_uid_t(entry_to_find);
+  UidType new_uid_pre = uid_hash_table_t.compute_uid_t(entry_to_find);
+  std::cout << "uid before normalize_uid_: " << new_uid <<std::endl;
+  normalize_uid_(new_uid);
+  std::cout << "uid after normalize_uid_: " << new_uid <<std::endl;
+  for(; index < S; index++)
+  {
+    // w1  = 0;
+    // for (size_t k = 0; k < XPC_WORD_LEN; ++k) {
+    //     w1 += __builtin_popcountl(fast_cdb[index].c[k] ^ fast_cdb[j].c[k]);
+    // }
+    // //std::cout << "w1: " << w1 << std::endl;
+    // if (w1 < XPC_SLICER_SAMPLING_THRESHOLD || w1 > (XPC_BIT_LEN - XPC_SLICER_SAMPLING_THRESHOLD)) {}
+    UidType cur_uid = db_t[index].uid;
+
+    normalize_uid_(cur_uid);
+    if (uids_are_equal(new_uid, cur_uid) || uids_are_equal(new_uid_pre, cur_uid)){
+      std::cout << "Uids are equal at index: " << index << std::endl;
+      for(int tmp=0; tmp<MAX_SIEVING_DIM; tmp++){
+        std::cout << entry_to_find[tmp] << " : " << db_t[index].yr[tmp] << std::endl;
+      }
+    }
+
+    auto v0  = db_t[index];
+    auto v1  = db_t[index];
+
+    int8_t signp = 1;
+    int8_t signm = -1;
+    this->sieve.addsub_vec(v0.yr,  entry_to_find, static_cast<ZT>(signp));
+    this->sieve.addsub_vec(v1.yr,  entry_to_find, static_cast<ZT>(signm));
+    //this->sieve.recompute_data_for_entry_t<Siever::Recompute::recompute_all>(v0);
+    //this->sieve.recompute_data_for_entry_t<Siever::Recompute::recompute_all>(v1);
+    // std::cout << "v0: " << v0.yr << std::endl;
+    // std::cout << "v1: " << v1.yr << std::endl;
+
+    uint duplicate_found = false;
+    int zero_coords_nump = 0;
+    int zero_coords_numm = 0;
+    for (int j = 0; j<n;j++){
+      if(float_is_zero(v0.yr[j])){//counting zeros in entry_to_find + v
+        zero_coords_nump++;
+      }
+      if(float_is_zero(v1.yr[j])){//counting zeros in entry_to_find - v
+        zero_coords_numm++;
+      }
+    }
+    duplicate_found = ( zero_coords_nump==n || zero_coords_numm==n ); //if one of vectors has n zeros, we found the collision
+    if (duplicate_found){
+      uint p_or_m = zero_coords_nump==n? 1 : 0;
+      std::cout << p_or_m << " duplicate found at index " << index << " " << std::endl;
+      return true;
+    }
+  }
+  // return static_cast<size_t>(std::pow(2, 31)-1);
+  return false;
+}
 
 inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1, const size_t i2,  std::vector<Entry_t>& transaction_db, int64_t& write_index, LFT new_l, int8_t sign)
 {
@@ -206,6 +286,21 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
         {
             // duplicate
             //std::cout << " duplicate !" << std::endl;
+            std::cout << " duplicate !" << std::endl;
+            std::cout << "check_uid_unsafe: " << !uid_hash_table_t.check_uid_unsafe(new_uid) << " insert_uid: " << uid_hash_table_t.insert_uid(new_uid) <<std::endl;
+
+
+            // int64_t index = write_index--;
+            // Entry_t& new_entry = transaction_db[index];
+            // new_entry.yr = new_yr;
+            //
+            //
+            // new_entry = transaction_db[index];
+            // new_entry.yr = new_yr;
+            // this->sieve.recompute_data_for_entry_t<Siever::Recompute::recompute_all>(new_entry);
+            std::cout << "duplicate found: " << find_vector(new_yr) << std::endl;
+
+            assert(false);
             return 0;
         }
     }
