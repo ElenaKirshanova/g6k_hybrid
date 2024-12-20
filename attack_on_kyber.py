@@ -125,7 +125,7 @@ def prepare_kyber(n,q,eta,k,betapre,seed=[0,0], nthreads=5): #for debug purposes
             then = time.perf_counter()
             LR.BKZ( beta )
             round_time = time.perf_counter()-then
-            print(f"Preprocess BKZ-{beta} done in {round_time}")
+            print(f"Preprocess BKZ-{beta} done in {round_time}", flush=True)
             report["time"] += round_time
 
         with open(out_path + f"kyb_preprimal_{n}_{q}_{eta}_{k}_{seed[0]}_{betapre}.pkl", "wb") as file:
@@ -159,7 +159,7 @@ def attack_on_kyber(n,q,eta,k,betapre,betamax,ntours=5,seed=[0,0],nthreads=5):
     B = np.array( B )
     tarnrmsq = 1.01*(sol.dot(sol))
 
-    ft = "dd" if (config.have_qd and B.nrows<450) else "mpfr"
+    ft = "dd" if (config.have_qd and C.nrows<450) else "mpfr"
     FPLLL.set_precision(208)
     G = GSO.Mat(C,float_type=ft, U=IntegerMatrix.identity(dim,int_type=C.int_type), UinvT=IntegerMatrix.identity(dim,int_type=C.int_type))
     G.update_gso()
@@ -203,7 +203,7 @@ def attack_on_kyber(n,q,eta,k,betapre,betamax,ntours=5,seed=[0,0],nthreads=5):
         curnrm = np.array( bkz.M.B[0] ).dot( np.array( bkz.M.B[0] ) )**(0.5)
         # print(f"BKZ-{beta} done in {round_time} | {curnrm}")
         slope = basis_quality(bkz.M)["/"]
-        print(f"Enum beta: {beta:}, done in: {round_time : 0.4f}, slope: {slope}  log r00: {log( bkz.M.get_r(0,0),2 )/2 : 0.5f} task_id = {seed}")
+        print(f"Enum beta: {beta:}, done in: {round_time : 0.4f}, slope: {slope}  log r00: {log( bkz.M.get_r(0,0),2 )/2 : 0.5f} task_id = {seed}", flush=True)
         report["time"] += round_time
 
         if bkz.M.get_r(0,0) <= tarnrmsq:
@@ -231,7 +231,7 @@ def attack_on_kyber(n,q,eta,k,betapre,betamax,ntours=5,seed=[0,0],nthreads=5):
 
                 # print('tour ', t, ' beta:',beta,' done in:', round_time, 'slope:', basis_quality(M)["/"], 'log r00:', float( log( g6k.M.get_r(0,0),2 )/2 ), 'task_id = ', seed)
                 slope = basis_quality(M)["/"]
-                print(f"Sieve tour: {t}, beta: {beta:}, done in: {round_time : 0.4f}, slope: {slope : 0.6f}, log r00: {log( g6k.M.get_r(0,0),2 )/2 : 0.5f} task_id = {seed}")
+                print(f"Sieve tour: {t}, beta: {beta:}, done in: {round_time : 0.4f}, slope: {slope : 0.6f}, log r00: {log( g6k.M.get_r(0,0),2 )/2 : 0.5f} task_id = {seed}", flush=True)
                 sys.stdout.flush()  #flush after the BKZ call
 
                 report["time"] += round_time
@@ -246,23 +246,23 @@ def attack_on_kyber(n,q,eta,k,betapre,betamax,ntours=5,seed=[0,0],nthreads=5):
         pass
 
     return report
-    
+
 if __name__ == "__main__":
-    path = "exp_folder/"
-    isExist = os.path.exists(path)
+    # path = "exp_folder/"
+    isExist = os.path.exists(out_path)
     if not isExist:
         try:
-            os.makedirs(path)
+            os.makedirs(out_path)
         except:
             pass    #still in docker if isExists==False, for some reason folder can exist and this will throw an exception.
 
     nthreads = 5
-    nworkers = 5
+    nworkers = 20
     lats_per_dim = 10 #10
     inst_per_lat = 10 #10 #how many instances per A, q
     q, eta = 3329, 3
-    nks = [ (170+10*i,1) for i in range(1) ]
-    betapre,betamax = 80, 125
+    nks = [ (140+10*i,3) for i in range(1) ]
+    betapre,betamax = 55, 95
 
     output = []
     pool = Pool( processes = nworkers )
@@ -284,7 +284,7 @@ if __name__ == "__main__":
                 pretasks.append( pool.apply_async(
                 prepare_kyber, (n,q,eta,k,betapre,[latnum,0], nthreads)
                 ) )
-        print(f"Preprocessing Kyber...")
+        print(f"Preprocessing Kyber...", flush=True)
         for t in pretasks:
             t.get()
 
@@ -303,9 +303,11 @@ if __name__ == "__main__":
 
     pool.close()
 
-    name = f"exp105-2.pkl"
-    with open( path+name, "wb" ) as file:
+    name = f"exp{nk}_{q}_{eta}_{k}.pkl"
+    with open( out_path+name, "wb" ) as file:
         pickle.dump( output,file )
+
+    print(f"Experimental data dumped to {out_path+name}")
 
     print(f"- - - output - - -")
     print(output)
