@@ -37,7 +37,8 @@ inline void RandomizedSlicer::recompute_data_for_entry_t(Entry_t &e)
 
     CPP17CONSTEXPRIF (rec_c)
     {
-        e.c = sim_hashes_t.compress(e.yr);
+        // e.c = sim_hashes_t.compress(e.yr);
+        e.c = this->sieve.sim_hashes.compress(e.yr);
     }
 
     /*
