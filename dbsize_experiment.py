@@ -220,7 +220,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
 if __name__ == '__main__':
 
-    Nexperiments = 20
+    Nexperiments = 50
     Nlats = 10
     path = "saved_lattices/"
     isExist = os.path.exists(path)
@@ -238,7 +238,7 @@ if __name__ == '__main__':
     nthreads = 1 # number of workers
     slicer_threads = 1 # threads the slicer will use
     shrink_factor = 0.7071 # ~ 1/sqrt(2)
-    n_shrinkings = 1
+    n_shrinkings = 9
     succ_criterion_factor = 1.0 #0 for uSVP check and >0 for approx_fact check
     pool = Pool(processes = nthreads )
     tasks = []
