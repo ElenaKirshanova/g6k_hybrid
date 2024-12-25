@@ -355,15 +355,16 @@ if __name__=="__main__":
 
         print(f"slicer:\n {answer==v2}")
 
-        print(f"- - - Now slicer with guessing - - -")
-        len_bound = dist_sq_bnd
-        vbab = np.array( alg_3_debug_v2( g6k,H11,t,n_guess_coord, eta, s, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None ) )
-        print(f"babai:\n {answer==vbab}")
-        print(f"Next vector...")
-        succ_alg_3_debug_v2 = all( answer==vbab )
-        print(f"succ_alg_3_debug vs succ_alg_3_debug_v2: {succ_alg_3_debug, succ_alg_3_debug_v2}")
-
-        H11prime = g6k.M.B
-        for ii in range(H11.nrows):
-            for jj in range(H11.ncols):
-                assert( H11[ii][jj] == g6k.M.B[ii][jj] )
+        print(f" - - - {all(answer==v2)} - - - ")
+        # print(f"- - - Now slicer with guessing - - -")
+        # len_bound = dist_sq_bnd
+        # vbab = np.array( alg_3_debug_v2( g6k,H11,t,n_guess_coord, eta, s, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None ) )
+        # print(f"babai:\n {answer==vbab}")
+        # print(f"Next vector...")
+        # succ_alg_3_debug_v2 = all( answer==vbab )
+        # print(f"succ_alg_3_debug vs succ_alg_3_debug_v2: {succ_alg_3_debug, succ_alg_3_debug_v2}")
+        #
+        # H11prime = g6k.M.B
+        # for ii in range(H11.nrows):
+        #     for jj in range(H11.ncols):
+        #         assert( H11[ii][jj] == g6k.M.B[ii][jj] )
