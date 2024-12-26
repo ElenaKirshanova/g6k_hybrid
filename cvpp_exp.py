@@ -62,7 +62,7 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705):
     print(f"dbsize: {len(g6k)}")
     return g6k
 
-def run_exp(g6k,ntests,approx_facts, n_threads=2):
+def run_exp(g6k,ntests,approx_facts, n_threads=2, nrand_param=1.):
     G = g6k.M
     B = G.B
     n = G.d
@@ -169,7 +169,7 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2):
                     print("dbsize", g6k.db_size())
 
                     nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
-                    nrand = ceil(5*(1./nrand_)**sieve_dim)
+                    nrand = ceil(nrand_param*(1./nrand_)**sieve_dim)
                     slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
 
                     blocks = 2 # should be the same as in siever
@@ -229,6 +229,7 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2):
     return Ds
 
 if __name__=="__main__":
+    nrand_param = 1.
     n_threads = 2
     ntests = 50
     n = 55
@@ -256,6 +257,6 @@ if __name__=="__main__":
     # print(f"bdgl2-{n} done in {perf_counter()-then}")
     # g6k.M.update_gso()
 
-    Ds = run_exp(g6k,ntests,approx_facts,n_threads=n_threads)
+    Ds = run_exp(g6k,ntests,approx_facts,n_threads=n_threads, nrand_param=nrand_param)
 
     print(Ds)
