@@ -67,12 +67,13 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2, nrand_param=1.):
     B = G.B
     n = G.d
 
-    lambda1 = G.get_r(0, 0)**0.5
+    # lambda1 = G.get_r(0, 0)**0.5
     D = {}
     Ds = []
 
     sieve_dim = n
     gh = gaussian_heuristic(G.r())**0.5
+    lambda1 = min( [G.get_r(0, 0)**0.5, gh] )
     param_sieve = SieverParams()
     param_sieve['threads'] = n_threads
     g6k = Siever(G,param_sieve) #temporary solution

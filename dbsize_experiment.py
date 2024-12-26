@@ -121,7 +121,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
             if i%10 == 0:
                 print(f"{i} out of {Nexperiments} done...", flush=True)
             c = cs[i] #[ randrange(-10,10) for k in range(n) ]
-            e = es[i] #np.array( random_on_sphere(n, 0.5 * gh) ) #error vector
+            e = es[i] #np.array( random_on_sphere(n, 0.95 * gh) ) #error vector
             print(f"gauss: {gh} vs r_00: {G.get_r(0,0)**0.5} vs ||err||: {(e@e)**0.5}")
             e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim) )
 
