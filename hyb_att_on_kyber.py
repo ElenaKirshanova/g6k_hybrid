@@ -252,7 +252,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     #know which of the target candidates it corresponds to. TODO: or should we?
     target_list_size =  2 * g6k.db_size() #len(g6k)
     nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
-    nrand = ceil(10*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
+    nrand = ceil(1.2*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
     # nrand = ceil( 0.75*len(g6k) ) #TODO: remove this in a such way that alg3 does not break
     print(f"len(target_candidates): {len(target_candidates)} nrand: {nrand}")
     t_gs_list = []

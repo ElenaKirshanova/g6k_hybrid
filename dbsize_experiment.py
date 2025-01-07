@@ -25,7 +25,7 @@ except ModuleNotFoundError:
 
 import sys, os
 
-def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperiments, nthreads, succ_criterion_factor):
+def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperiments, nthreads, succ_criterion_factor, nrand_param=1.):
 
     slack = 1.03
     ft = "ld" if n<50 else ( "dd" if config.have_qd else "mpfr")
@@ -106,7 +106,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
     bs = []
     for i in range(Nexperiments):
         c = [ randrange(-10,10) for k in range(n) ]
-        e = np.array( random_on_sphere(n, 0.99 * gh) ) #error vector
+        e = np.array( random_on_sphere(n, 0.95 * gh) ) #error vector
         # e = uniform_in_ball( 1, n, 0.5 * gh )[0]
         b = G.B.multiply_left( c )
         cs.append( c )
@@ -121,7 +121,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
             if i%10 == 0:
                 print(f"{i} out of {Nexperiments} done...", flush=True)
             c = cs[i] #[ randrange(-10,10) for k in range(n) ]
-            e = es[i] #np.array( random_on_sphere(n, 0.5 * gh) ) #error vector
+            e = es[i] #np.array( random_on_sphere(n, 0.95 * gh) ) #error vector
             print(f"gauss: {gh} vs r_00: {G.get_r(0,0)**0.5} vs ||err||: {(e@e)**0.5}")
             e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim) )
 
@@ -158,7 +158,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
                 #would remain to be in the db_t
                 slicer = RandomizedSlicer(g6k)
                 slicer.set_nthreads(nthreads);
-                n_per_target = ceil( 3*(1./nrand_)**sieve_dim ) #10.8 for dim=55?
+                n_per_target = ceil( nrand_param*(1./nrand_)**sieve_dim ) #10.8 for dim=55?
                 print(f"Forcing nrerand = {n_per_target}")
                 slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=n_per_target)
                 try:
@@ -220,7 +220,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
 if __name__ == '__main__':
 
-    Nexperiments = 20
+    Nexperiments = 50
     Nlats = 10
     path = "saved_lattices/"
     isExist = os.path.exists(path)
@@ -237,8 +237,9 @@ if __name__ == '__main__':
 
     nthreads = 1 # number of workers
     slicer_threads = 1 # threads the slicer will use
+    nrand_param = 1.
     shrink_factor = 0.7071 # ~ 1/sqrt(2)
-    n_shrinkings = 1
+    n_shrinkings = 9
     succ_criterion_factor = 1.0 #0 for uSVP check and >0 for approx_fact check
     pool = Pool(processes = nthreads )
     tasks = []
@@ -246,7 +247,7 @@ if __name__ == '__main__':
     density_plots = []
     for lat_id in range(Nlats):
         tasks.append( pool.apply_async(
-            run_exp, (lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperiments, slicer_threads, succ_criterion_factor)
+            run_exp, (lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperiments, slicer_threads, succ_criterion_factor, nrand_param)
         ) )
 
     for t in tasks:
