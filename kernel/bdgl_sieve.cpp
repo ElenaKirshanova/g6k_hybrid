@@ -176,7 +176,7 @@ void Siever::bdgl_bucketing(const size_t blocks, const size_t multi_hash, const 
     ProductLSH lsh(n, blocks, nr_buckets_aim, multi_hash, lsh_seed);
     const size_t nr_buckets = lsh.codesize;
     const size_t S = cdb.size();
-    size_t bsize = 2 * (S*multi_hash / double(nr_buckets));
+    size_t bsize = 4 * (S*multi_hash / double(nr_buckets));
     buckets.resize( nr_buckets * bsize );
     buckets_index.resize(nr_buckets);
     for( size_t i = 0; i < nr_buckets; i++ )
@@ -194,7 +194,7 @@ void Siever::bdgl_bucketing(const size_t blocks, const size_t multi_hash, const 
         // bucket overflow
         if( buckets_index[i].val > bsize ) {
             buckets_index[i].val = bsize;
-            std::cout << "bucket overflow!" << std::endl;
+            //std::cout << "sieve: bucket overflow!" << std::endl;
         }
     }
 }

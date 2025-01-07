@@ -176,7 +176,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
                     bab_01 =  np.array( bab_1 ) #shifted answer. Good since it is smaller, thus less rounding error
                     bab_01 += np.array(shift_babai_c)
                     # print(f"Success: {all(c==bab_01)}")
-                    succedeed = False
+                    #succedeed = False
                     if (all(c==bab_01)):
                         print(f"SUCCESS")
                         succedeed = True

@@ -440,7 +440,7 @@ void RandomizedSlicer::slicer_bucketing(const size_t blocks, const size_t multi_
 
     const size_t nr_buckets = lsh.codesize;
     const size_t S = cdb_t.size();
-    size_t bsize = 3 * (S*multi_hash / double(nr_buckets));
+    size_t bsize = 4 * (S*multi_hash / double(nr_buckets));
     buckets.resize( nr_buckets * bsize );
     buckets_index.resize(nr_buckets);
     for( size_t i = 0; i < nr_buckets; i++ )
@@ -459,7 +459,7 @@ void RandomizedSlicer::slicer_bucketing(const size_t blocks, const size_t multi_
         //std::cout << i << " " <<  buckets_index[i].val << " " << bsize <<  std::endl;
         if( buckets_index[i].val > bsize ) {
             buckets_index[i].val = bsize;
-            //std::cout << "bucket overflow!" << std::endl;
+            //std::cout << "slicer: bucket overflow!" << std::endl;
         }
     }
     //exit(1);
@@ -612,7 +612,8 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
 
     size_t it = 0;
     LFT best_len = cdb_t[0].len;
-    while( true ) {
+    size_t MAX_SLICER_ITERS = 1000; //TODO: make it adjustable
+    while( it < MAX_SLICER_ITERS ) {
 
         if(cdb_t[0].len<len_bound){
             std::cout << it <<  "-th it: solution found of norm:" << cdb_t[0].len << std::endl;
@@ -636,20 +637,13 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
         parallel_sort_cdb();
         //std::cout << "parallel_sort_cdb finished" << std::endl;
 
-
-
-
-
-
         if(it%100==0) {
             std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << "cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
         }
 
-        size_t MAX_SLICER_ITERS = 1000; //TODO: make it adjustable
-        if( it > MAX_SLICER_ITERS ) {
-            std::cerr << "Couldn't find a close vector after " << MAX_SLICER_ITERS << " iterations" << std::endl;
-            return false;
-        }
+
         it++;
     }
+    std::cerr << "Couldn't find a close vector after " << MAX_SLICER_ITERS << " iterations" << std::endl;
+    return false;
 }
