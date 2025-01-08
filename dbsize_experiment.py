@@ -100,6 +100,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
     dbsize_start = g6k.db_size()
     nrand_, _ = batchCVPP_cost(sieve_dim,100,dbsize_start**(1./sieve_dim),1) #100 can be any constant >1
+    print("nrand:", (1./nrand_)**sieve_dim)
 
     cs = []
     es = []
@@ -114,7 +115,6 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
         bs.append( b )
 
     for j in range(n_shrinkings):
-        print("nrand:", (1./nrand_)**sieve_dim)
         print("Running experiment ", j, "out of ", n_shrinkings)
 
         for i in range(Nexperiments):
@@ -155,7 +155,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
             if not succ:
                 #need to define it here since old targets and their rerandomizations
-                #would remain to be in the db_t
+                #would remain to be in db_t
                 slicer = RandomizedSlicer(g6k)
                 slicer.set_nthreads(nthreads);
                 n_per_target = ceil( nrand_param*(1./nrand_)**sieve_dim ) #10.8 for dim=55?
@@ -179,20 +179,20 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
                     #succedeed = False
                     if (all(c==bab_01)):
                         print(f"SUCCESS")
-                        succedeed = True
+                        succeeded = True
                     else:
-                        slicer_fail[j] += 1
-                        succedeed = False
+                        #slicer_fail[j] += 1
+                        succeeded = False
                         print(f"FAIL")
-                    if succ_criterion_factor>0:
-                        found_nrm = (out_gs_reduced@out_gs_reduced)**0.5
-                        if found_nrm < succ_criterion_factor:
-                            print(f"SUCCESS at approxCVP")
-                            succedeed = True
-                        else:
-                            succedeed = False
-                            print(f"FAIL at approxCVP")
-                    if succedeed:
+                    # if succ_criterion_factor>0:
+                    #     found_nrm = (out_gs_reduced@out_gs_reduced)**0.5
+                    #     if found_nrm < succ_criterion_factor:
+                    #         print(f"SUCCESS at approxCVP")
+                    #         succeeded = True
+                    #     else:
+                    #         succeeded = False
+                    #         print(f"FAIL at approxCVP")
+                    if succeeded:
                         slicer_suc[j] += 1
                     else:
                         slicer_fail[j] += 1
@@ -220,8 +220,8 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
 if __name__ == '__main__':
 
-    Nexperiments = 50
-    Nlats = 10
+    Nexperiments = 20
+    Nlats = 12
     path = "saved_lattices/"
     isExist = os.path.exists(path)
     if not isExist:
@@ -231,13 +231,13 @@ if __name__ == '__main__':
             pass
 
 
-    FPLLL.set_precision(250)
+    FPLLL.set_precision(200)
 
     n, betamax, sieve_dim = 60, 45, 60 #also 70, 25, 70 and 80, 25, 80
 
-    nthreads = 1 # number of workers
+    nthreads = 3 # number of workers
     slicer_threads = 1 # threads the slicer will use
-    nrand_param = 1.
+    nrand_param = 5.5
     shrink_factor = 0.7071 # ~ 1/sqrt(2)
     n_shrinkings = 9
     succ_criterion_factor = 1.0 #0 for uSVP check and >0 for approx_fact check

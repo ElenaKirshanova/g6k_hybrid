@@ -2,6 +2,8 @@
 #include "slicer.h"
 #include "fht_lsh.h"
 #include <limits>
+#include <cmath>
+#include <cfloat>
 
 
 inline bool compare_QEntry(QEntry const& lhs, QEntry const& rhs) { return lhs.len > rhs.len; }
@@ -219,6 +221,10 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
 
 }
 
+//bool areEqual(float a, float b, float epsilon) {
+//    return (fabs(a - b) <= epsilon * std::max(1.0f, std::max(a, b)));
+//}
+
 
 inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1, const size_t i2,  std::vector<Entry_t>& transaction_db, int64_t& write_index, LFT new_l, int8_t sign)
 {
@@ -261,9 +267,8 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
         else
         {
             // duplicate
-
-           // std::cout << uid_hash_table_t.check_uid(new_uid) << " " << uid_hash_table_t.insert_uid(new_uid) << std::endl;
-           // std::cout << " duplicate with new_uid = " << new_uid <<  std::endl;
+            //std::cout << uid_hash_table_t.check_uid(new_uid) << " " << uid_hash_table_t.insert_uid(new_uid) << std::endl;
+            //std::cout << " duplicate with new_uid = " << new_uid <<  std::endl;
 //            const size_t S = cdb_t.size();
 //            std::cout << "S = " << S << std::endl;
 //
@@ -271,17 +276,19 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
 //            for(size_t i = 0; i<S; i++)
 //            {
 //                if (db_t[i].uid==new_uid || db_t[i].uid==-new_uid) {
-//                    std::cout << i << "uid_i " << db_t[i].uid <<  " new_uid " << new_uid <<  std::endl;
-//                    for(size_t j = 0; j<n; j++)
-//                        std::cout << db_t[i].yr[j] << " " << new_yr[j] << std::endl;
+//                    //std::cout << i << "uid_i " << db_t[i].uid <<  " new_uid " << new_uid <<  std::endl;
+//
+//                    for(size_t j = 0; j<n; j++) {
+//                        if (!areEqual(db_t[i].yr[j],new_yr[j],FLT_EPSILON))
+//                        {
+//                            std::cout << "collision in uid detected for different vectors" << std::endl;
+//                            std::cout << db_t[i].yr[j] << " " << new_yr[j] << std::endl;
+//                            break;
+//                        }
+//                    }
 //                    break;
 //                }
 //            }
-//            for (const auto & elem: uid_hash_table_t.db_uid[new_uid % uid_hash_table_t.DB_UID_SPLIT])
-//            {
-//                std::cout << elem << " ";
-//            }
-//            std::cout << '\n';
 
             //assert(false);
             return 0;
@@ -639,7 +646,7 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
         //std::cout << "parallel_sort_cdb finished" << std::endl;
 
         if(it%100==0) {
-            std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << "cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
+            std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << " cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
         }
         it++;
     }
