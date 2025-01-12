@@ -23,6 +23,9 @@ public:
         this->n = this->sieve.n;
         sim_hashes_t.reset_compress_pos(this->sieve);
         uid_hash_table_t.reset_hash_function(this->sieve);
+        this->r = this->sieve.r;
+        this->l = this->sieve.l;
+        this->ll = this->sieve.ll;
         //std::cout << "initialized randomized slicer" << std::endl;
     }
 
@@ -34,6 +37,9 @@ public:
 
     friend SimHashes;
     friend UidHashTable;
+    unsigned int ll;
+    unsigned int l;
+    unsigned int r;
 
     enum class RecomputeSlicer // used as a bitmask for the template argument to recompute_data_for_entry below
     {
@@ -56,6 +62,9 @@ public:
     CACHELINE_VARIABLE(rng::threadsafe_rng, rng_t);
 
     unsigned int n;
+    FT slicer_lift_length = 0.7;
+    FT slicer_lifted_error_bound = 1.3;
+    bool terminate = false;
 
     SimHashes sim_hashes_t; // needs to go after rng!
     UidHashTable uid_hash_table_t; //hash table for db_t -- the database of targets
@@ -67,6 +76,8 @@ public:
     size_t sorted_until = 0;
 
     void parallel_sort_cdb();
+
+    inline void lift_and_compare(const Entry_t& e);
 
     void randomize_target_small_task(Entry_t &t);
     void grow_db_with_target(const double t_yr[], size_t n_per_target);

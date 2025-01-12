@@ -53,18 +53,52 @@ inline void RandomizedSlicer::recompute_data_for_entry_t(Entry_t &e)
             e.otf_helper[k] = std::inner_product(e.x.cbegin(), e.x.cbegin()+n, full_muT[i].cbegin()+l,  static_cast<FT>(0.));
         }
     }
-
-    if (consider_lift && params.otf_lift && e.len < params.lift_radius)
+    */
+    if (e.len < slicer_lift_length)
     {
         lift_and_compare(e);
     }
-    */
 
     return;
 }
 
+inline void RandomizedSlicer::lift_and_compare(const Entry_t& e)
+{
+    FT yr_new[r];
+    std::fill(yr_new, yr_new+l,0);
 
-//First element from the list of targets, the second from the siever db
+    for(unsigned int j=0; j<n; ++j)
+    {
+        yr_new[j + l] = e.yr[j];
+    }
+
+    FT len = e.len;
+
+    int i = static_cast<signed int>(l) - 1;
+    const int llb = static_cast<signed int>(ll);
+    for (; i >= llb; --i)
+    {
+
+        FT yi = std::inner_product(yr_new+i+1, yr_new+r, this->sieve.full_muT[i].cbegin()+i+1,  static_cast<FT>(0.));
+        int const c = -std::floor(yi+0.5);
+        yr_new[i] = c;
+        yi += c;
+        len += yi * yi; // * this->sieve.full_rr[i];
+
+        //if (UNLIKELY(len < lift_bounds[i])) lift_and_replace_best_lift(x_full, static_cast<unsigned int>(i));
+        if (len >= slicer_lifted_error_bound) return;
+    }
+
+    if (len<slicer_lifted_error_bound)
+    {
+        std::cout << "error found of norm " << len << std::endl;
+        terminate = true;
+    }
+
+}
+
+
+//First element is from the list of targets, the second is from the siever db
 std::pair<LFT, int8_t> RandomizedSlicer::reduce_to_QEntry_t(CompressedEntry *ce1, CompressedEntry *ce2)
 {
     LFT inner = std::inner_product(db_t[ce1->i].yr.begin(), db_t[ce1->i].yr.begin()+n, this->sieve.db[ce2->i].yr.begin(),  static_cast<LFT>(0.));
@@ -621,7 +655,7 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
     size_t it = 0;
     LFT best_len = cdb_t[0].len;
     size_t MAX_SLICER_ITERS = 1000; //TODO: make it adjustable
-    while( it < MAX_SLICER_ITERS ) {
+    while( it < MAX_SLICER_ITERS && !terminate ) {
 
         if(cdb_t[0].len<len_bound){
             std::cout << it <<  "-th it: solution found of norm:" << cdb_t[0].len << std::endl;
