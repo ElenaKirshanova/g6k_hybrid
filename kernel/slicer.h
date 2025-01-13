@@ -9,6 +9,13 @@ static constexpr unsigned int XPC_SLICER_SAMPLING_THRESHOLD = 75; // XPC Thresho
 static constexpr unsigned int XPC_SLICER_THRESHOLD = 96; // XPC Threshold for iterative slicer sampling
 
 #define REDUCE_DIST_MARGIN 1.008
+#define NLIFTED 20  //max number of returned lifted vectors
+
+#ifndef MAX_SIEVING_DIM
+#define MAX_SIEVING_DIM 128
+#endif
+
+typedef std::array<std::array<LFT,MAX_SIEVING_DIM>,NLIFTED> liftedvecs;
 
 struct Entry_t
 {
@@ -26,7 +33,7 @@ class RandomizedSlicer{
 
 public:
     explicit RandomizedSlicer(Siever &sieve, unsigned long int seed = 0) :
-            sieve(sieve), db_t(), cdb_t(), n(0), rng_t(seed), sim_hashes_t(rng_t.rng_nolock())
+            sieve(sieve), db_t(), cdb_t(), db_lifted(), n(0), rng_t(seed), sim_hashes_t(rng_t.rng_nolock())
     {
         this->n = this->sieve.n;
         sim_hashes_t.reset_compress_pos(this->sieve);
@@ -61,9 +68,11 @@ public:
     CACHELINE_VARIABLE(std::vector<Entry_t>, db_t);             // database of targets
     CACHELINE_VARIABLE(std::vector<CompressedEntry>, cdb_t);  // compressed version, faster access and periodically sorted
     CACHELINE_VARIABLE(std::vector<CompressedEntry>, cdb_t_tmp_copy);
+    CACHELINE_VARIABLE(liftedvecs, db_lifted); //database of lifted vectors
     CACHELINE_VARIABLE(rng::threadsafe_rng, rng_t);
 
     unsigned int n;
+    size_t nlifted = 0;
     FT proj_error_bound = 0.9; //arbitrary values
     FT lifted_error_bound = 1.0; //TODO:throw error if not set
     bool terminate = false;

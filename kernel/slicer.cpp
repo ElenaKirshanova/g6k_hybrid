@@ -3,6 +3,7 @@
 #include "fht_lsh.h"
 
 
+
 inline bool compare_QEntry(QEntry const& lhs, QEntry const& rhs) { return lhs.len > rhs.len; }
 
 ENABLE_BITOPS_FOR_ENUM(RandomizedSlicer::RecomputeSlicer)
@@ -36,7 +37,6 @@ inline void RandomizedSlicer::recompute_data_for_entry_t(Entry_t &e)
 
     CPP17CONSTEXPRIF (rec_c)
     {
-        // e.c = sim_hashes_t.compress(e.yr);
         e.c = this->sieve.sim_hashes.compress(e.yr);
     }
 
@@ -82,20 +82,28 @@ inline void RandomizedSlicer::lift_and_compare(const Entry_t& e)
         yi += c;
         len += yi * yi; // * this->sieve.full_rr[i];
 
-        //if (UNLIKELY(len < lift_bounds[i])) lift_and_replace_best_lift(x_full, static_cast<unsigned int>(i));
         if (len >= lifted_error_bound) return;
     }
 
     if (len<lifted_error_bound)
     {
         std::cout << "error found of norm " << len << std::endl;
-
-        for(unsigned int j=0; j<n; ++j)
+        for(unsigned int j=0; j<r; ++j)
         {
             std::cout << yr_new[j] << " ";
         }
         std::cout << std::endl;
 
+        if (nlifted<NLIFTED)
+        {
+            for(unsigned int j=0; j<r; ++j)
+            {
+                db_lifted[nlifted][j] = yr_new[j];
+            }
+            //std::copy(yr_new.begin(), yr_new.end(), db_lifted[nlifted]); // TODO:fixit
+            nlifted++;
+        }
+        else std::cout << "overflow in db_lifted" << std::endl; //almost never should it happen
         terminate = true;
     }
 
@@ -207,8 +215,6 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
     cdb_t.reserve(N);
     db_t.resize(N);
     cdb_t.resize(N);
-
-
 
     // if(!uid_hash_table_t.insert_uid(input_t.uid)){
     //     std::cerr << "The original target is already in db" << std::endl;
@@ -610,10 +616,6 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
 
         if(cdb_t[0].len<proj_error_bound){
             std::cout << it <<  "-th it: solution found of norm:" << cdb_t[0].len << std::endl;
-#           //transaction_db.clear();
-            //buckets.clear();
-            //buckets_i.clear();
-            //t_queues.clear();
             return true;
         }
 
@@ -637,7 +639,7 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
     }
     if(terminate)
     {
-
+        return true;
     }
     std::cerr << "Couldn't find a close vector after " << MAX_SLICER_ITERS << " iterations" << std::endl;
     return false;
