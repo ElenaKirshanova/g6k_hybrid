@@ -1,9 +1,6 @@
 #include "siever.h"
 #include "slicer.h"
 #include "fht_lsh.h"
-#include <limits>
-#include <cmath>
-#include <cfloat>
 
 
 inline bool compare_QEntry(QEntry const& lhs, QEntry const& rhs) { return lhs.len > rhs.len; }
@@ -54,7 +51,7 @@ inline void RandomizedSlicer::recompute_data_for_entry_t(Entry_t &e)
         }
     }
     */
-    if (e.len < slicer_lift_length)
+    if (e.len < proj_error_bound)
     {
         lift_and_compare(e);
     }
@@ -86,12 +83,19 @@ inline void RandomizedSlicer::lift_and_compare(const Entry_t& e)
         len += yi * yi; // * this->sieve.full_rr[i];
 
         //if (UNLIKELY(len < lift_bounds[i])) lift_and_replace_best_lift(x_full, static_cast<unsigned int>(i));
-        if (len >= slicer_lifted_error_bound) return;
+        if (len >= lifted_error_bound) return;
     }
 
-    if (len<slicer_lifted_error_bound)
+    if (len<lifted_error_bound)
     {
         std::cout << "error found of norm " << len << std::endl;
+
+        for(unsigned int j=0; j<n; ++j)
+        {
+            std::cout << yr_new[j] << " ";
+        }
+        std::cout << std::endl;
+
         terminate = true;
     }
 
@@ -255,11 +259,6 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
 
 }
 
-//bool areEqual(float a, float b, float epsilon) {
-//    return (fabs(a - b) <= epsilon * std::max(1.0f, std::max(a, b)));
-//}
-
-
 inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1, const size_t i2,  std::vector<Entry_t>& transaction_db, int64_t& write_index, LFT new_l, int8_t sign)
 {
     if (new_l < REDUCE_DIST_MARGIN*db_t[i1].len)
@@ -300,31 +299,6 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
         }
         else
         {
-            // duplicate
-            //std::cout << uid_hash_table_t.check_uid(new_uid) << " " << uid_hash_table_t.insert_uid(new_uid) << std::endl;
-            //std::cout << " duplicate with new_uid = " << new_uid <<  std::endl;
-//            const size_t S = cdb_t.size();
-//            std::cout << "S = " << S << std::endl;
-//
-//
-//            for(size_t i = 0; i<S; i++)
-//            {
-//                if (db_t[i].uid==new_uid || db_t[i].uid==-new_uid) {
-//                    //std::cout << i << "uid_i " << db_t[i].uid <<  " new_uid " << new_uid <<  std::endl;
-//
-//                    for(size_t j = 0; j<n; j++) {
-//                        if (!areEqual(db_t[i].yr[j],new_yr[j],FLT_EPSILON))
-//                        {
-//                            std::cout << "collision in uid detected for different vectors" << std::endl;
-//                            std::cout << db_t[i].yr[j] << " " << new_yr[j] << std::endl;
-//                            break;
-//                        }
-//                    }
-//                    break;
-//                }
-//            }
-
-            //assert(false);
             return 0;
         }
     }
@@ -335,27 +309,6 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
     return -1;
 }
 
-// void RandomizedSlicer::slicer_queue_dup_remove_task( std::vector<QEntry> &queue) {
-//     const size_t Q = queue.size();
-//     for( size_t index = 0; index < Q; index++ ) {
-//         size_t i1 = queue[index].i;
-//         size_t i2 = queue[index].j;
-//         UidType new_uid = db_t[i1].uid;
-//         if(queue[index].sign==1)
-//         {
-//             new_uid += db_t[i2].uid;
-//         }
-//         else
-//         {
-//             new_uid -= db_t[i2].uid;
-//         }
-//         //std::cout << " new_uid: " << new_uid << std::endl;
-//         // if already present, use sign as duplicate marker
-//         if (uid_hash_table_t.check_uid_unsafe(new_uid) )
-//             queue[index].sign = 0;
-//             //std::cout << "duplicate detected on positions" << queue[index].i << " " << queue[index].j << std::endl;
-//     }
-// }
 
 void RandomizedSlicer::slicer_queue_create_task( const size_t t_id, const std::vector<QEntry> &queue, std::vector<Entry_t> &transaction_db, int64_t &write_index) {
     const size_t S = cdb_t.size();
@@ -380,7 +333,7 @@ void RandomizedSlicer::slicer_queue_create_task( const size_t t_id, const std::v
 
 bool RandomizedSlicer::slicer_replace_in_db(size_t cdb_index, Entry_t &e)
 {
-    CompressedEntry &ce = cdb_t[cdb_index]; // abbreviation
+    CompressedEntry &ce = cdb_t[cdb_index];
 
     if (REDUCE_DIST_MARGIN * e.len >= ce.len)
     {
@@ -640,7 +593,7 @@ void RandomizedSlicer::slicer_process_buckets_task(const size_t t_id,
 }
 
 
-bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t multi_hash, LFT len_bound, size_t max_slicer_iters ){
+bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t multi_hash){
 
     //std::cout << "nr_buckets_aim:" << nr_buckets_aim << " blocks: " << blocks << " multi_hash: " <<multi_hash <<  std::endl;
     parallel_sort_cdb();
@@ -653,11 +606,9 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
     //TODO: assert that all input parameters are equal to those from bdgl_sieve
 
     size_t it = 0;
-    LFT best_len = cdb_t[0].len;
-    size_t MAX_SLICER_ITERS = 1000; //TODO: make it adjustable
     while( it < MAX_SLICER_ITERS && !terminate ) {
 
-        if(cdb_t[0].len<len_bound){
+        if(cdb_t[0].len<proj_error_bound){
             std::cout << it <<  "-th it: solution found of norm:" << cdb_t[0].len << std::endl;
 #           //transaction_db.clear();
             //buckets.clear();
@@ -683,6 +634,10 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
             std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << " cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
         }
         it++;
+    }
+    if(terminate)
+    {
+
     }
     std::cerr << "Couldn't find a close vector after " << MAX_SLICER_ITERS << " iterations" << std::endl;
     return false;

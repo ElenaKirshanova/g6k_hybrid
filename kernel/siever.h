@@ -286,14 +286,7 @@ struct Entry
     std::array<LFT,OTF_LIFT_HELPER_DIM> otf_helper; // auxiliary information to accelerate otf lifting of pairs
 };
 
-struct Entry_t
-{
-    std::array<LFT,MAX_SIEVING_DIM> yr;     // Vector coordinates in gso basis renormalized by the rr[i] (for faster inner product)
-    CompressedVector c;                     // Compressed vector (i.e. a simhash)
-    UidType uid;                            // Unique identifier for collision detection (essentially a hash)
-    FT len = 0.;                            // (squared) length of the vector, renormalized by the local gaussian heuristic
-    std::array<LFT,OTF_LIFT_HELPER_DIM> otf_helper; // auxiliary information to accelerate otf lifting of pairs
-};
+
 
 struct QEntry {
     size_t i,j;

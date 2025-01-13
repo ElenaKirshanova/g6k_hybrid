@@ -10,6 +10,14 @@ static constexpr unsigned int XPC_SLICER_THRESHOLD = 96; // XPC Threshold for it
 
 #define REDUCE_DIST_MARGIN 1.008
 
+struct Entry_t
+{
+    std::array<LFT,MAX_SIEVING_DIM> yr;     // Vector coordinates in gso basis renormalized by the rr[i] (for faster inner product)
+    CompressedVector c;                     // Compressed vector (i.e. a simhash)
+    UidType uid;                            // Unique identifier for collision detection (essentially a hash)
+    FT len = 0.;                            // (squared) length of the vector, renormalized by the local gaussian heuristic
+    //std::array<LFT,OTF_LIFT_HELPER_DIM> otf_helper; // auxiliary information to accelerate otf lifting of pairs
+};
 
 struct QEntry;
 class ProductLSH;
@@ -28,12 +36,6 @@ public:
         this->ll = this->sieve.ll;
         //std::cout << "initialized randomized slicer" << std::endl;
     }
-
-    //~RandomizedSlicer(){
-    //    this->db_t.clear();
-    //    this->cdb_t.clear();
-    //    this->cdb_t_tmp_copy.clear();
-    //}
 
     friend SimHashes;
     friend UidHashTable;
@@ -62,15 +64,15 @@ public:
     CACHELINE_VARIABLE(rng::threadsafe_rng, rng_t);
 
     unsigned int n;
-    FT slicer_lift_length = 0.7;
-    FT slicer_lifted_error_bound = 1.3;
+    FT proj_error_bound = 0.9; //arbitrary values
+    FT lifted_error_bound = 1.0; //TODO:throw error if not set
     bool terminate = false;
+    size_t MAX_SLICER_ITERS = 1000; //TODO:throw error if not set
 
     SimHashes sim_hashes_t; // needs to go after rng!
     UidHashTable uid_hash_table_t; //hash table for db_t -- the database of targets
 
     size_t threads = 1;
-
 
     thread_pool::thread_pool threadpool;
     size_t sorted_until = 0;
@@ -82,7 +84,7 @@ public:
     void randomize_target_small_task(Entry_t &t);
     void grow_db_with_target(const double t_yr[], size_t n_per_target);
 
-    bool bdgl_like_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t multi_hash, LFT len_bound, size_t max_slicer_iters );
+    bool bdgl_like_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t multi_hash);
     void slicer_bucketing(const size_t blocks, const size_t multi_hash, const size_t nr_buckets_aim,
                                             std::vector<uint32_t> &buckets, std::vector<atomic_size_t_wrapper> &buckets_index);
     void slicer_bucketing_task(const size_t t_id, std::vector<uint32_t> &buckets, std::vector<atomic_size_t_wrapper> &buckets_index, ProductLSH &lsh);
@@ -101,6 +103,9 @@ public:
     bool slicer_replace_in_db(size_t cdb_index, Entry_t &e);
 
     void set_nthreads(size_t nt){ this->threads = nt;}
+    void set_proj_error_bound(FT len) {this->proj_error_bound = len;}
+    void set_lifted_error_bound(FT len) {this->lifted_error_bound = len;}
+    void set_max_slicer_interations(size_t maxiter){this->MAX_SLICER_ITERS = maxiter;}
 
     template<RecomputeSlicer what_to_recompute>
     inline void recompute_data_for_entry_t(Entry_t &e);

@@ -65,7 +65,7 @@ if __name__ == "__main__":
     print(f"dbsize: {len(g6k)}")
 
     nbab_succ, nsli_succ = 0, 0
-    nexp = 5
+    nexp = 1
 
     for _ in range(nexp):
         c = [ randrange(-33,34) for j in range(n) ]
@@ -150,10 +150,14 @@ if __name__ == "__main__":
 
             #out_gs = g6k.randomized_iterative_slice([float(tt) for tt in t_gs],samples=1000)
             slicer = RandomizedSlicer(g6k)
-            slicer.set_nthreads(2);
+            slicer.set_nthreads(2)
+            slicer.set_proj_error_bound(1.01*(e_@e_))
+            slicer.set_lifted_error_bound((e@e))
+            slicer.set_max_slicer_interations(450)
 
             print("target:", [float(tt) for tt in t_gs_reduced])
             print("dbsize", g6k.db_size())
+
 
             slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=2*10**4)
 
@@ -173,7 +177,7 @@ if __name__ == "__main__":
             # print("target length:", 1.01*(e_@e_))
             #slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], (1.01*(e_@e_)))
 
-            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], (1.005*(e_@e_)))
+            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
             iterator = slicer.itervalues_t()
             for tmp in iterator:
                 out_gs_reduced = np.array(tmp)  #cdb[0]

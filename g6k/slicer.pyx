@@ -29,9 +29,18 @@ cdef class RandomizedSlicer(object):
     def set_nthreads(self, size_t nt):
         self._core.set_nthreads(nt)
 
-    def bdgl_like_sieve(self, size_t nr_buckets, size_t blocks, size_t multi_hash, len_bound, size_t max_slicer_iters = 256):
+    def set_proj_error_bound(self, len):
+        self._core.set_proj_error_bound(len)
+
+    def set_lifted_error_bound(self, len):
+        self._core.set_lifted_error_bound(len)
+
+    def set_max_slicer_interations(self, maxiter):
+        self._core.set_max_slicer_interations(maxiter)
+
+    def bdgl_like_sieve(self, size_t nr_buckets, size_t blocks, size_t multi_hash):
         sig_on()
-        self._core.bdgl_like_sieve(nr_buckets, blocks, multi_hash, len_bound, max_slicer_iters)
+        self._core.bdgl_like_sieve(nr_buckets, blocks, multi_hash)
         sig_off()
 
     def itervalues_t(self):
