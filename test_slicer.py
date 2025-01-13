@@ -152,7 +152,7 @@ if __name__ == "__main__":
             slicer = RandomizedSlicer(g6k)
             slicer.set_nthreads(2)
             slicer.set_proj_error_bound(1.01*(e_@e_))
-            slicer.set_lifted_error_bound((e@e))
+            slicer.set_lifted_error_bound(1.01*(e@e))
             slicer.set_max_slicer_interations(450)
 
             print("target:", [float(tt) for tt in t_gs_reduced])

@@ -64,7 +64,7 @@ inline void RandomizedSlicer::lift_and_compare(const Entry_t& e)
     FT yr_new[r];
     std::fill(yr_new, yr_new+l,0);
 
-    for(unsigned int j=0; j<n; ++j)
+    for(unsigned int j=0; j<n; j++)
     {
         yr_new[j + l] = e.yr[j];
     }
