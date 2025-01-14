@@ -1357,7 +1357,7 @@ cdef class Siever(object):
       with open( filename, "rb" ) as file:
           data = pickle.load( file )
       B = data["B"]
-      ll, l, r = data["ll"], data["l"], data["r"]
+      ll, l, r = 0, data["l"], data["r"]
       coeffs = data["coeffs"]
 
       B = IntegerMatrix.from_matrix( B, int_type="long" )
