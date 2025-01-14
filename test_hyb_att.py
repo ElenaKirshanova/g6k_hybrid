@@ -16,6 +16,11 @@ from test_alg2 import alg_2_batched_debug
 
 from preprocessing import load_lwe
 
+try:
+    from multiprocess import Pool  # you might need pip install multiprocess
+except ModuleNotFoundError:
+    from multiprocessing import Pool
+
 inp_path = "lwe instances/saved_lattices/"
 out_path = "lwe instances/reduced_lattices/"
 max_nsampl = 2**10
@@ -125,7 +130,7 @@ def alg_3_debug_v2(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthrea
     print()
     return argminv
 
-def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
+def alg_3_debug(g6k,H11, B, target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
     # - - - prepare targets - - -
     then_start = perf_counter()
     dim = B.nrows
@@ -189,111 +194,135 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=
         cntr+=1
     return argminv
 
+def run_experiment(lat_index, params, stats_dict):
+    n, k, q, eta = params["n"], params["k"], params["q"], params["eta"]
+    n_guess_coord, n_slicer_coord = params["n_guess_coord"], params["n_slicer_coord"]
+
+    ft = "ld" if 2*k*n<140 else ( "dd" if config.have_qd else "mpfr")
+    dim = 2*k*n
+
+    print(f"float_type: {ft}")
+    succ_cntr = 0
+    ex_cntr = 0
+
+    filename_g6kdump = f"g6kdump_{n}_{q}_{eta}_{k}_{lat_index}_{n_guess_coord}_{n_slicer_coord}.pkl"
+    # with open(filename_g6kdump,"rb") as g6kfile:
+    A, _, _, _, bse = load_lwe(n,q,eta,k,lat_index)
+
+    Binit = [ [int(0) for i in range(2*k*n)] for j in range(2*k*n) ]
+    for i in range( k*n ):
+        Binit[i][i] = int( q )
+    for i in range(k*n, 2*k*n):
+        Binit[i][i] = 1
+    for i in range(k*n, 2*k*n):
+        for j in range(k*n):
+            Binit[i][j] = int( A[i-k*n,j] )
+
+    with open(out_path+f"kyb_prehybrid_{n}_{q}_{eta}_{k}_{lat_index}_{n_guess_coord}_{327}", "rb") as file:
+        H11 = pickle.load(file)["B"]
+    H11r, H11c = H11.nrows, H11.ncols
+    g6k = Siever.restore_from_file( out_path + filename_g6kdump )
+    g6k.initialize_local(H11r-n_slicer_coord, H11r-n_slicer_coord, H11r)
+    g6k(alg="bdgl2")
+    then = perf_counter()
+    G = g6k.M
+
+    # g6k(alg="bdgl2")
+    # print(f"Sieving-1 done in {perf_counter() - then}")
+
+
+    gh = gaussian_heuristic( g6k.M.r()[-n_slicer_coord:] )
+    print(f"r / r = {(g6k.M.r()[-n_slicer_coord] / g6k.M.r()[-1])**0.5}")
+    for (b, s, e) in bse:
+        ex_cntr+=1
+        print(f"running exp # {ex_cntr}")
+        ex_timer = perf_counter()
+        assert ( all( (s@A+e)%q == b ) ), f"wrong lwe instance! {(A@s+e)%q , b}"
+        print(f"len {len(Binit), len(Binit[0])}")
+        # assert ( all( ( np.concatenate([b,n*[0]]) == (np.concatenate([n*[0],s])@Binit+e)%q) ) ) , f"non-aligned lwe instance! { b , (np.concatenate([n*[0],s])@Binit+e)%q }"
+        # print( f"non-aligned lwe instance! { b , (np.concatenate([n*[0],s])@Binit+np.concatenate([e,n*[0]]))%q }" )
+
+        answer = np.concatenate( [b-e,s] )
+
+        print(f"Database size: {len(g6k)}")
+
+        t = np.concatenate([b,n*[0]])
+        e_ = np.concatenate([e,-s])[:-n_guess_coord]
+        e_ = from_canonical_scaled( G,e_,offset=n_slicer_coord )
+
+        dist_sq_bnd = e_@e_
+        gh_sub = gaussian_heuristic(G.r()[-n_slicer_coord:])
+        dist_bnd = dist_sq_bnd**0.5
+        dist_threshold = ( G.r()[-n_slicer_coord] / gh_sub )**0.5
+        print(f"dist_bnd: {dist_bnd} | dist_threshold: {dist_threshold} | ratio: {dist_bnd/dist_threshold}")
+        print(f"dist_sq_bnd: {dist_sq_bnd}")
+        print(f"len(e_): {len(e_)} G.M.nrows(): {G.B.nrows}")
+        rs = np.array( G.r()[-n_slicer_coord:] ) / gh_sub
+        rs = np.array( [ sqrt(rr) for rr in rs ] )
+
+        B = IntegerMatrix.from_matrix(Binit)
+
+        len_bound = dist_sq_bnd
+        v = alg_3_debug(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None)
+        print(f"v: {v}")
+        print(f"vs: {np.concatenate([b-e,s]) }")
+        # v = np.concatenate([b-e,s]) #uncomment this to verify that does indeed belong to B
+        print(f" - - - - - - ")
+
+        LR2 = LatticeReduction( B )
+        # for beta in range(4,15):
+        #     LR2.BKZ(beta, tours=2)
+        cv = LR2.gso.babai( v )
+        v2 = LR2.basis.multiply_left( cv )
+        succ_alg_3_debug = all( answer==v2 )
+
+        sli_succ = answer==v2
+        print(f"slicer:\n {sli_succ}")
+        if all(sli_succ):
+            succ_cntr+=1
+        stats_dict[(n,lat_index, n_slicer_coord, n_guess_coord, ex_cntr)] = {
+            "walltime": perf_counter() - ex_timer, 
+            "dist_bnd": dist_bnd, 
+            "succ": all(sli_succ),
+            "key_num": 0 #number of guessed keys
+        }
+
+        print(f" - - - {all(answer==v2)} - - - ")
+    return stats_dict
+
 if __name__=="__main__":
     n, k = 140, 1
     q, eta = 3329, 3
     latnum = 10
     n_guess_coord, n_slicer_coord = 15, 48
-    # sieve_dim_max = n_slicer_coord
+    params = {}
+    params["n"], params["k"], params["q"], params["eta"] = n, k, q, eta
+    params["n_guess_coord"], params["n_slicer_coord"] = n_guess_coord, n_slicer_coord
 
-    nthreads = 5
-    dim = 2*k*n
-    ft = "ld" if 2*k*n<140 else ( "dd" if config.have_qd else "mpfr")
-    print(f"float_type: {ft}")
+    nthreads = 2
+    nworkers = 2
 
     succ_cntr = 0
     ex_cntr = 0
-    stats_dict = {}
+    # stats_dicts = []
+    # for lat_index in range(latnum):
+    #     stats_dict = {}
+    #     run_experiment(lat_index, params, stats_dict)
+    #     stats_dict_agr.update(stats_dict)
+
+    output = []
+    pool = Pool( processes = nworkers )
+    tasks = []
     for lat_index in range(latnum):
-        filename_g6kdump = f"g6kdump_{n}_{q}_{eta}_{k}_{lat_index}_{n_guess_coord}_{n_slicer_coord}.pkl"
-        # with open(filename_g6kdump,"rb") as g6kfile:
-        A, _, _, _, bse = load_lwe(n,q,eta,k,lat_index)
+        output.append({})
+        tasks.append( pool.apply_async(
+            run_experiment, (lat_index, params, output[lat_index])
+            ) )
+        
+    stats_dict_agr = {}
+    for t in tasks:
+            # output.append( t.get() )
+            stats_dict_agr.update(t.get())
 
-        Binit = [ [int(0) for i in range(2*k*n)] for j in range(2*k*n) ]
-        for i in range( k*n ):
-            Binit[i][i] = int( q )
-        for i in range(k*n, 2*k*n):
-            Binit[i][i] = 1
-        for i in range(k*n, 2*k*n):
-            for j in range(k*n):
-                Binit[i][j] = int( A[i-k*n,j] )
-
-        with open(out_path+f"kyb_prehybrid_{n}_{q}_{eta}_{k}_{lat_index}_{n_guess_coord}_{327}", "rb") as file:
-            H11 = pickle.load(file)["B"]
-        H11r, H11c = H11.nrows, H11.ncols
-        g6k = Siever.restore_from_file( out_path + filename_g6kdump )
-        g6k.initialize_local(H11r-n_slicer_coord, H11r-n_slicer_coord, H11r)
-        g6k(alg="bdgl2")
-        then = perf_counter()
-        G = g6k.M
-
-        # g6k(alg="bdgl2")
-        # print(f"Sieving-1 done in {perf_counter() - then}")
-
-
-        gh = gaussian_heuristic( g6k.M.r()[-n_slicer_coord:] )
-        print(f"r / r = {(g6k.M.r()[-n_slicer_coord] / g6k.M.r()[-1])**0.5}")
-        for (b, s, e) in bse:
-            ex_cntr+=1
-            print(f"running exp # {ex_cntr}")
-            ex_timer = perf_counter()
-            assert ( all( (s@A+e)%q == b ) ), f"wrong lwe instance! {(A@s+e)%q , b}"
-            print(f"len {len(Binit), len(Binit[0])}")
-            # assert ( all( ( np.concatenate([b,n*[0]]) == (np.concatenate([n*[0],s])@Binit+e)%q) ) ) , f"non-aligned lwe instance! { b , (np.concatenate([n*[0],s])@Binit+e)%q }"
-            # print( f"non-aligned lwe instance! { b , (np.concatenate([n*[0],s])@Binit+np.concatenate([e,n*[0]]))%q }" )
-
-            answer = np.concatenate( [b-e,s] )
-
-            print(f"Database size: {len(g6k)}")
-
-            t = np.concatenate([b,n*[0]])
-            e_ = np.concatenate([e,-s])[:-n_guess_coord]
-            e_ = from_canonical_scaled( G,e_,offset=n_slicer_coord )
-
-            dist_sq_bnd = e_@e_
-            gh_sub = gaussian_heuristic(G.r()[-n_slicer_coord:])
-            dist_bnd = dist_sq_bnd**0.5
-            dist_threshold = ( G.r()[-n_slicer_coord] / gh_sub )**0.5
-            print(f"dist_bnd: {dist_bnd} | dist_threshold: {dist_threshold} | ratio: {dist_bnd/dist_threshold}")
-            print(f"dist_sq_bnd: {dist_sq_bnd}")
-            print(f"len(e_): {len(e_)} G.M.nrows(): {G.B.nrows}")
-            rs = np.array( G.r()[-n_slicer_coord:] ) / gh_sub
-            rs = np.array( [ sqrt(rr) for rr in rs ] )
-
-            B = IntegerMatrix.from_matrix(Binit)
-
-            len_bound = dist_sq_bnd
-            v = alg_3_debug(g6k,H11,t,n_guess_coord, eta, s, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None)
-            print(f"v: {v}")
-            print(f"vs: {np.concatenate([b-e,s]) }")
-            # v = np.concatenate([b-e,s]) #uncomment this to verify that does indeed belong to B
-            print(f" - - - - - - ")
-
-            LR2 = LatticeReduction( B )
-            # for beta in range(4,15):
-            #     LR2.BKZ(beta, tours=2)
-            cv = LR2.gso.babai( v )
-            v2 = LR2.basis.multiply_left( cv )
-            succ_alg_3_debug = all( answer==v2 )
-
-            sli_succ = answer==v2
-            print(f"slicer:\n {sli_succ}")
-            if all(sli_succ):
-                succ_cntr+=1
-                stats_dict[(n,lat_index, n_slicer_coord, n_guess_coord, ex_cntr)] = perf_counter() - ex_timer, dist_bnd, all(sli_succ)
-
-            print(f" - - - {all(answer==v2)} - - - ")
-            # print(f"- - - Now slicer with guessing - - -")
-            # len_bound = dist_sq_bnd
-            # vbab = np.array( alg_3_debug_v2( g6k,H11,t,n_guess_coord, eta, s, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None ) )
-            # print(f"babai:\n {answer==vbab}")
-            # print(f"Next vector...")
-            # succ_alg_3_debug_v2 = all( answer==vbab )
-            # print(f"succ_alg_3_debug vs succ_alg_3_debug_v2: {succ_alg_3_debug, succ_alg_3_debug_v2}")
-            #
-            # H11prime = g6k.M.B
-            # for ii in range(H11.nrows):
-            #     for jj in range(H11.ncols):
-            #         assert( H11[ii][jj] == g6k.M.B[ii][jj] )
-    print(ex_cntr, succ_cntr)
-    print(stats_dict)
+    # print(ex_cntr, succ_cntr)
+    print(stats_dict_agr)
