@@ -306,14 +306,14 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
 
     print(f"t_gs_reduced: {t_gs_reduced}")
     print(f"t_gs_reduced norm: {t_gs_reduced@t_gs_reduced}")
-    iterator = slicer.itervalues_t()
+    iterator = slicer.itervalues_cdb_t()
     for tmp in iterator:
         out_gs_reduced = np.array(tmp)  #db_t[0] is expected to contain the error vector
         cur_nrm_sq = out_gs_reduced@out_gs_reduced
         break
     # print(f"cur_nrm ={cur_nrm_sq**0.5}")
 
-    iterator = slicer.itervalues_t()
+    iterator = slicer.itervalues_cdb_t()
     nrms = []
     for tmp in iterator:
         tmp = np.array(tmp)  #db_t[0] is expected to contain the error vector

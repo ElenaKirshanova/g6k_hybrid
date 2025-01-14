@@ -195,6 +195,7 @@ def alg_3_debug(g6k,H11, B, target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthre
     return argminv
 
 def run_experiment(lat_index, params, stats_dict):
+    nthreads = params["nthreads"]
     n, k, q, eta = params["n"], params["k"], params["q"], params["eta"]
     n_guess_coord, n_slicer_coord = params["n_guess_coord"], params["n_slicer_coord"]
 
@@ -222,7 +223,7 @@ def run_experiment(lat_index, params, stats_dict):
         H11 = pickle.load(file)["B"]
     H11r, H11c = H11.nrows, H11.ncols
     g6k = Siever.restore_from_file( out_path + filename_g6kdump )
-    g6k.initialize_local(H11r-n_slicer_coord, H11r-n_slicer_coord, H11r)
+    g6k.initialize_local(0, H11r-n_slicer_coord, H11r)
     g6k(alg="bdgl2")
     then = perf_counter()
     G = g6k.M
@@ -296,11 +297,12 @@ if __name__=="__main__":
     latnum = 10
     n_guess_coord, n_slicer_coord = 15, 48
     params = {}
-    params["n"], params["k"], params["q"], params["eta"] = n, k, q, eta
-    params["n_guess_coord"], params["n_slicer_coord"] = n_guess_coord, n_slicer_coord
-
     nthreads = 2
     nworkers = 2
+
+    params["nthreads"] = nthreads
+    params["n"], params["k"], params["q"], params["eta"] = n, k, q, eta
+    params["n_guess_coord"], params["n_slicer_coord"] = n_guess_coord, n_slicer_coord
 
     succ_cntr = 0
     ex_cntr = 0

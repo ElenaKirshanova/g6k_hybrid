@@ -65,7 +65,7 @@ if __name__ == "__main__":
     print(f"dbsize: {len(g6k)}")
 
     nbab_succ, nsli_succ = 0, 0
-    nexp = 1
+    nexp = 20
 
     for _ in range(nexp):
         c = [ randrange(-33,34) for j in range(n) ]
