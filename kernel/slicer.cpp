@@ -61,7 +61,9 @@ inline void RandomizedSlicer::recompute_data_for_entry_t(Entry_t &e)
 
 inline void RandomizedSlicer::lift_and_compare(const Entry_t& e)
 {
-    FT yr_new[r];
+    //
+    //yr_new.yr
+    LFT yr_new[r];
     std::fill(yr_new, yr_new+l,0);
 
     for(unsigned int j=0; j<n; j++)
@@ -76,7 +78,7 @@ inline void RandomizedSlicer::lift_and_compare(const Entry_t& e)
     for (; i >= llb; --i)
     {
 
-        FT yi = std::inner_product(yr_new+i+1, yr_new+r, this->sieve.full_muT[i].cbegin()+i+1,  static_cast<FT>(0.));
+        LFT yi = std::inner_product(yr_new+i+1, yr_new+r, this->sieve.full_muT[i].cbegin()+i+1,  static_cast<FT>(0.));
         int const c = -std::floor(yi+0.5);
         yr_new[i] = c;
         yi += c;
@@ -94,14 +96,18 @@ inline void RandomizedSlicer::lift_and_compare(const Entry_t& e)
         }
         std::cout << std::endl;
 
-        if (nlifted<NLIFTED)
+
+
+        if (db_lifted.size()<NLIFTED)
         {
+            Entry_lifted yr_new_entry;
+
             for(unsigned int j=0; j<r; ++j)
             {
-                db_lifted[nlifted][j] = yr_new[j];
+                yr_new_entry.yr[j] = yr_new[j];
             }
-            //std::copy(yr_new.begin(), yr_new.end(), db_lifted[nlifted]); // TODO:fixit
-            nlifted++;
+            db_lifted.push_back(yr_new_entry);
+
         }
         else std::cout << "overflow in db_lifted" << std::endl; //almost never should it happen
         terminate = true;

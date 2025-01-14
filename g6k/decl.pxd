@@ -25,6 +25,7 @@ cdef extern from "../kernel/siever.h" nogil:
 
     cdef const int  MAX_SIEVING_DIM
 
+
     ctypedef double FT
     ctypedef float  LFT
     ctypedef int16_t ZT
@@ -179,9 +180,7 @@ cdef extern from "../kernel/siever.h" nogil:
         #CompressedVector c
         #uint64_t uid
 
-    cdef struct Entry_t:
-      vector[LFT] yr
-      FT len
+
 
     cdef struct CompressedEntry:
     # CompressedVector c
@@ -192,6 +191,7 @@ cdef extern from "../kernel/siever.h" nogil:
     cdef struct LiftEntry:
         vector[ZT] x
         FT len
+
 
     # internal function, not exported
     # bool compare_CE(CompressedEntry lhs, CompressedEntry rhs)
@@ -295,7 +295,15 @@ cdef extern from "../kernel/siever.h" nogil:
 
 cdef extern from "../kernel/slicer.h" nogil:
 
+    cdef struct Entry_t:
+        vector[float] yr
+        FT len
+
+    cdef struct Entry_lifted:
+        vector[float] yr
+
     cdef cppclass RandomizedSlicer:
+
         RandomizedSlicer(Siever &sieve, unsigned long int seed)
         void grow_db_with_target( double* t_yr, size_t n_per_target);
         void bdgl_like_sieve(size_t nr_buckets, size_t blocks, size_t multi_hash);
@@ -305,6 +313,11 @@ cdef extern from "../kernel/slicer.h" nogil:
         void set_max_slicer_interations(size_t maxiter);
 
         unsigned int n
+        unsigned int r
         size_t db_t_size()
         vector[Entry_t] db_t
         vector[CompressedEntry] cdb_t
+        vector[Entry_lifted] db_lifted
+        #FT db_lifted[NLIFTED][MAX_SIEVING_DIM]
+
+

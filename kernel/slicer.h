@@ -15,7 +15,7 @@ static constexpr unsigned int XPC_SLICER_THRESHOLD = 96; // XPC Threshold for it
 #define MAX_SIEVING_DIM 128
 #endif
 
-typedef std::array<std::array<LFT,MAX_SIEVING_DIM>,NLIFTED> liftedvecs;
+typedef std::vector<std::array<FT,MAX_SIEVING_DIM>> liftedvecs;
 
 struct Entry_t
 {
@@ -24,6 +24,11 @@ struct Entry_t
     UidType uid;                            // Unique identifier for collision detection (essentially a hash)
     FT len = 0.;                            // (squared) length of the vector, renormalized by the local gaussian heuristic
     //std::array<LFT,OTF_LIFT_HELPER_DIM> otf_helper; // auxiliary information to accelerate otf lifting of pairs, commented out for slicer
+};
+
+struct Entry_lifted
+{
+    std::array<LFT,MAX_SIEVING_DIM> yr;
 };
 
 struct QEntry;
@@ -67,11 +72,10 @@ public:
     CACHELINE_VARIABLE(std::vector<Entry_t>, db_t);             // database of targets
     CACHELINE_VARIABLE(std::vector<CompressedEntry>, cdb_t);  // compressed version, faster access and periodically sorted
     CACHELINE_VARIABLE(std::vector<CompressedEntry>, cdb_t_tmp_copy); // for sorting
-    CACHELINE_VARIABLE(liftedvecs, db_lifted); //database of lifted vectors
+    CACHELINE_VARIABLE(std::vector<Entry_lifted>, db_lifted); //database of lifted vectors
     CACHELINE_VARIABLE(rng::threadsafe_rng, rng_t);
 
     unsigned int n;
-    size_t nlifted = 0;
     FT proj_error_bound = 0.9; //arbitrary values
     FT lifted_error_bound = 1.0; //TODO:throw error if not set
     bool terminate = false;

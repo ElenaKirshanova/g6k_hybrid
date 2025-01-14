@@ -5,10 +5,10 @@ from numpy import zeros, float32, float64, int64, matrix, array, where, matmul, 
 from cysignals.signals cimport sig_on, sig_off
 cimport numpy as np
 
-#from siever import Siever
+
 from cython.operator import dereference
 from decl cimport MAX_SIEVING_DIM
-from decl cimport CompressedEntry, Entry_t
+from decl cimport CompressedEntry, Entry_t, Entry_lifted
 
 cdef class RandomizedSlicer(object):
 
@@ -43,9 +43,9 @@ cdef class RandomizedSlicer(object):
         self._core.bdgl_like_sieve(nr_buckets, blocks, multi_hash)
         sig_off()
 
-    def itervalues_t(self):
+    def itervalues_cdb_t(self):
         """
-        Iterate over all entries in the target database (in the order determined by the compressed database)
+        Iterate over all entries in the target database (in the order determined by the compressed database cdb_t)
 
         """
         cdef Entry_t *e;
@@ -53,4 +53,15 @@ cdef class RandomizedSlicer(object):
         for i in range(self._core.cdb_t.size()):
             e = &self._core.db_t[self._core.cdb_t[i].i]
             r = [e.yr[j] for j in range(self._core.n)]
+            yield tuple(r)
+
+    def itervalues_db_lifted(self):
+        """
+        Iterate over the db of lifted target vectors
+        """
+        cdef Entry_lifted *e;
+
+        for i in range(self._core.db_lifted.size()):
+            e = &self._core.db_lifted[i]
+            r = [e.yr[j] for j in range(self._core.r)]
             yield tuple(r)

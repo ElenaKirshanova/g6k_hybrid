@@ -9,7 +9,7 @@ import sys
 if __name__ == "__main__":
 
     FPLLL.set_precision(250)
-    n, betamax, sieve_dim = 65, 55, 65
+    n, betamax, sieve_dim = 50, 45, 50
     ft = "ld" if n<70 else ( "dd" if config.have_qd else "mpfr")
     # - - - try load a lattice - - -
     filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
@@ -178,11 +178,18 @@ if __name__ == "__main__":
             #slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], (1.01*(e_@e_)))
 
             slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
-            iterator = slicer.itervalues_t()
+            iterator = slicer.itervalues_cdb_t()
             for tmp in iterator:
                 out_gs_reduced = np.array(tmp)  #cdb[0]
                 break
             out_gs = out_gs_reduced + t_gs_shift
+
+            #EXAMPLE OF itervalues_db_lifted. TO ADAPT, REMOVE THE ABOVE
+            iterator2 = slicer.itervalues_db_lifted()
+            for tmp in iterator2:
+                res_lifted = np.array(tmp)
+                print(res_lifted)
+                break
 
             # - - - Check - - - -
             out = to_canonical_scaled( G,out_gs,offset=sieve_dim )
