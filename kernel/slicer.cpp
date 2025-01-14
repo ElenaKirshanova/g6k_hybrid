@@ -216,17 +216,12 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
     db_t.resize(N);
     cdb_t.resize(N);
 
-    // if(!uid_hash_table_t.insert_uid(input_t.uid)){
-    //     std::cerr << "The original target is already in db" << std::endl;
-    //     exit(1);
-    // }
     db_t[start] = input_t;
     CompressedEntry ce;
     ce.len = input_t.len;
     ce.c = input_t.c;
     ce.i = start;
     cdb_t[start] = ce;
-    // std::cout << "ce.len  is" << ce.len << std::endl;
 
     for( size_t i = start+1; i < N; i++)
     {
@@ -269,17 +264,6 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
 {
     if (new_l < REDUCE_DIST_MARGIN*db_t[i1].len)
     {
-        /*
-        std::cout << "db_t[i2].uid: " << db_t[i2].uid << std::endl;
-        for(unsigned int i=0; i<n; i++){
-            std::cout << db_t[i1].yr[i] << " ";
-        }
-        std::cout << std::endl;
-        for(unsigned int i=0; i<n; i++){
-            std::cout << this->sieve.db[i2].yr[i] << " ";
-        }
-        std::cout << std::endl;
-        */
 
         std::array<LFT,MAX_SIEVING_DIM> new_yr = db_t[i1].yr;
         this->sieve.addsub_vec(new_yr,  this->sieve.db[i2].yr, static_cast<ZT>(sign));
@@ -292,11 +276,6 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
                 Entry_t& new_entry = transaction_db[index];
                 new_entry.yr = new_yr;
                 recompute_data_for_entry_t<RandomizedSlicer::RecomputeSlicer::recompute_all>(new_entry);
-                //std::cout << "new_entry.len: " << new_entry.len << std::endl;
-                //std::cout << std::endl;
-
-
-                //exit(1);
 
                 return 1;
             }
@@ -320,7 +299,6 @@ void RandomizedSlicer::slicer_queue_create_task( const size_t t_id, const std::v
     const size_t S = cdb_t.size();
     const size_t Q = queue.size();
 
-    //const size_t insert_after = S-1-t_id-threads*write_index;
     for(unsigned int index = 0; index < Q; index++ )  {
 
         if( queue[index].sign == 0 ){
@@ -366,17 +344,6 @@ size_t RandomizedSlicer::slicer_queue_insert_task( const size_t t_id, std::vecto
 }
 
 void RandomizedSlicer::slicer_queue(std::vector<std::vector<QEntry>> &t_queues, std::vector<std::vector<Entry_t>>& transaction_db ) {
-    // clear duplicates read only
-
-    // for( size_t t_id = 0; t_id < threads; ++t_id ) {
-    //     threadpool.push([this, t_id, &t_queues](){
-    //         slicer_queue_dup_remove_task(t_queues[t_id]);
-    //     });
-    // }
-    // threadpool.wait_work();
-
-    //std::cout << "slicer_queue_dup_remove_task finished" << std::endl;
-
 
     const size_t S = cdb_t.size();
     size_t Q = 0;
@@ -388,11 +355,7 @@ void RandomizedSlicer::slicer_queue(std::vector<std::vector<QEntry>> &t_queues, 
 
     for(unsigned int i = 0; i < threads; i++ )
         transaction_db[i].resize(std::min(S-insert_after, Q)/threads + 1);
-        //transaction_db[i].resize(t_queues[i].size());
 
-    //std::vector<int> write_indices(threads);
-    //for(unsigned int i = 0; i < threads; i++ )
-    //    write_indices[i] = transaction_db[i].size();
 
     std::vector<int> write_indices(threads, transaction_db[0].size()-1);
 
@@ -441,7 +404,7 @@ void RandomizedSlicer::slicer_bucketing(const size_t blocks, const size_t multi_
 
     const size_t nr_buckets = lsh.codesize;
     const size_t S = cdb_t.size();
-    size_t bsize = 4 * (S*multi_hash / double(nr_buckets));
+    size_t bsize = 4 * (S*multi_hash / double(nr_buckets)); //factor of 4 gives decent success probability for slicer
     buckets.resize( nr_buckets * bsize );
     buckets_index.resize(nr_buckets);
     for( size_t i = 0; i < nr_buckets; i++ )
@@ -457,7 +420,6 @@ void RandomizedSlicer::slicer_bucketing(const size_t blocks, const size_t multi_
 
     for( size_t i = 0; i < nr_buckets; ++i ) {
         // bucket overflow
-        //std::cout << i << " " <<  buckets_index[i].val << " " << bsize <<  std::endl;
         if( buckets_index[i].val > bsize ) {
             buckets_index[i].val = bsize;
             //std::cout << "slicer: bucket overflow!" << std::endl;
@@ -543,14 +505,6 @@ void RandomizedSlicer::slicer_process_buckets_task(const size_t t_id,
         const size_t i_start_s = bsize_sieve*b;
         const size_t i_end_s = i_start_s + this->sieve.buckets_i[b].val;
 
-        /*
-        for (size_t j = i_start_s; j < i_end_s; ++j)
-        {
-            uint32_t bj = fast_buckets[j];
-            std::cout << fast_cdb[bj].len << " ";
-        }
-        std::cout << std::endl;
-        */
 
         //B +=( (i_end - i_start) * (i_end-i_start-1)) / 2;
         for( size_t i = i_start; i < i_end; ++i )
@@ -594,7 +548,6 @@ void RandomizedSlicer::slicer_process_buckets_task(const size_t t_id,
             }
         }
     }
-    //statistics.inc_stats_xorpopcnt_inner(B);
     std::sort( t_queue.begin(), t_queue.end(), &compare_QEntry);
 }
 

@@ -23,7 +23,7 @@ struct Entry_t
     CompressedVector c;                     // Compressed vector (i.e. a simhash)
     UidType uid;                            // Unique identifier for collision detection (essentially a hash)
     FT len = 0.;                            // (squared) length of the vector, renormalized by the local gaussian heuristic
-    //std::array<LFT,OTF_LIFT_HELPER_DIM> otf_helper; // auxiliary information to accelerate otf lifting of pairs
+    //std::array<LFT,OTF_LIFT_HELPER_DIM> otf_helper; // auxiliary information to accelerate otf lifting of pairs, commented out for slicer
 };
 
 struct QEntry;
@@ -41,7 +41,6 @@ public:
         this->r = this->sieve.r;
         this->l = this->sieve.l;
         this->ll = this->sieve.ll;
-        //std::cout << "initialized randomized slicer" << std::endl;
     }
 
     friend SimHashes;
@@ -67,7 +66,7 @@ public:
 
     CACHELINE_VARIABLE(std::vector<Entry_t>, db_t);             // database of targets
     CACHELINE_VARIABLE(std::vector<CompressedEntry>, cdb_t);  // compressed version, faster access and periodically sorted
-    CACHELINE_VARIABLE(std::vector<CompressedEntry>, cdb_t_tmp_copy);
+    CACHELINE_VARIABLE(std::vector<CompressedEntry>, cdb_t_tmp_copy); // for sorting
     CACHELINE_VARIABLE(liftedvecs, db_lifted); //database of lifted vectors
     CACHELINE_VARIABLE(rng::threadsafe_rng, rng_t);
 
