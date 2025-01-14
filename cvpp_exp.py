@@ -183,35 +183,44 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2, nrand_param=1.):
                     buckets = max(buckets, 2**(blocks-1))
 
                     print("blocks: ", blocks, " buckets: ", buckets )
-                    # e_ = np.array( from_canonical_scaled(g6k.M,e,offset=sieve_dim) )
+                    slicer.set_proj_error_bound(1.01*(e_@e_))
+                    # slicer.set_lifted_error_bound(8.01*(1.01*(e_@e_)))
+                    slicer.set_max_slicer_interations(100)
+                    slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
+                    # - - - THIS BELOW - - -
+                    # iterator = slicer.itervalues_t()
+                    # for tmp in iterator:
+                    #     out_gs_reduced = tmp  #cdb[0]
+                    #     break
+                    # out_gs = out_gs_reduced + t_gs_shift
 
-                    # print(f"(e_@e_): {(e_@e_)} vs r: {g6k.M.get_r(n-sieve_dim, n-sieve_dim)}")
-                    # print("target length:", 1.01*(e_@e_))
-                    #slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], (1.01*(e_@e_)))
+                    # # - - - Check - - - -
+                    # out = to_canonical_scaled( G,out_gs,offset=sieve_dim )
 
-                    slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], (1.01*(e_@e_)))
-                    iterator = slicer.itervalues_t()
-                    for tmp in iterator:
-                        out_gs_reduced = tmp  #cdb[0]
+                    # projerr = G.to_canonical( G.from_canonical(e,start=n-sieve_dim), start=n-sieve_dim)
+                    # diff_v =  np.array(projerr)-np.array(out)
+                    # # print(f"Diff btw. cvp and slicer: {diff_v}")
+
+                    # N = GSO.Mat( G.B[:n-sieve_dim] )
+                    # N.update_gso()
+                    # bab_1 = G.babai(t-np.array(out),start=n-sieve_dim) #last sieve_dim coordinates of s
+                    # tmp = t - np.array( G.B[-sieve_dim:].multiply_left(bab_1) )
+                    # tmp = N.to_canonical( G.from_canonical( tmp, start=0, dimension=n-sieve_dim ) ) #project onto span(B[-sieve_dim:])
+                    # bab_0 = N.babai(tmp)
+
+                    # bab_01=np.array( bab_0+bab_1 )
+                    # - - - IS REPLACED WITH THIS BELOW
+                    iterator2 = slicer.itervalues_db_lifted()
+                    res_lifted = np.array(sieve_dim*[0])
+                    for tmp in iterator2:
+                        res_lifted = np.array(tmp)
+                        print(res_lifted)
                         break
-                    out_gs = out_gs_reduced + t_gs_shift
 
-                    # - - - Check - - - -
-                    out = to_canonical_scaled( G,out_gs,offset=sieve_dim )
+                    bab_01 = np.round(to_canonical_scaled( G, res_lifted ))
+                    bab_01 = np.array( G.babai( t-bab_01 ) )
+                    # - - - END THIS BELOW
 
-                    projerr = G.to_canonical( G.from_canonical(e,start=n-sieve_dim), start=n-sieve_dim)
-                    diff_v =  np.array(projerr)-np.array(out)
-                    # print(f"Diff btw. cvp and slicer: {diff_v}")
-
-                    N = GSO.Mat( G.B[:n-sieve_dim] )
-                    N.update_gso()
-                    bab_1 = G.babai(t-np.array(out),start=n-sieve_dim) #last sieve_dim coordinates of s
-                    tmp = t - np.array( G.B[-sieve_dim:].multiply_left(bab_1) )
-                    tmp = N.to_canonical( G.from_canonical( tmp, start=0, dimension=n-sieve_dim ) ) #project onto span(B[-sieve_dim:])
-                    bab_0 = N.babai(tmp)
-
-                    bab_01=np.array( bab_0+bab_1 )
-                    # - - -
                     succ = all(c==bab_01)
                     print(f"Slic Succsess: {succ}")
                     if not ( succ ):

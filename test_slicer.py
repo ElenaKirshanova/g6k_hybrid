@@ -171,21 +171,20 @@ if __name__ == "__main__":
             buckets = max(buckets, 2**(blocks-1))
 
             print("blocks: ", blocks, " buckets: ", buckets )
-            # e_ = np.array( from_canonical_scaled(g6k.M,e,offset=sieve_dim) )
 
-            # print(f"(e_@e_): {(e_@e_)} vs r: {g6k.M.get_r(n-sieve_dim, n-sieve_dim)}")
-            # print("target length:", 1.01*(e_@e_))
-            #slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], (1.01*(e_@e_)))
-
+            slicer.set_proj_error_bound(1.01*dist_sq_bnd)
+            # slicer.set_lifted_error_bound(8.01*(dist_sq_bnd))
+            slicer.set_max_slicer_interations(100)
             slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
-            iterator = slicer.itervalues_cdb_t()
-            for tmp in iterator:
-                out_gs_reduced = np.array(tmp)  #cdb[0]
-                break
-            out_gs = out_gs_reduced + t_gs_shift
+            # iterator = slicer.itervalues_cdb_t()
+            # for tmp in iterator:
+            #     out_gs_reduced = np.array(tmp)  #cdb[0]
+            #     break
+            # out_gs = out_gs_reduced + t_gs_shift
 
             #EXAMPLE OF itervalues_db_lifted. TO ADAPT, REMOVE THE ABOVE
             iterator2 = slicer.itervalues_db_lifted()
+            res_lifted = np.array(sieve_dim*[0])
             for tmp in iterator2:
                 res_lifted = np.array(tmp)
                 print(res_lifted)

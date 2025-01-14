@@ -162,21 +162,35 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
                 print(f"Forcing nrerand = {n_per_target}")
                 slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=n_per_target)
                 try:
-                    slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], (slack**2 * (e_@e_)))
-                    iterator = slicer.itervalues_t()
-                    for tmp in iterator:
-                        out_gs_reduced = np.array( tmp )  #cdb[0]
+                    slicer.set_proj_error_bound(1.01*(e_@e_))
+                    # slicer.set_lifted_error_bound(8.01*(e_@e_))
+                    slicer.set_max_slicer_interations(100)
+                    slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
+
+                    # iterator = slicer.itervalues_cdb_t()
+                    # for tmp in iterator:
+                    #     out_gs_reduced = np.array( tmp )  #cdb[0]
+                    #     break
+                    # out_gs = out_gs_reduced + t_gs_shift
+
+                    # # - - - Check - - - -
+                    # out = to_canonical_scaled( G,out_gs,offset=sieve_dim )
+                    # bab_1 = G.babai(t-np.array(out),start=n-sieve_dim) #last sieve_dim coordinates of s
+
+                    # bab_01 =  np.array( bab_1 ) #shifted answer. Good since it is smaller, thus less rounding error
+                    # bab_01 += np.array(shift_babai_c)
+
+                    # TODO: fix empty iterator bug (done?)
+                    iterator2 = slicer.itervalues_db_lifted()
+                    res_lifted = np.array(sieve_dim*[0])
+                    for tmp in iterator2:
+                        res_lifted = np.array(tmp)
+                        print(res_lifted)
                         break
-                    out_gs = out_gs_reduced + t_gs_shift
 
-                    # - - - Check - - - -
-                    out = to_canonical_scaled( G,out_gs,offset=sieve_dim )
-                    bab_1 = G.babai(t-np.array(out),start=n-sieve_dim) #last sieve_dim coordinates of s
+                    bab_01 = np.round(to_canonical_scaled( G, res_lifted ))
+                    bab_01 = np.array( G.babai( t-bab_01 ) )
 
-                    bab_01 =  np.array( bab_1 ) #shifted answer. Good since it is smaller, thus less rounding error
-                    bab_01 += np.array(shift_babai_c)
-                    # print(f"Success: {all(c==bab_01)}")
-                    #succedeed = False
                     if (all(c==bab_01)):
                         print(f"SUCCESS")
                         succeeded = True
@@ -184,14 +198,6 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
                         #slicer_fail[j] += 1
                         succeeded = False
                         print(f"FAIL")
-                    # if succ_criterion_factor>0:
-                    #     found_nrm = (out_gs_reduced@out_gs_reduced)**0.5
-                    #     if found_nrm < succ_criterion_factor:
-                    #         print(f"SUCCESS at approxCVP")
-                    #         succeeded = True
-                    #     else:
-                    #         succeeded = False
-                    #         print(f"FAIL at approxCVP")
                     if succeeded:
                         slicer_suc[j] += 1
                     else:
