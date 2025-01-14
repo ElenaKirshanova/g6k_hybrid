@@ -65,7 +65,7 @@ if __name__ == "__main__":
     print(f"dbsize: {len(g6k)}")
 
     nbab_succ, nsli_succ = 0, 0
-    nexp = 20
+    nexp = 10
 
     for _ in range(nexp):
         c = [ randrange(-33,34) for j in range(n) ]
@@ -191,6 +191,9 @@ if __name__ == "__main__":
                 print(res_lifted)
                 break
 
+            bab_01 = np.round(to_canonical_scaled( G, res_lifted ))
+            bab_01 = np.array( G.babai( t-bab_01 ) )
+
             # - - - Check - - - -
             out = to_canonical_scaled( G,out_gs,offset=sieve_dim )
             print(f"out_gs_reduced: {out_gs_reduced}")
@@ -201,19 +204,7 @@ if __name__ == "__main__":
 
             projerr = G.to_canonical( G.from_canonical(e,start=n-sieve_dim), start=n-sieve_dim)
             diff_v =  np.array(projerr)-np.array(out)
-            # print(f"Diff btw. cvp and slicer: {diff_v}")
 
-            N = GSO.Mat( G.B[:n-sieve_dim], float_type=ft )
-            N.update_gso()
-            bab_1 = G.babai(t-np.array(out),start=n-sieve_dim) #last sieve_dim coordinates of s
-            tmp = t - np.array( G.B[-sieve_dim:].multiply_left(bab_1) )
-            tmp = N.to_canonical( G.from_canonical( tmp, start=0, dimension=n-sieve_dim ) ) #project onto span(B[-sieve_dim:])
-            bab_0 = N.babai(tmp)
-
-            bab_01=np.array( bab_0+bab_1 )
-            #print((f"recovered*B^(-1): {bab_0+bab_1}"))
-            #print(c)
-            #print(f"Coeffs of b found: {(c==bab_01)}")
             succ = all(c==bab_01)
             print(f"Success: {(succ)}")
             if succ:
