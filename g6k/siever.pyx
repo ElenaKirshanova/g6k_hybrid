@@ -1369,7 +1369,7 @@ cdef class Siever(object):
       param_sieve = SieverParams()
       param_sieve['threads'] = 5 #TODO: pass as an argument?
       mySiever =  Siever(G,param_sieve)
-      mySiever.initialize_local(ll,l,r)
+      mySiever.initialize_local(0,l,r)
 
       loc_dim = r-ll #the dimension of sieve
       assert len(coeffs[0]) == r-l, f"Corrupted siever context: expected {r-l} got {len(coeffs[0])}."

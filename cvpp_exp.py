@@ -10,7 +10,7 @@ import glob #for automated search in subfolders
 
 from fpylll.util import gaussian_heuristic
 FPLLL.set_random_seed(0x1337)
-from g6k.siever import Siever
+from g6k.siever import Siever, SaturationError
 from g6k.siever_params import SieverParams
 from g6k.slicer import RandomizedSlicer
 from math import sqrt, ceil, floor, log, exp
@@ -55,7 +55,10 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705):
     g6k.initialize_local(0,0,n)
     print("Running bdgl2...")
     then=perf_counter()
-    g6k(alg="bdgl2")
+    try:
+        g6k(alg="bdgl2")
+    except SaturationError:
+        pass
     print(f"bdgl2-{n} done in {perf_counter()-then}")
     g6k.M.update_gso()
 

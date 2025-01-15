@@ -574,6 +574,7 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
     while( it < MAX_SLICER_ITERS && !terminate ) {
 
         if(cdb_t[0].len<proj_error_bound){
+            std::cout << "proj_error_bound: " << proj_error_bound << std::endl;
             std::cout << it <<  "-th it: solution found of norm:" << cdb_t[0].len << std::endl;
             return true;
         }
