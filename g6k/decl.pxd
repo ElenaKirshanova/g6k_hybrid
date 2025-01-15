@@ -296,11 +296,11 @@ cdef extern from "../kernel/siever.h" nogil:
 cdef extern from "../kernel/slicer.h" nogil:
 
     cdef struct Entry_t:
-        vector[float] yr
+        vector[LFT] yr
         FT len
 
     cdef struct Entry_lifted:
-        vector[float] yr
+        vector[LFT] yr
 
     cdef cppclass RandomizedSlicer:
 

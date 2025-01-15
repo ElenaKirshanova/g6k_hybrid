@@ -28,7 +28,7 @@ struct Entry_t
 
 struct Entry_lifted
 {
-    std::array<LFT,MAX_SIEVING_DIM> yr;
+    std::vector<LFT> yr;
 };
 
 struct QEntry;

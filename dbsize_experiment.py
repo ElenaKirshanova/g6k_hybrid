@@ -226,8 +226,8 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
 if __name__ == '__main__':
 
-    Nexperiments = 20
-    Nlats = 12
+    Nexperiments = 1
+    Nlats = 1
     path = "saved_lattices/"
     isExist = os.path.exists(path)
     if not isExist:
@@ -241,7 +241,7 @@ if __name__ == '__main__':
 
     n, betamax, sieve_dim = 60, 45, 60 #also 70, 25, 70 and 80, 25, 80
 
-    nthreads = 3 # number of workers
+    nthreads = 1 # number of workers
     slicer_threads = 1 # threads the slicer will use
     nrand_param = 5.5
     shrink_factor = 0.7071 # ~ 1/sqrt(2)
