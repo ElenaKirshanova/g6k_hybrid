@@ -187,7 +187,7 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2, nrand_param=1.):
 
                     print("blocks: ", blocks, " buckets: ", buckets )
                     slicer.set_proj_error_bound(1.01*(e_@e_))
-                    # slicer.set_lifted_error_bound(8.01*(1.01*(e_@e_)))
+                    slicer.set_lifted_error_bound(38.01*(1.01*(e_@e_)))
                     slicer.set_max_slicer_interations(100)
                     slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
                     # - - - THIS BELOW - - -
@@ -242,10 +242,10 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2, nrand_param=1.):
     return Ds
 
 if __name__=="__main__":
-    nrand_param = 1.
+    nrand_param = 3.
     n_threads = 2
     ntests = 50
-    n = 55
+    n = 60
     betamax = 53
     # approx_facts = [ 0.4 + 0.05*i for i in range(17) ]
     approx_facts = [ 0.5 + 0.05*i for i in range(13) ]

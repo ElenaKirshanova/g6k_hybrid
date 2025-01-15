@@ -86,10 +86,14 @@ inline void RandomizedSlicer::lift_and_compare(const Entry_t& e)
         yr_new[i] = yi;
         len += yi * yi; //* this->sieve.full_rr[i];
 
-        if (len >= lifted_error_bound) return;
+        if (len > lifted_error_bound) 
+        {
+            std::cout << "too long! " << len <<" vs " << lifted_error_bound << std::endl;
+            return;
+        }
     }
 
-    if (len<lifted_error_bound)
+    if (len<=lifted_error_bound)
     {
         std::cout << "error found of norm " << len << std::endl;
         for(unsigned int j=0; j<r; ++j)
