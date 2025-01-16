@@ -8,7 +8,7 @@ cimport numpy as np
 
 from cython.operator import dereference
 from decl cimport MAX_SIEVING_DIM
-from decl cimport CompressedEntry, Entry_t, Entry_lifted
+from decl cimport CompressedEntry, Entry_t
 
 cdef class RandomizedSlicer(object):
 
@@ -32,9 +32,6 @@ cdef class RandomizedSlicer(object):
     def set_proj_error_bound(self, len):
         self._core.set_proj_error_bound(len)
 
-    def set_lifted_error_bound(self, len):
-        self._core.set_lifted_error_bound(len)
-
     def set_max_slicer_interations(self, maxiter):
         self._core.set_max_slicer_interations(maxiter)
 
@@ -55,13 +52,3 @@ cdef class RandomizedSlicer(object):
             r = [e.yr[j] for j in range(self._core.n)]
             yield tuple(r)
 
-    def itervalues_db_lifted(self):
-        """
-        Iterate over the db of lifted target vectors
-        """
-        cdef Entry_lifted *e;
-
-        for i in range(self._core.db_lifted.size()):
-            e = &self._core.db_lifted[i]
-            r = [e.yr[j] for j in range(self._core.r)]
-            yield tuple(r)

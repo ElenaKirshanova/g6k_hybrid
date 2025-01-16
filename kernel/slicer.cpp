@@ -12,12 +12,9 @@ template<RandomizedSlicer::RecomputeSlicer what_to_recompute>
 inline void RandomizedSlicer::recompute_data_for_entry_t(Entry_t &e)
 {
     //ATOMIC_CPUCOUNT(214);
-    bool constexpr rec_yr = (what_to_recompute & RecomputeSlicer::recompute_yr) != RecomputeSlicer::none;
     bool constexpr rec_len = (what_to_recompute & RecomputeSlicer::recompute_len) != RecomputeSlicer::none;
     bool constexpr rec_c = (what_to_recompute & RecomputeSlicer::recompute_c) != RecomputeSlicer::none;
     bool constexpr rec_uid = (what_to_recompute & RecomputeSlicer::recompute_uid) != RecomputeSlicer::none;
-    bool constexpr consider_lift = (what_to_recompute & RecomputeSlicer::consider_otf_lift) != RecomputeSlicer::none;
-    bool constexpr rec_otf_helper = (what_to_recompute & RecomputeSlicer::recompute_otf_helper) != RecomputeSlicer::none;
 
 
     CPP17CONSTEXPRIF(rec_len) e.len = 0.;
@@ -40,80 +37,8 @@ inline void RandomizedSlicer::recompute_data_for_entry_t(Entry_t &e)
         e.c = this->sieve.sim_hashes.compress(e.yr);
     }
 
-    /*
-    CPP17CONSTEXPRIF (rec_otf_helper)
-    {
-        for (int k = 0; k < OTF_LIFT_HELPER_DIM; ++k)
-        {
-            int const i = l - (k + 1);
-            if (i < static_cast<signed int>(ll)) break;
-            e.otf_helper[k] = std::inner_product(e.x.cbegin(), e.x.cbegin()+n, full_muT[i].cbegin()+l,  static_cast<FT>(0.));
-        }
-    }
-    */
-    if (e.len < proj_error_bound)
-    {
-        lift_and_compare(e);
-    }
-
     return;
 }
-
-inline void RandomizedSlicer::lift_and_compare(const Entry_t& e)
-{
-    //
-    //yr_new.yr
-    std::vector<LFT> yr_new;
-    yr_new.resize(r);
-//std::fill(yr_new, yr_new+l,0);
-
-    for(unsigned int j=0; j<n; j++)
-    {
-        yr_new[j + l] = e.yr[j];
-    }
-
-    FT len = e.len;
-
-    int i = static_cast<signed int>(l) - 1;
-    const int llb = static_cast<signed int>(ll);
-    for (; i >= llb; --i)
-    {
-        LFT yi = std::inner_product(yr_new.begin()+i+1, yr_new.end(), this->sieve.full_muT[i].cbegin()+i+1,  static_cast<FT>(0.));
-        int const c = -std::floor(yi+0.5);
-        yi += c;
-        // yi *= this->sieve.sqrt_rr[i];
-        yr_new[i] = yi;
-        len += yi * yi; //* this->sieve.full_rr[i];
-
-        if (len > lifted_error_bound) 
-        {
-            std::cout << "too long! " << len <<" vs " << lifted_error_bound << std::endl;
-            return;
-        }
-    }
-
-    if (len<=lifted_error_bound)
-    {
-        std::cout << "error found of norm " << len << std::endl;
-        for(unsigned int j=0; j<r; ++j)
-        {
-            std::cout << yr_new[j] << " ";
-        }
-        std::cout << std::endl;
-
-        if (db_lifted.size()<NLIFTED)
-        {
-            Entry_lifted yr_new_entry;
-            yr_new_entry.yr = std::move(yr_new);
-            db_lifted.push_back(yr_new_entry);
-            std::cout << "finished push_back" << std::endl;
-        }
-        else std::cout << "overflow in db_lifted" << std::endl; //almost never should it happen
-        terminate = true;
-    }
-
-}
-
 
 //First element is from the list of targets, the second is from the siever db
 std::pair<LFT, int8_t> RandomizedSlicer::reduce_to_QEntry_t(CompressedEntry *ce1, CompressedEntry *ce2)
@@ -292,10 +217,7 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
             return 0;
         }
     }
-    //else if (params.otf_lift && (new_l < params.lift_radius))
-    //{
-    //    bdgl_lift(i1, i2, new_l, sign);
-    //}
+
     return -1;
 }
 
@@ -570,12 +492,11 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
     //TODO: assert that all input parameters are equal to those from bdgl_sieve
 
     size_t it = 0;
-    while( it < MAX_SLICER_ITERS && !terminate ) {
+    while( it < MAX_SLICER_ITERS ) {
 
         if(cdb_t[0].len<proj_error_bound){
             std::cout << "proj_error_bound: " << proj_error_bound << std::endl;
             std::cout << it <<  "-th it: solution found of norm:" << cdb_t[0].len << std::endl;
-            // lift_and_compare(&cdb_t[0]);
             return true;
         }
 
@@ -592,31 +513,12 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
         parallel_sort_cdb();
         //std::cout << "parallel_sort_cdb finished" << std::endl;
 
-        if(terminate){
-            std::cout << "db_t[0]: ";
-            for(int i0; i0<n; ++i0){
-                std::cout << db_t[0].yr[i0] << ", ";
-            }
-            std::cout << std::endl;
-            std::cout << "db_lifted[0]: ";
-            if (db_lifted.size()> 0){
-            for(int i0; i0<n; ++i0){
-            std::cout << db_lifted[0].yr[i0] << std::endl;
-            }
-            std::cout << std::endl;
-            }
-            else std::cout << "db_lifted is empty" << std::endl;
-        }
-
         if(it%100==0) {
             std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << " cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
         }
         it++;
     }
-    if(terminate)
-    {
-        return true;
-    }
+
     std::cerr << "Couldn't find a close vector after " << MAX_SLICER_ITERS << " iterations" << std::endl;
     return false;
 }

@@ -9,13 +9,10 @@ static constexpr unsigned int XPC_SLICER_SAMPLING_THRESHOLD = 75; // XPC Thresho
 static constexpr unsigned int XPC_SLICER_THRESHOLD = 96; // XPC Threshold for iterative slicer sampling
 
 #define REDUCE_DIST_MARGIN 1.008
-#define NLIFTED 20  //max number of returned lifted vectors
 
 #ifndef MAX_SIEVING_DIM
 #define MAX_SIEVING_DIM 128
 #endif
-
-typedef std::vector<std::array<FT,MAX_SIEVING_DIM>> liftedvecs;
 
 struct Entry_t
 {
@@ -26,10 +23,6 @@ struct Entry_t
     //std::array<LFT,OTF_LIFT_HELPER_DIM> otf_helper; // auxiliary information to accelerate otf lifting of pairs, commented out for slicer
 };
 
-struct Entry_lifted
-{
-    std::vector<LFT> yr;
-};
 
 struct QEntry;
 class ProductLSH;
@@ -38,21 +31,15 @@ class RandomizedSlicer{
 
 public:
     explicit RandomizedSlicer(Siever &sieve, unsigned long int seed = 0) :
-            sieve(sieve), db_t(), cdb_t(), db_lifted(), n(0), rng_t(seed), sim_hashes_t(rng_t.rng_nolock())
+            sieve(sieve), db_t(), cdb_t(), n(0), rng_t(seed), sim_hashes_t(rng_t.rng_nolock())
     {
         this->n = this->sieve.n;
         sim_hashes_t.reset_compress_pos(this->sieve);
         uid_hash_table_t.reset_hash_function(this->sieve);
-        this->r = this->sieve.r;
-        this->l = this->sieve.l;
-        this->ll = this->sieve.ll;
     }
 
     friend SimHashes;
     friend UidHashTable;
-    unsigned int ll;
-    unsigned int l;
-    unsigned int r;
 
     enum class RecomputeSlicer // used as a bitmask for the template argument to recompute_data_for_entry below
     {
@@ -72,14 +59,12 @@ public:
     CACHELINE_VARIABLE(std::vector<Entry_t>, db_t);             // database of targets
     CACHELINE_VARIABLE(std::vector<CompressedEntry>, cdb_t);  // compressed version, faster access and periodically sorted
     CACHELINE_VARIABLE(std::vector<CompressedEntry>, cdb_t_tmp_copy); // for sorting
-    CACHELINE_VARIABLE(std::vector<Entry_lifted>, db_lifted); //database of lifted vectors
     CACHELINE_VARIABLE(rng::threadsafe_rng, rng_t);
 
     unsigned int n;
-    FT proj_error_bound = 0.9; //arbitrary values
-    FT lifted_error_bound = 1.0; //TODO:throw error if not set
-    bool terminate = false;
-    size_t MAX_SLICER_ITERS = 1000; //TODO:throw error if not set
+    FT proj_error_bound = 0.9; //arbitrary value, expect to be set by the caller
+
+    size_t MAX_SLICER_ITERS = 1000;
 
     SimHashes sim_hashes_t; // needs to go after rng!
     UidHashTable uid_hash_table_t; //hash table for db_t -- the database of targets
@@ -91,7 +76,6 @@ public:
 
     void parallel_sort_cdb();
 
-    inline void lift_and_compare(const Entry_t& e);
 
     void randomize_target_small_task(Entry_t &t);
     void grow_db_with_target(const double t_yr[], size_t n_per_target);
@@ -116,7 +100,6 @@ public:
 
     void set_nthreads(size_t nt){ this->threads = nt;}
     void set_proj_error_bound(FT len) {this->proj_error_bound = len;}
-    void set_lifted_error_bound(FT len) {this->lifted_error_bound = len;}
     void set_max_slicer_interations(size_t maxiter){this->MAX_SLICER_ITERS = maxiter;}
 
     template<RecomputeSlicer what_to_recompute>
