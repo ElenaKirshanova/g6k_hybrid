@@ -82,7 +82,7 @@ inline void RandomizedSlicer::lift_and_compare(const Entry_t& e)
         LFT yi = std::inner_product(yr_new.begin()+i+1, yr_new.end(), this->sieve.full_muT[i].cbegin()+i+1,  static_cast<FT>(0.));
         int const c = -std::floor(yi+0.5);
         yi += c;
-        yi *= this->sieve.sqrt_rr[i];
+        // yi *= this->sieve.sqrt_rr[i];
         yr_new[i] = yi;
         len += yi * yi; //* this->sieve.full_rr[i];
 

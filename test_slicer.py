@@ -54,8 +54,9 @@ if __name__ == "__main__":
         lll = LLL.Reduction( G )
         lll()
     # - - - end Make all fpylll objects - - -
-    gh = min( [G.r()[0], gaussian_heuristic(G.r())] )**0.5
-    gh_sub = min( [G.r()[-sieve_dim], gaussian_heuristic(G.r()[-sieve_dim:])] )**0.5
+    gh = min( [G.r()[0], gaussian_heuristic(G.r())] )
+    gh_sub = gaussian_heuristic(G.r()[-sieve_dim:]) #min( [G.r()[-sieve_dim], gaussian_heuristic(G.r()[-sieve_dim:])] )
+    print(f"gh: {gh**0.5}, gh_sub: {gh_sub**0.5}")
     param_sieve = SieverParams()
     param_sieve['threads'] = 1
     g6k = Siever(G,param_sieve)
@@ -75,15 +76,15 @@ if __name__ == "__main__":
     for _ in range(nexp):
         c = [ randrange(-33,34) for j in range(n) ]
         # e = np.array( [ randrange(-8,9) for j in range(n) ],dtype=np.int64 )
-        e = np.array( random_on_sphere(n,0.255*gh) )
+        e = np.array( random_on_sphere(n,0.29*gh**0.5) )
         e = np.round(e)
 
-        print(f"gauss: {gh} vs r_00: {G.get_r(0,0)**0.5} vs ||err||: {(e@e)**0.5}")
+        print(f"gauss: {gh**0.5} vs r_00: {G.get_r(0,0)**0.5} vs ||err||: {(e@e)**0.5}")
 
-        e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim) )
-        e_llr = np.array( from_canonical_scaled(G,e) ) 
-        dist_sq_bnd = e_@e_
-        print(f"projected (e_@e_): {(e_@e_)} vs r/gh: {G.get_r(n-sieve_dim, n-sieve_dim)/gh**2}")
+        e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim,scale_fact=gh_sub) ) #,scale_fact=gh_sub
+        e_llr = np.array( from_canonical_scaled(G,e,scale_fact=gh_sub) ) #,scale_fact=gh_sub
+        dist_sq_bnd = e_@e_,
+        print(f"projected (e_@e_): {(e_@e_)} vs r/gh: {G.get_r(n-sieve_dim, n-sieve_dim)/gh}")
         print("projected target squared length:", (e_@e_))
 
         print(f"e_: {e_}")
@@ -105,24 +106,24 @@ if __name__ == "__main__":
 
         #assert(False)
 
-        t_gs = from_canonical_scaled( G,t,offset=sieve_dim )
+        t_gs = from_canonical_scaled( G,t,offset=sieve_dim,scale_fact=gh_sub )
         #print(f"t_gs: {t_gs} | norm: {(t_gs@t_gs)}")
         #retrieve the projective sublattice
-        B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
+        B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim,scale_fact=gh_sub), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
         t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
         t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
 
         # t_gs_non_scaled = G.from_canonical(t)[-sieve_dim:]
         # shift_babai_c = G.babai((n-sieve_dim)*[0] + list(t_gs_non_scaled), start=n-sieve_dim,gso=True)
-        # shift_babai = G.B.multiply_left( (n-sieve_dim)*[0] + list( shift_babai_c ) )
-        # t_gs_reduced = from_canonical_scaled( G,np.array(t)-shift_babai,offset=sieve_dim ) #this is the actual reduced target
-        # t_gs_shift = from_canonical_scaled( G,shift_babai,offset=sieve_dim )
+        # shift_babai = G.B.multiply_left( (n-sieve_dim)*[0] + list( shift_babai_c ),scale_fact=gh_sub )
+        # t_gs_reduced = from_canonical_scaled( G,np.array(t)-shift_babai,offset=sieve_dim,scale_fact=gh_sub ) #this is the actual reduced target
+        # t_gs_shift = from_canonical_scaled( G,shift_babai,offset=sieve_dim,scale_fact=gh_sub )
 
 
         # t_gs_reduced = t_gs
         # t_gs_shift = t_gs-t_gs_reduced
         # - - - prelim check - - -
-        out = to_canonical_scaled( G,t_gs_reduced,offset=sieve_dim )
+        out = to_canonical_scaled( G,t_gs_reduced,offset=sieve_dim,scale_fact=gh_sub )
 
 
         N = GSO.Mat( G.B[:n-sieve_dim], float_type=ft )
@@ -178,24 +179,27 @@ if __name__ == "__main__":
             print("blocks: ", blocks, " buckets: ", buckets )
 
             slicer.set_proj_error_bound(1.01*(e_@e_))
-            slicer.set_lifted_error_bound(1.01*(e@e))
-            slicer.set_max_slicer_interations(2500)
+            # slicer.set_lifted_error_bound(1.01*(e@e))
+            slicer.set_max_slicer_interations(150)
             slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
 
             iterator = slicer.itervalues_cdb_t()
             for tmp in iterator:
                 out_gs_reduced = np.array(tmp)  #cdb[0]
                 break
-            # out_gs = out_gs_reduced + t_gs_shift
+            out_gs = out_gs_reduced + t_gs_shift
 
-            # out = to_canonical_scaled( G,out_gs,offset=sieve_dim )
-            # N = GSO.Mat( G.B[:n-sieve_dim], float_type=ft )
-            # N.update_gso()
-            # bab_1 = G.babai(t-np.array(out),start=n-sieve_dim) #last sieve_dim coordinates of s
-            # tmp = t - np.array( G.B[-sieve_dim:].multiply_left(bab_1) )
-            # tmp = N.to_canonical( G.from_canonical( tmp, start=0, dimension=n-sieve_dim ) ) #project onto span(B[-sieve_dim:])
-            # bab_0 = N.babai(tmp)
-            # bab_01=np.array( bab_0+bab_1 )
+            out = to_canonical_scaled( G,out_gs,offset=sieve_dim,scale_fact=gh_sub )
+            N = GSO.Mat( G.B[:n-sieve_dim], float_type=ft )
+            N.update_gso()
+            bab_1 = G.babai(t-np.array(out),start=n-sieve_dim) #last sieve_dim coordinates of s
+            tmp = t - np.array( G.B[-sieve_dim:].multiply_left(bab_1) )
+            tmp = N.to_canonical( G.from_canonical( tmp, start=0, dimension=n-sieve_dim ) ) #project onto span(B[-sieve_dim:])
+            bab_0 = N.babai(tmp)
+            bab_01=np.array( bab_0+bab_1 )
+
+            # out = to_canonical_scaled( G,out_gs,offset=sieve_dim,scale_fact=gh_sub )
+            # bab_01 = np.array( G.babai( np.array(t)-out ) )
 
             #EXAMPLE OF itervalues_db_lifted. TO ADAPT, REMOVE THE ABOVE
             iterator2 = slicer.itervalues_db_lifted()
@@ -206,8 +210,8 @@ if __name__ == "__main__":
                 # break
 
             print(len(res_lifted))
-            bab_01 = np.array(to_canonical_scaled( G, res_lifted ))
-            bab_01 = np.array( G.babai( t-bab_01 ) ) #not neccessary, only use it to get the coefficients
+            # bab_01 = np.array(to_canonical_scaled( G, res_lifted ,scale_fact=gh_sub))
+            # bab_01 = np.array( G.babai( t-bab_01 ) ) #not neccessary, only use it to get the coefficients
 
             # print(f"res_lifted: {res_lifted}")
             # print(f"bab_01: {bab_01}")
@@ -216,7 +220,7 @@ if __name__ == "__main__":
             # print(f"eq: {bab_01==bab_01_}")
 
             # - - - Check - - - -
-            # out = to_canonical_scaled( G,out_gs,offset=sieve_dim )
+            # out = to_canonical_scaled( G,out_gs,offset=sieve_dim,scale_fact=gh_sub )
             # print(f"out_gs_reduced: {out_gs_reduced}")
             print(f"e_: {e_}")
             # print(f"e_-out_gs_reduced: {np.abs(e_-out_gs_reduced)}")
@@ -233,7 +237,7 @@ if __name__ == "__main__":
             print(f"|e_|: {(e_@e_)**0.5} vs. {G.get_r(n-sieve_dim, n-sieve_dim)**0.5/gh_sub}")
             es_.append((e_@e_)**0.5)
 
-            # projerr = G.to_canonical( G.from_canonical(e,start=n-sieve_dim), start=n-sieve_dim)
+            # projerr = G.to_canonical( G.from_canonical(e,start=n-sieve_dim, scale_fact=gh_sub), start=n-sieve_dim, scale_fact=gh_sub)
             # diff_v =  np.array(projerr)-np.array(out)
 
             succ = all(c==bab_01)

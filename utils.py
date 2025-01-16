@@ -54,39 +54,79 @@ def gsomat_copy(M):
     M.update_gso()
     return M
 
-def from_canonical_scaled(M, t, offset=None):
+def to_canonical_scaled(M, t, offset=None, scale_fact=None):
     """
     param M: updated GSO.Mat object
     param t: target vector
     param offset: number of last coordinates the coordinates are computed for
                   or None if the dimension is maximal
     """
+    assert not( scale_fact is None ), "scale_fact is None "
     if len(t)==0:
         return np.array([])
     if offset is None:
         offset=M.d
-    gh = gaussian_heuristic(M.r()[-offset:])
+
+    if scale_fact is None:
+        scale_fact = gaussian_heuristic(M.r())
+    r_ = np.array( [sqrt(scale_fact/tt) for tt in M.r()[-offset:]], dtype=DTYPE )
+    tmp = t*r_
+    return np.array( M.to_canonical(tmp, start=M.d-offset) )
+
+def from_canonical_scaled(M, t, offset=None, scale_fact=None):
+    """
+    param M: updated GSO.Mat object
+    param t: target vector
+    param offset: number of last coordinates the coordinates are computed for
+                  or None if the dimension is maximal
+    """
+    assert not( scale_fact is None ), "scale_fact is None "
+    if len(t)==0:
+        return np.array([])
+    if offset is None:
+        offset=M.d
+    if scale_fact is None:
+        scale_fact = gaussian_heuristic(M.r())
     t_ = np.array( M.from_canonical(t)[-offset:], dtype=DTYPE )
-    r_ = np.array( [sqrt(tt/gh) for tt in M.r()[-offset:]], dtype=DTYPE )
+    r_ = np.array( [sqrt(tt/scale_fact) for tt in M.r()[-offset:]], dtype=DTYPE )
 
     return t_*r_
 
-def to_canonical_scaled(M, t, offset=None):
+def to_canonical_scaled_start(M, t, dim=None, scale_fact=None):
     """
     param M: updated GSO.Mat object
     param t: target vector
-    param offset: number of last coordinates the coordinates are computed for
+    param offset: number of first coordinates the coordinates are computed for
                   or None if the dimension is maximal
     """
     if len(t)==0:
         return np.array([])
-    if offset is None:
-        offset=M.d
+    if dim is None:
+        dim=M.d
+    if scale_fact is None:
+        scale_fact = gaussian_heuristic(M.r())
+    r_ = np.array( [sqrt(scale_fact/tt) for tt in M.r()[:dim]], dtype=DTYPE )
+    tmp = np.concatenate( [t*r_, (M.d-dim)*[0]] )
 
-    gh = gaussian_heuristic(M.r()[-offset:])
-    r_ = np.array( [sqrt(gh/tt) for tt in M.r()[-offset:]], dtype=DTYPE )
-    tmp = t*r_
-    return M.to_canonical(tmp, start=M.d-offset)
+    return np.array( M.to_canonical(tmp,start=0) )
+
+def from_canonical_scaled_start(M, t, dim=None, scale_fact=None):
+    """
+    param M: updated GSO.Mat object
+    param t: target vector
+    param offset: number of first coordinates the coordinates are computed for
+                  or None if the dimension is maximal
+    """
+    if len(t)==0:
+        return np.array([])
+    if dim is None:
+        dim=M.d
+    if scale_fact is None:
+        scale_fact = gaussian_heuristic(M.r())
+    t_ = np.array( M.from_canonical(t)[:dim], dtype=DTYPE )
+    r_ = np.array( [sqrt(tt/scale_fact) for tt in M.r()[:dim]], dtype=DTYPE )
+
+    return t_*r_
 
 def gen_and_pickle_lattice(n, k=None, bits=None, betamax=None, seed=None):
     isExist = os.path.exists(save_folder)
