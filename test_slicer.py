@@ -10,7 +10,7 @@ import sys
 if __name__ == "__main__":
 
     FPLLL.set_precision(250)
-    n, betamax, sieve_dim = 60, 53, 60
+    n, betamax, sieve_dim = 144, 53, 64
     ft = "ld" if n<90 else ( "dd" if config.have_qd else "mpfr")
     # - - - try load a lattice - - -
     filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
@@ -63,6 +63,8 @@ if __name__ == "__main__":
     print("Running bdgl2...")
     g6k(alg="bdgl2")
     g6k.M.update_gso()
+    filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
+    g6k.dump_on_disk( filename )
 
     print(f"dbsize: {len(g6k)}")
 
@@ -73,13 +75,13 @@ if __name__ == "__main__":
     for _ in range(nexp):
         c = [ randrange(-33,34) for j in range(n) ]
         # e = np.array( [ randrange(-8,9) for j in range(n) ],dtype=np.int64 )
-        e = np.array( random_on_sphere(n,0.65*gh) )
+        e = np.array( random_on_sphere(n,0.255*gh) )
         e = np.round(e)
 
         print(f"gauss: {gh} vs r_00: {G.get_r(0,0)**0.5} vs ||err||: {(e@e)**0.5}")
 
         e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim) )
-        e_llr = np.array( from_canonical_scaled(G,e) ) #never specify offset=n here
+        e_llr = np.array( from_canonical_scaled(G,e) ) 
         dist_sq_bnd = e_@e_
         print(f"projected (e_@e_): {(e_@e_)} vs r/gh: {G.get_r(n-sieve_dim, n-sieve_dim)/gh**2}")
         print("projected target squared length:", (e_@e_))
@@ -109,12 +111,16 @@ if __name__ == "__main__":
         B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
         t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
         t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
+
         # t_gs_non_scaled = G.from_canonical(t)[-sieve_dim:]
         # shift_babai_c = G.babai((n-sieve_dim)*[0] + list(t_gs_non_scaled), start=n-sieve_dim,gso=True)
         # shift_babai = G.B.multiply_left( (n-sieve_dim)*[0] + list( shift_babai_c ) )
         # t_gs_reduced = from_canonical_scaled( G,np.array(t)-shift_babai,offset=sieve_dim ) #this is the actual reduced target
         # t_gs_shift = from_canonical_scaled( G,shift_babai,offset=sieve_dim )
 
+
+        # t_gs_reduced = t_gs
+        # t_gs_shift = t_gs-t_gs_reduced
         # - - - prelim check - - -
         out = to_canonical_scaled( G,t_gs_reduced,offset=sieve_dim )
 
@@ -173,25 +179,23 @@ if __name__ == "__main__":
 
             slicer.set_proj_error_bound(1.01*(e_@e_))
             slicer.set_lifted_error_bound(1.01*(e@e))
-            slicer.set_max_slicer_interations(250)
+            slicer.set_max_slicer_interations(2500)
             slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
 
             iterator = slicer.itervalues_cdb_t()
             for tmp in iterator:
                 out_gs_reduced = np.array(tmp)  #cdb[0]
                 break
-            out_gs = out_gs_reduced + t_gs_shift
+            # out_gs = out_gs_reduced + t_gs_shift
 
-            out = to_canonical_scaled( G,out_gs,offset=sieve_dim )
-            N = GSO.Mat( G.B[:n-sieve_dim], float_type=ft )
-            N.update_gso()
-            bab_1 = G.babai(t-np.array(out),start=n-sieve_dim) #last sieve_dim coordinates of s
-            tmp = t - np.array( G.B[-sieve_dim:].multiply_left(bab_1) )
-            tmp = N.to_canonical( G.from_canonical( tmp, start=0, dimension=n-sieve_dim ) ) #project onto span(B[-sieve_dim:])
-            bab_0 = N.babai(tmp)
-            bab_01=np.array( bab_0+bab_1 )
-
-            # bab_01 = np.array( G.babai(t-np.array(out)))
+            # out = to_canonical_scaled( G,out_gs,offset=sieve_dim )
+            # N = GSO.Mat( G.B[:n-sieve_dim], float_type=ft )
+            # N.update_gso()
+            # bab_1 = G.babai(t-np.array(out),start=n-sieve_dim) #last sieve_dim coordinates of s
+            # tmp = t - np.array( G.B[-sieve_dim:].multiply_left(bab_1) )
+            # tmp = N.to_canonical( G.from_canonical( tmp, start=0, dimension=n-sieve_dim ) ) #project onto span(B[-sieve_dim:])
+            # bab_0 = N.babai(tmp)
+            # bab_01=np.array( bab_0+bab_1 )
 
             #EXAMPLE OF itervalues_db_lifted. TO ADAPT, REMOVE THE ABOVE
             iterator2 = slicer.itervalues_db_lifted()
@@ -202,8 +206,8 @@ if __name__ == "__main__":
                 # break
 
             print(len(res_lifted))
-            # bab_01 = np.array(to_canonical_scaled( G, res_lifted ))
-            # bab_01 = np.array( G.babai( t-bab_01 ) ) #not neccessary, only use it to get the coefficients
+            bab_01 = np.array(to_canonical_scaled( G, res_lifted ))
+            bab_01 = np.array( G.babai( t-bab_01 ) ) #not neccessary, only use it to get the coefficients
 
             # print(f"res_lifted: {res_lifted}")
             # print(f"bab_01: {bab_01}")
@@ -214,8 +218,9 @@ if __name__ == "__main__":
             # - - - Check - - - -
             # out = to_canonical_scaled( G,out_gs,offset=sieve_dim )
             # print(f"out_gs_reduced: {out_gs_reduced}")
-            # print(f"e_: {e_}")
+            print(f"e_: {e_}")
             # print(f"e_-out_gs_reduced: {np.abs(e_-out_gs_reduced)}")
+            # print(f"e_-res_lifted: {np.abs(e_-res_lifted)}")
             # print(f"|out_gs_reduced|^2: {out_gs_reduced@out_gs_reduced}")
             # print(f"e_: {e_}")
             # print(f"out_gs_reduced: {out_gs_reduced}")
@@ -223,7 +228,7 @@ if __name__ == "__main__":
 
             print(f"e_llr: {e_llr}")
             print(f"np.concatenate( [ (n-sieve_dim)*[0], out_gs_reduced] ): {np.concatenate( [ (n-sieve_dim)*[0], out_gs_reduced] )}")
-            print(f"res - e_llr: {res_lifted + e_llr}")
+            print(f"res - e_llr: {res_lifted - e_llr}")
             print(f"out_gs_reduced-e_llr: {np.concatenate( [ (n-sieve_dim)*[0], out_gs_reduced] ) - e_llr}")
             print(f"|e_|: {(e_@e_)**0.5} vs. {G.get_r(n-sieve_dim, n-sieve_dim)**0.5/gh_sub}")
             es_.append((e_@e_)**0.5)
@@ -238,4 +243,4 @@ if __name__ == "__main__":
                 nsli_succ+=1
             print(f"both succeded: {succ and succbab}", flush=True)
         print(f"nbab_succ, nsli_succ: {nbab_succ,nsli_succ+nbab_succ} out of {nexp}")
-        print(f"es_: {es_}")
+        print(f"es_: {sorted(es_)}")
