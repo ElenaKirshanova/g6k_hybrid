@@ -64,12 +64,10 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705):
     print(f"dbsize: {len(g6k)}")
     return g6k
 
-def run_exp(g6k,ntests,approx_facts, n_threads=1, nrand_param=1.):
+def run_exp(g6k,ntests,approx_facts, n_threads=1, nrand_params=[1.]):
     G = g6k.M
     B = G.B
     n = G.d
-    D = {}
-    Ds = []
 
     sieve_dim = n
     gh = gaussian_heuristic(G.r())
@@ -81,115 +79,118 @@ def run_exp(g6k,ntests,approx_facts, n_threads=1, nrand_param=1.):
     print("Running bdgl2...")
     g6k(alg="bdgl2")
     g6k.M.update_gso()
-    for approx_fact in approx_facts:
-        nsucc_slic, nsucc_bab = 0, 0
-        for tstnum in range(ntests):
-            print(f" - - - {approx_fact} #{tstnum} out of {ntests} - - -", flush=True)
-            c = [ randrange(-2,3) for j in range(n) ]
-            e = np.array( random_on_sphere(n,approx_fact*lambda1) )
-            b = np.array( B.multiply_left( c ) )
-            t = b+e
 
-            """
-            Testing Babai.
-            """
-            then = perf_counter()
-            ctmp = G.babai( t )
-            tmp = B.multiply_left( ctmp )
-            print(f"Babai-{n} done in {perf_counter()-then}")
-            err = tmp-b
-            succ_bab = (err@err)<10**-6
-            if not ( succ_bab ):
-                print(f"FAIL after babai: {(err@err)}")
-            else:
-                print(f"SUCCSESS after babai!")
-                nsucc_bab += 1
-                nsucc_slic += 1
+    aggregated_data = []
+    for nrand_param in nrand_params:
+        D = {}
+        Ds = []
+        for approx_fact in approx_facts:
+            nsucc_slic, nsucc_bab = 0, 0
+            for tstnum in range(ntests):
+                print(f" - - - {approx_fact} #{tstnum} out of {ntests} - - -", flush=True)
+                c = [ randrange(-2,3) for j in range(n) ]
+                e = np.array( random_on_sphere(n,approx_fact*lambda1) )
+                b = np.array( B.multiply_left( c ) )
+                t = b+e
 
-            """
-            Testing Slicer.
-            """
-            if not succ_bab:
-                sieve_dim = n
-                t_gs = from_canonical_scaled( G,t,offset=sieve_dim,scale_fact=gh )
+                """
+                Testing Babai.
+                """
+                then = perf_counter()
+                ctmp = G.babai( t )
+                tmp = B.multiply_left( ctmp )
+                print(f"Babai-{n} done in {perf_counter()-then}")
+                err = tmp-b
+                succ_bab = (err@err)<10**-6
+                if not ( succ_bab ):
+                    print(f"FAIL after babai: {(err@err)}")
+                else:
+                    print(f"SUCCSESS after babai!")
+                    nsucc_bab += 1
+                    nsucc_slic += 1
 
-                #retrieve the projective sublattice
-                B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim,scale_fact=gh), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
-                t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
-                t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
-
-                try:
-                    e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim,scale_fact=gh) )
-                    gh_sub = gaussian_heuristic( G.r()[-sieve_dim:] )
-                    print(f"projected (e_@e_): {(e_@e_)} vs r/4: {G.get_r(n-sieve_dim, n-sieve_dim)/4/gh_sub}")
-                    print("projected target squared length:", (e_@e_))
-
+                """
+                Testing Slicer.
+                """
+                if not succ_bab:
+                    sieve_dim = n
                     t_gs = from_canonical_scaled( G,t,offset=sieve_dim,scale_fact=gh )
+
                     #retrieve the projective sublattice
                     B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim,scale_fact=gh), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
                     t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
                     t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
 
-                    slicer = RandomizedSlicer(g6k)
-                    slicer.set_nthreads(n_threads);
+                    try:
+                        e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim,scale_fact=gh) )
+                        gh_sub = gaussian_heuristic( G.r()[-sieve_dim:] )
+                        print("projected target squared length:", (e_@e_))
 
-                    print("target:", [float(tt) for tt in t_gs_reduced])
-                    print("dbsize", g6k.db_size())
+                        t_gs = from_canonical_scaled( G,t,offset=sieve_dim,scale_fact=gh )
+                        #retrieve the projective sublattice
+                        B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim,scale_fact=gh), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
+                        t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
+                        t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
 
-                    nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
-                    nrand = ceil(nrand_param*(1./nrand_)**sieve_dim)
-                    slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
+                        slicer = RandomizedSlicer(g6k)
+                        slicer.set_nthreads(n_threads);
+                        print("dbsize", g6k.db_size())
 
-                    blocks = 2 # should be the same as in siever
-                    blocks = min(3, max(1, blocks))
-                    blocks = min(int(sieve_dim / 28), blocks)
-                    sp = SieverParams()
-                    N = sp["db_size_factor"] * sp["db_size_base"] ** sieve_dim
-                    buckets = sp["bdgl_bucket_size_factor"]* 2.**((blocks-1.)/(blocks+1.)) * sp["bdgl_multi_hash"]**((2.*blocks)/(blocks+1.)) * (N ** (blocks/(1.0+blocks)))
-                    buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
-                    buckets = max(buckets, 2**(blocks-1))
+                        nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
+                        nrand = ceil(nrand_param*(1./nrand_)**sieve_dim)
+                        slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
 
-                    print("blocks: ", blocks, " buckets: ", buckets )
-                    slicer.set_proj_error_bound(1.01*(e_@e_))
-                    slicer.set_max_slicer_interations(100)
-                    slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
+                        blocks = 2 # should be the same as in siever
+                        blocks = min(3, max(1, blocks))
+                        blocks = min(int(sieve_dim / 28), blocks)
+                        sp = SieverParams()
+                        N = sp["db_size_factor"] * sp["db_size_base"] ** sieve_dim
+                        buckets = sp["bdgl_bucket_size_factor"]* 2.**((blocks-1.)/(blocks+1.)) * sp["bdgl_multi_hash"]**((2.*blocks)/(blocks+1.)) * (N ** (blocks/(1.0+blocks)))
+                        buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
+                        buckets = max(buckets, 2**(blocks-1))
 
-                    iterator = slicer.itervalues_cdb_t()
-                    for tmp in iterator:
-                        out_gs_reduced = tmp  #cdb[0]
-                        break
-                    out_gs = out_gs_reduced + t_gs_shift
+                        print("blocks: ", blocks, " buckets: ", buckets )
+                        slicer.set_max_slicer_interations(100)
+                        slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
 
-                    # - - - Check - - - -
-                    out = to_canonical_scaled( G,out_gs,offset=sieve_dim,scale_fact=gh )
+                        iterator = slicer.itervalues_cdb_t()
+                        for tmp in iterator:
+                            out_gs_reduced = tmp  #cdb[0]
+                            break
+                        out_gs = out_gs_reduced + t_gs_shift
 
-                    projerr = G.to_canonical( G.from_canonical(e,start=n-sieve_dim), start=n-sieve_dim)
-                    diff_v =  np.array(projerr)-np.array(out)
-                    out = to_canonical_scaled( G,np.concatenate( [(G.d-sieve_dim)*[0], out_gs_reduced] ), scale_fact=gh_sub )
-                    bab_01 = np.array( G.babai( np.array(t)-out ) )
+                        # - - - Check - - - -
+                        out = to_canonical_scaled( G,out_gs,offset=sieve_dim,scale_fact=gh )
 
-                    succ = all(c==bab_01)
-                    print(f"Slic Succsess: {succ}")
-                    if not ( succ ):
-                        print(f"FAIL after slicer: {(err@err)}")
-                    else:
-                        nsucc_slic += 1
-                    del slicer
-                except Exception as excpt: #if slicer fails for some reason,
-                    #then prey, this is not a devastating segfault
-                    print(excpt)
-                    raise excpt
+                        projerr = G.to_canonical( G.from_canonical(e,start=n-sieve_dim), start=n-sieve_dim)
+                        diff_v =  np.array(projerr)-np.array(out)
+                        out = to_canonical_scaled( G,np.concatenate( [(G.d-sieve_dim)*[0], out_gs_reduced] ), scale_fact=gh_sub )
+                        bab_01 = np.array( G.babai( np.array(t)-out ) )
 
-        D[(n,approx_fact)] = (0, 1.0*nsucc_slic / ntests, 1.0*nsucc_bab / ntests)
-        Ds.append(D)
-    return Ds
+                        succ = all(c==bab_01)
+                        print(f"Slic Succsess: {succ}")
+                        if not ( succ ):
+                            print(f"FAIL after slicer: {(err@err)}")
+                        else:
+                            nsucc_slic += 1
+                        del slicer
+                    except Exception as excpt: #if slicer fails for some reason,
+                        #then prey, this is not a devastating segfault
+                        print(excpt)
+                        raise excpt
+
+            D[(n,approx_fact)] = (0, 1.0*nsucc_slic / ntests, 1.0*nsucc_bab / ntests)
+            Ds.append(D)
+            print( f"Experiments for nrand_param={nrand_param} done..." )
+        aggregated_data.append([nrand_param, Ds]) 
+    return aggregated_data
 
 if __name__=="__main__":
     n_threads = 1
-    ntests = 5
+    ntests = 200
     n = 60
     betamax = 53
-    approx_facts = [ 0.5 + 0.05*i for i in range(13) ]
+    approx_facts = [ 0.4 + 0.05*i for i in range(13) ]
     print(approx_facts)
     try:
         g6k = Siever.restore_from_file(f"cvppg6k_n{n}_test.pkl")
@@ -198,11 +199,12 @@ if __name__=="__main__":
          g6k.dump_on_disk(f"cvppg6k_n{n}_test.pkl")
 
     aggregated_data = []
-    for nrand_param in [1., 3., 5.]:
-        Ds = run_exp(g6k,ntests,approx_facts,n_threads=n_threads, nrand_param=nrand_param)
-        aggregated_data.append( Ds )
-        print( Ds )
-        print( f"Experiments for nrand_param={nrand_param} done..." )
+    nrand_params = [1., 3., 5.]
+
+    aggregated_data = run_exp(g6k,ntests,approx_facts,n_threads=n_threads, nrand_params=nrand_params)
     for tmp in aggregated_data:
         print(f"nrand_parameter: {aggregated_data[0]}")
         print(aggregated_data[1])
+
+    with open(f"slicsucc_{n}.pkl","wb") as file:
+        pickle.dump(aggregated_data, file)
