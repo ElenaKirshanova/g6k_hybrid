@@ -31,7 +31,6 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705):
     betamax=n if betamax is None else betamax
     k = n//2 if k is None else k
     B = IntegerMatrix(n,n)
-    # B.randomize("qary", k=k, bits=bits)
     B.randomize("qary", bits=bits, k = k)
 
     LR = LatticeReduction( B )
@@ -48,7 +47,7 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705):
     param_sieve['threads'] = 2
     param_sieve['db_size_base'] = (4/3.)**0.5 #(4/3.)**0.5 ~ 1.1547
     param_sieve['db_size_factor'] = 3.2 #3.2
-    param_sieve['saturation_ratio'] = 0.95
+    param_sieve['saturation_ratio'] = 0.5
     param_sieve['saturation_radius'] = 1.32
 
     g6k = Siever(G,param_sieve)
@@ -65,12 +64,10 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705):
     print(f"dbsize: {len(g6k)}")
     return g6k
 
-def run_exp(g6k,ntests,approx_facts, n_threads=2, nrand_param=1.):
+def run_exp(g6k,ntests,approx_facts, n_threads=1, nrand_param=1.):
     G = g6k.M
     B = G.B
     n = G.d
-
-    # lambda1 = G.get_r(0, 0)**0.5
     D = {}
     Ds = []
 
@@ -85,19 +82,17 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2, nrand_param=1.):
     g6k(alg="bdgl2")
     g6k.M.update_gso()
     for approx_fact in approx_facts:
-        nsucc_enum, nsucc_slic, nsucc_bab = 0, 0, 0
+        nsucc_slic, nsucc_bab = 0, 0
         for tstnum in range(ntests):
             print(f" - - - {approx_fact} #{tstnum} out of {ntests} - - -", flush=True)
             c = [ randrange(-2,3) for j in range(n) ]
             e = np.array( random_on_sphere(n,approx_fact*lambda1) )
             b = np.array( B.multiply_left( c ) )
             t = b+e
-            # print(e@e, 0.25*G.get_r(0, 0))
 
             """
             Testing Babai.
             """
-            succ_bab = False
             then = perf_counter()
             ctmp = G.babai( t )
             tmp = B.multiply_left( ctmp )
@@ -110,30 +105,6 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2, nrand_param=1.):
                 print(f"SUCCSESS after babai!")
                 nsucc_bab += 1
                 nsucc_slic += 1
-
-            """
-            Testing Enumeration.
-            """
-            # if n<55: #we do not run enumeration in dimensions >45
-            #     then = perf_counter()
-            #     # tmp = fpylll.CVP.closest_vector(B,[float(tt) for tt in t],method="proved")
-            #     enum = Enumeration(G, strategy=EvaluatorStrategy.BEST_N_SOLUTIONS, nr_solutions=1)
-            #     try:
-            #         tmp = enum.enumerate( 0, n, 1.01*(approx_fact*lambda1/2)**2, 0, target=G.from_canonical(t) )
-            #         tmp = tmp[0][1]
-            #         v = B.multiply_left( tmp )
-            #         print( np.array(c)-np.array(tmp) )
-            #         print(f"CVP-{n} done in {perf_counter()-then}")
-            #         sys.stdout.flush()
-            #         err = v-b
-            #         if not ( (err@err)<10**-6 ):
-            #             print(f"FAIL after enumeration: {(err@err)}")
-            #         else:
-            #             nsucc_enum += 1
-            #     except EnumerationError:
-            #         print("Enum failed...")
-            # else:
-            #     print(f"n={n} is too large for enumeration. Skipping...")
 
             """
             Testing Slicer.
@@ -154,17 +125,10 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2, nrand_param=1.):
                     print("projected target squared length:", (e_@e_))
 
                     t_gs = from_canonical_scaled( G,t,offset=sieve_dim,scale_fact=gh )
-                    #print(f"t_gs: {t_gs} | norm: {(t_gs@t_gs)}")
                     #retrieve the projective sublattice
                     B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim,scale_fact=gh), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
                     t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
                     t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
-
-                    # t_gs_non_scaled = G.from_canonical(t)[-sieve_dim:]
-                    # shift_babai_c = G.babai((n-sieve_dim)*[0] + list(t_gs_non_scaled), start=n-sieve_dim,gso=True)
-                    # shift_babai = G.B.multiply_left( (n-sieve_dim)*[0] + list( shift_babai_c ) )
-                    # t_gs_reduced = from_canonical_scaled( G,np.array(t)-shift_babai,offset=sieve_dim,scale_fact=gh ) #this is the actual reduced target
-                    # t_gs_shift = from_canonical_scaled( G,shift_babai,offset=sieve_dim,scale_fact=gh )
 
                     slicer = RandomizedSlicer(g6k)
                     slicer.set_nthreads(n_threads);
@@ -187,10 +151,9 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2, nrand_param=1.):
 
                     print("blocks: ", blocks, " buckets: ", buckets )
                     slicer.set_proj_error_bound(1.01*(e_@e_))
-                    slicer.set_lifted_error_bound(38.01*(1.01*(e_@e_)))
                     slicer.set_max_slicer_interations(100)
                     slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
-                    # - - - THIS BELOW - - -
+
                     iterator = slicer.itervalues_cdb_t()
                     for tmp in iterator:
                         out_gs_reduced = tmp  #cdb[0]
@@ -202,16 +165,6 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2, nrand_param=1.):
 
                     projerr = G.to_canonical( G.from_canonical(e,start=n-sieve_dim), start=n-sieve_dim)
                     diff_v =  np.array(projerr)-np.array(out)
-                    # print(f"Diff btw. cvp and slicer: {diff_v}")
-
-                    # N = GSO.Mat( G.B[:n-sieve_dim] )
-                    # N.update_gso()
-                    # bab_1 = G.babai(t-np.array(out),start=n-sieve_dim) #last sieve_dim coordinates of s
-                    # tmp = t - np.array( G.B[-sieve_dim:].multiply_left(bab_1) )
-                    # tmp = N.to_canonical( G.from_canonical( tmp, start=0, dimension=n-sieve_dim ) ) #project onto span(B[-sieve_dim:])
-                    # bab_0 = N.babai(tmp)
-                    # bab_01=np.array( bab_0+bab_1 )
-
                     out = to_canonical_scaled( G,np.concatenate( [(G.d-sieve_dim)*[0], out_gs_reduced] ), scale_fact=gh_sub )
                     bab_01 = np.array( G.babai( np.array(t)-out ) )
 
@@ -226,19 +179,16 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2, nrand_param=1.):
                     #then prey, this is not a devastating segfault
                     print(excpt)
                     raise excpt
-                # pass
 
-        D[(n,approx_fact)] = (1.0*nsucc_enum / ntests, 1.0*nsucc_slic / ntests, 1.0*nsucc_bab / ntests)
+        D[(n,approx_fact)] = (0, 1.0*nsucc_slic / ntests, 1.0*nsucc_bab / ntests)
         Ds.append(D)
     return Ds
 
 if __name__=="__main__":
-    # nrand_param = 3.
-    n_threads = 2
-    ntests = 200
+    n_threads = 1
+    ntests = 5
     n = 60
     betamax = 53
-    # approx_facts = [ 0.4 + 0.05*i for i in range(17) ]
     approx_facts = [ 0.5 + 0.05*i for i in range(13) ]
     print(approx_facts)
     try:
@@ -246,20 +196,6 @@ if __name__=="__main__":
     except FileNotFoundError:
          g6k = gen_cvpp_g6k(n,betamax=betamax,k=None,bits=11.705)
          g6k.dump_on_disk(f"cvppg6k_n{n}_test.pkl")
-
-    # with open("projlat55.pkl","rb") as file:
-    #     B = pickle.load( file )
-    #
-    # G = GSO.Mat( B, U=IntegerMatrix.identity(n,int_type=B.int_type), UinvT=IntegerMatrix.identity(n,int_type=B.int_type), float_type="dd" )
-    # param_sieve = SieverParams()
-    # param_sieve['threads'] = 5
-    # g6k = Siever(G,param_sieve)
-    # g6k.initialize_local(0,0,n)
-    # print("Running bdgl2...")
-    # then=perf_counter()
-    # g6k(alg="bdgl2")
-    # print(f"bdgl2-{n} done in {perf_counter()-then}")
-    # g6k.M.update_gso()
 
     aggregated_data = []
     for nrand_param in [1., 3., 5.]:
