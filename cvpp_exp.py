@@ -39,12 +39,11 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705):
         LR.BKZ(beta)
         print(f"BKZ-{beta} done in {perf_counter()-then}", flush=True)
 
-    B = LR.gso.B
     int_type = LR.gso.B.int_type
     ft = "ld" if n<145 else ( "dd" if config.have_qd else "mpfr")
     G = GSO.Mat( LR.gso.B, U=IntegerMatrix.identity(n,int_type=int_type), UinvT=IntegerMatrix.identity(n,int_type=int_type), float_type=ft )
     param_sieve = SieverParams()
-    param_sieve['threads'] = 2
+    param_sieve['threads'] = 1
     param_sieve['db_size_base'] = (4/3.)**0.5 #(4/3.)**0.5 ~ 1.1547
     param_sieve['db_size_factor'] = 3.2 #3.2
     param_sieve['saturation_ratio'] = 0.5
@@ -64,7 +63,7 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705):
     print(f"dbsize: {len(g6k)}")
     return g6k
 
-def run_exp(g6k,ntests,approx_facts, n_threads=1, nrand_params=[1.]):
+def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, n_threads=1, nrand_params=[1.]):
     G = g6k.M
     B = G.B
     n = G.d
@@ -118,8 +117,6 @@ def run_exp(g6k,ntests,approx_facts, n_threads=1, nrand_params=[1.]):
 
                     #retrieve the projective sublattice
                     B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim,scale_fact=gh), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
-                    t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
-                    t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
 
                     try:
                         e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim,scale_fact=gh) )
@@ -148,7 +145,7 @@ def run_exp(g6k,ntests,approx_facts, n_threads=1, nrand_params=[1.]):
                         buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
                         buckets = max(buckets, 2**(blocks-1))
 
-                        slicer.set_max_slicer_interations(100)
+                        slicer.set_max_slicer_interations(max_slicer_interations)
                         slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
 
                         iterator = slicer.itervalues_cdb_t()
@@ -161,7 +158,6 @@ def run_exp(g6k,ntests,approx_facts, n_threads=1, nrand_params=[1.]):
                         out = to_canonical_scaled( G,out_gs,offset=sieve_dim,scale_fact=gh )
 
                         projerr = G.to_canonical( G.from_canonical(e,start=n-sieve_dim), start=n-sieve_dim)
-                        diff_v =  np.array(projerr)-np.array(out)
                         out = to_canonical_scaled( G,np.concatenate( [(G.d-sieve_dim)*[0], out_gs_reduced] ), scale_fact=gh_sub )
                         bab_01 = np.array( G.babai( np.array(t)-out ) )
 
@@ -185,6 +181,7 @@ def run_exp(g6k,ntests,approx_facts, n_threads=1, nrand_params=[1.]):
 
 if __name__=="__main__":
     n_threads = 1
+    max_slicer_interations = 300
     ntests = 200
     n = 60
     betamax = 53
@@ -199,7 +196,7 @@ if __name__=="__main__":
     aggregated_data = []
     nrand_params = [1., 3., 5.]
 
-    aggregated_data = run_exp(g6k,ntests,approx_facts,n_threads=n_threads, nrand_params=nrand_params)
+    aggregated_data = run_exp(g6k,ntests,approx_facts,max_slicer_interations=max_slicer_interations, n_threads=n_threads, nrand_params=nrand_params)
     for tmp in aggregated_data:
         print(f"nrand_parameter: {aggregated_data[0]}")
         print(aggregated_data[1])
