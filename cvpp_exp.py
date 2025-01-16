@@ -134,7 +134,6 @@ def run_exp(g6k,ntests,approx_facts, n_threads=1, nrand_params=[1.]):
 
                         slicer = RandomizedSlicer(g6k)
                         slicer.set_nthreads(n_threads);
-                        print("dbsize", g6k.db_size())
 
                         nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
                         nrand = ceil(nrand_param*(1./nrand_)**sieve_dim)
@@ -149,7 +148,6 @@ def run_exp(g6k,ntests,approx_facts, n_threads=1, nrand_params=[1.]):
                         buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
                         buckets = max(buckets, 2**(blocks-1))
 
-                        print("blocks: ", blocks, " buckets: ", buckets )
                         slicer.set_max_slicer_interations(100)
                         slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
 
