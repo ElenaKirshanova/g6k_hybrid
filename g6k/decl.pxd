@@ -299,8 +299,6 @@ cdef extern from "../kernel/slicer.h" nogil:
         vector[LFT] yr
         FT len
 
-    cdef struct Entry_lifted:
-        vector[LFT] yr
 
     cdef cppclass RandomizedSlicer:
 
@@ -309,7 +307,6 @@ cdef extern from "../kernel/slicer.h" nogil:
         void bdgl_like_sieve(size_t nr_buckets, size_t blocks, size_t multi_hash);
         void set_nthreads(size_t nt);
         void set_proj_error_bound(FT len);
-        void set_lifted_error_bound(FT len);
         void set_max_slicer_interations(size_t maxiter);
 
         unsigned int n
@@ -317,7 +314,6 @@ cdef extern from "../kernel/slicer.h" nogil:
         size_t db_t_size()
         vector[Entry_t] db_t
         vector[CompressedEntry] cdb_t
-        vector[Entry_lifted] db_lifted
         #FT db_lifted[NLIFTED][MAX_SIEVING_DIM]
 
 
