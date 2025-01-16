@@ -73,7 +73,6 @@ if __name__ == "__main__":
     nexp = 50
 
     es_ = []
-    times_oldbab, times_newbab = [], []
     for _ in range(nexp):
         c = [ randrange(-33,34) for j in range(n) ]
         # e = np.array( [ randrange(-8,9) for j in range(n) ],dtype=np.int64 )
@@ -188,65 +187,26 @@ if __name__ == "__main__":
             for tmp in iterator:
                 out_gs_reduced = np.array(tmp)  #cdb[0]
                 break
-            
-            timer = time.perf_counter()
 
-            out_gs = out_gs_reduced + t_gs_shift
-            out = to_canonical_scaled( G,out_gs,offset=sieve_dim,scale_fact=gh_sub )
-            N = GSO.Mat( G.B[:n-sieve_dim], float_type=ft )
-            N.update_gso()
-            bab_1 = G.babai(t-np.array(out),start=n-sieve_dim) #last sieve_dim coordinates of s
-            tmp = t - np.array( G.B[-sieve_dim:].multiply_left(bab_1) )
-            tmp = N.to_canonical( G.from_canonical( tmp, start=0, dimension=n-sieve_dim ) ) #project onto span(B[-sieve_dim:])
-            bab_0 = N.babai(tmp)
-            bab_01=np.array( bab_0+bab_1 )
-
-            times_oldbab.append(time.perf_counter()-timer)
-            timer = time.perf_counter()
+            # out_gs = out_gs_reduced + t_gs_shift
+            # out = to_canonical_scaled( G,out_gs,offset=sieve_dim,scale_fact=gh_sub )
+            # N = GSO.Mat( G.B[:n-sieve_dim], float_type=ft )
+            # N.update_gso()
+            # bab_1 = G.babai(t-np.array(out),start=n-sieve_dim) #last sieve_dim coordinates of s
+            # tmp = t - np.array( G.B[-sieve_dim:].multiply_left(bab_1) )
+            # tmp = N.to_canonical( G.from_canonical( tmp, start=0, dimension=n-sieve_dim ) ) #project onto span(B[-sieve_dim:])
+            # bab_0 = N.babai(tmp)
+            # bab_01=np.array( bab_0+bab_1 )
 
             out = to_canonical_scaled( G,np.concatenate( [(G.d-sieve_dim)*[0], out_gs_reduced] ), scale_fact=gh_sub )
             bab_01 = np.array( G.babai( np.array(t)-out ) )
 
-            times_newbab.append(time.perf_counter()-timer)
-
-            #EXAMPLE OF itervalues_db_lifted. TO ADAPT, REMOVE THE ABOVE
-            iterator2 = slicer.itervalues_db_lifted()
-            res_lifted = np.array(g6k.r*[0])
-            for tmp in iterator2:
-                res_lifted = np.array(tmp)
-                print(f"nonempty res_lifted")
-                # break
-
-            print(len(res_lifted))
-            # bab_01 = np.array(to_canonical_scaled( G, res_lifted ,scale_fact=gh_sub))
-            # bab_01 = np.array( G.babai( t-bab_01 ) ) #not neccessary, only use it to get the coefficients
-
-            # print(f"res_lifted: {res_lifted}")
-            # print(f"bab_01: {bab_01}")
-            # print(f"bab_01_: {bab_01_}")
-            # print(f"c: {c}")
-            # print(f"eq: {bab_01==bab_01_}")
-
             # - - - Check - - - -
-            # out = to_canonical_scaled( G,out_gs,offset=sieve_dim,scale_fact=gh_sub )
-            # print(f"out_gs_reduced: {out_gs_reduced}")
-            print(f"e_: {e_}")
-            # print(f"e_-out_gs_reduced: {np.abs(e_-out_gs_reduced)}")
-            # print(f"e_-res_lifted: {np.abs(e_-res_lifted)}")
-            # print(f"|out_gs_reduced|^2: {out_gs_reduced@out_gs_reduced}")
             # print(f"e_: {e_}")
-            # print(f"out_gs_reduced: {out_gs_reduced}")
-            # print(f"res: {res_lifted}")
-
             print(f"e_llr: {e_llr}")
-            print(f"np.concatenate( [ (n-sieve_dim)*[0], out_gs_reduced] ): {np.concatenate( [ (n-sieve_dim)*[0], out_gs_reduced] )}")
-            print(f"res - e_llr: {res_lifted - e_llr}")
             print(f"out_gs_reduced-e_llr[-sieve_dim:]: {np.concatenate( [out_gs_reduced] ) - e_llr[-sieve_dim:]}")
             print(f"|e_|: {(e_@e_)**0.5} vs. {G.get_r(n-sieve_dim, n-sieve_dim)**0.5/gh_sub}")
             es_.append((e_@e_)**0.5)
-
-            # projerr = G.to_canonical( G.from_canonical(e,start=n-sieve_dim, scale_fact=gh_sub), start=n-sieve_dim, scale_fact=gh_sub)
-            # diff_v =  np.array(projerr)-np.array(out)
 
             succ = all(c==bab_01)
             print(f"{c==bab_01}")
@@ -256,6 +216,3 @@ if __name__ == "__main__":
             print(f"both succeded: {succ and succbab}", flush=True)
         print(f"nbab_succ, nsli_succ: {nbab_succ,nsli_succ+nbab_succ} out of {nexp}")
         print(f"es_: {sorted(es_)}")
-
-        print(f"times_oldbab: {times_oldbab}")
-        print(f"times_newbab: {times_newbab}")

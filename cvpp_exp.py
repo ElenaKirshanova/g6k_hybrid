@@ -204,25 +204,16 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2, nrand_param=1.):
                     diff_v =  np.array(projerr)-np.array(out)
                     # print(f"Diff btw. cvp and slicer: {diff_v}")
 
-                    N = GSO.Mat( G.B[:n-sieve_dim] )
-                    N.update_gso()
-                    bab_1 = G.babai(t-np.array(out),start=n-sieve_dim) #last sieve_dim coordinates of s
-                    tmp = t - np.array( G.B[-sieve_dim:].multiply_left(bab_1) )
-                    tmp = N.to_canonical( G.from_canonical( tmp, start=0, dimension=n-sieve_dim ) ) #project onto span(B[-sieve_dim:])
-                    bab_0 = N.babai(tmp)
+                    # N = GSO.Mat( G.B[:n-sieve_dim] )
+                    # N.update_gso()
+                    # bab_1 = G.babai(t-np.array(out),start=n-sieve_dim) #last sieve_dim coordinates of s
+                    # tmp = t - np.array( G.B[-sieve_dim:].multiply_left(bab_1) )
+                    # tmp = N.to_canonical( G.from_canonical( tmp, start=0, dimension=n-sieve_dim ) ) #project onto span(B[-sieve_dim:])
+                    # bab_0 = N.babai(tmp)
+                    # bab_01=np.array( bab_0+bab_1 )
 
-                    bab_01=np.array( bab_0+bab_1 )
-                    # - - - IS REPLACED WITH THIS BELOW
-                    # iterator2 = slicer.itervalues_db_lifted()
-                    # res_lifted = np.array(sieve_dim*[0])
-                    # for tmp in iterator2:
-                    #     res_lifted = np.array(tmp)
-                    #     print(res_lifted)
-                    #     break
-
-                    # bab_01 = np.round(to_canonical_scaled( G, res_lifted,scale_fact=gh ))
-                    # bab_01 = np.array( G.babai( t-bab_01 ) )
-                    # - - - END THIS BELOW
+                    out = to_canonical_scaled( G,np.concatenate( [(G.d-sieve_dim)*[0], out_gs_reduced] ), scale_fact=gh_sub )
+                    bab_01 = np.array( G.babai( np.array(t)-out ) )
 
                     succ = all(c==bab_01)
                     print(f"Slic Succsess: {succ}")
@@ -242,9 +233,9 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2, nrand_param=1.):
     return Ds
 
 if __name__=="__main__":
-    nrand_param = 1.
+    nrand_param = 3.
     n_threads = 2
-    ntests = 50
+    ntests = 200
     n = 60
     betamax = 53
     # approx_facts = [ 0.4 + 0.05*i for i in range(17) ]
