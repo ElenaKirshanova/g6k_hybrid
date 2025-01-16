@@ -78,7 +78,6 @@ inline void RandomizedSlicer::lift_and_compare(const Entry_t& e)
     const int llb = static_cast<signed int>(ll);
     for (; i >= llb; --i)
     {
-
         LFT yi = std::inner_product(yr_new.begin()+i+1, yr_new.end(), this->sieve.full_muT[i].cbegin()+i+1,  static_cast<FT>(0.));
         int const c = -std::floor(yi+0.5);
         yi += c;
@@ -576,6 +575,7 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
         if(cdb_t[0].len<proj_error_bound){
             std::cout << "proj_error_bound: " << proj_error_bound << std::endl;
             std::cout << it <<  "-th it: solution found of norm:" << cdb_t[0].len << std::endl;
+            // lift_and_compare(&cdb_t[0]);
             return true;
         }
 
@@ -591,6 +591,22 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
         //std::cout << "slicer_queue finished" << std::endl;
         parallel_sort_cdb();
         //std::cout << "parallel_sort_cdb finished" << std::endl;
+
+        if(terminate){
+            std::cout << "db_t[0]: ";
+            for(int i0; i0<n; ++i0){
+                std::cout << db_t[0].yr[i0] << ", ";
+            }
+            std::cout << std::endl;
+            std::cout << "db_lifted[0]: ";
+            if (db_lifted.size()> 0){
+            for(int i0; i0<n; ++i0){
+            std::cout << db_lifted[0].yr[i0] << std::endl;
+            }
+            std::cout << std::endl;
+            }
+            else std::cout << "db_lifted is empty" << std::endl;
+        }
 
         if(it%100==0) {
             std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << " cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;

@@ -75,8 +75,8 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2, nrand_param=1.):
     Ds = []
 
     sieve_dim = n
-    gh = gaussian_heuristic(G.r())**0.5
-    lambda1 = min( [G.get_r(0, 0)**0.5, gh] )
+    gh = gaussian_heuristic(G.r())
+    lambda1 = min( [G.get_r(0, 0)**0.5, gh**0.5] )
     param_sieve = SieverParams()
     param_sieve['threads'] = n_threads
     g6k = Siever(G,param_sieve) #temporary solution
@@ -140,31 +140,31 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2, nrand_param=1.):
             """
             if not succ_bab:
                 sieve_dim = n
-                t_gs = from_canonical_scaled( G,t,offset=sieve_dim )
+                t_gs = from_canonical_scaled( G,t,offset=sieve_dim,scale_fact=gh )
 
                 #retrieve the projective sublattice
-                B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
+                B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim,scale_fact=gh), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
                 t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
                 t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
 
                 try:
-                    e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim) )
+                    e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim,scale_fact=gh) )
                     gh_sub = gaussian_heuristic( G.r()[-sieve_dim:] )
                     print(f"projected (e_@e_): {(e_@e_)} vs r/4: {G.get_r(n-sieve_dim, n-sieve_dim)/4/gh_sub}")
                     print("projected target squared length:", (e_@e_))
 
-                    t_gs = from_canonical_scaled( G,t,offset=sieve_dim )
+                    t_gs = from_canonical_scaled( G,t,offset=sieve_dim,scale_fact=gh )
                     #print(f"t_gs: {t_gs} | norm: {(t_gs@t_gs)}")
                     #retrieve the projective sublattice
-                    B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
+                    B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim,scale_fact=gh), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
                     t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
                     t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
 
                     # t_gs_non_scaled = G.from_canonical(t)[-sieve_dim:]
                     # shift_babai_c = G.babai((n-sieve_dim)*[0] + list(t_gs_non_scaled), start=n-sieve_dim,gso=True)
                     # shift_babai = G.B.multiply_left( (n-sieve_dim)*[0] + list( shift_babai_c ) )
-                    # t_gs_reduced = from_canonical_scaled( G,np.array(t)-shift_babai,offset=sieve_dim ) #this is the actual reduced target
-                    # t_gs_shift = from_canonical_scaled( G,shift_babai,offset=sieve_dim )
+                    # t_gs_reduced = from_canonical_scaled( G,np.array(t)-shift_babai,offset=sieve_dim,scale_fact=gh ) #this is the actual reduced target
+                    # t_gs_shift = from_canonical_scaled( G,shift_babai,offset=sieve_dim,scale_fact=gh )
 
                     slicer = RandomizedSlicer(g6k)
                     slicer.set_nthreads(n_threads);
@@ -191,37 +191,37 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2, nrand_param=1.):
                     slicer.set_max_slicer_interations(100)
                     slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
                     # - - - THIS BELOW - - -
-                    # iterator = slicer.itervalues_t()
-                    # for tmp in iterator:
-                    #     out_gs_reduced = tmp  #cdb[0]
-                    #     break
-                    # out_gs = out_gs_reduced + t_gs_shift
-
-                    # # - - - Check - - - -
-                    # out = to_canonical_scaled( G,out_gs,offset=sieve_dim )
-
-                    # projerr = G.to_canonical( G.from_canonical(e,start=n-sieve_dim), start=n-sieve_dim)
-                    # diff_v =  np.array(projerr)-np.array(out)
-                    # # print(f"Diff btw. cvp and slicer: {diff_v}")
-
-                    # N = GSO.Mat( G.B[:n-sieve_dim] )
-                    # N.update_gso()
-                    # bab_1 = G.babai(t-np.array(out),start=n-sieve_dim) #last sieve_dim coordinates of s
-                    # tmp = t - np.array( G.B[-sieve_dim:].multiply_left(bab_1) )
-                    # tmp = N.to_canonical( G.from_canonical( tmp, start=0, dimension=n-sieve_dim ) ) #project onto span(B[-sieve_dim:])
-                    # bab_0 = N.babai(tmp)
-
-                    # bab_01=np.array( bab_0+bab_1 )
-                    # - - - IS REPLACED WITH THIS BELOW
-                    iterator2 = slicer.itervalues_db_lifted()
-                    res_lifted = np.array(sieve_dim*[0])
-                    for tmp in iterator2:
-                        res_lifted = np.array(tmp)
-                        print(res_lifted)
+                    iterator = slicer.itervalues_cdb_t()
+                    for tmp in iterator:
+                        out_gs_reduced = tmp  #cdb[0]
                         break
+                    out_gs = out_gs_reduced + t_gs_shift
 
-                    bab_01 = np.round(to_canonical_scaled( G, res_lifted ))
-                    bab_01 = np.array( G.babai( t-bab_01 ) )
+                    # - - - Check - - - -
+                    out = to_canonical_scaled( G,out_gs,offset=sieve_dim,scale_fact=gh )
+
+                    projerr = G.to_canonical( G.from_canonical(e,start=n-sieve_dim), start=n-sieve_dim)
+                    diff_v =  np.array(projerr)-np.array(out)
+                    # print(f"Diff btw. cvp and slicer: {diff_v}")
+
+                    N = GSO.Mat( G.B[:n-sieve_dim] )
+                    N.update_gso()
+                    bab_1 = G.babai(t-np.array(out),start=n-sieve_dim) #last sieve_dim coordinates of s
+                    tmp = t - np.array( G.B[-sieve_dim:].multiply_left(bab_1) )
+                    tmp = N.to_canonical( G.from_canonical( tmp, start=0, dimension=n-sieve_dim ) ) #project onto span(B[-sieve_dim:])
+                    bab_0 = N.babai(tmp)
+
+                    bab_01=np.array( bab_0+bab_1 )
+                    # - - - IS REPLACED WITH THIS BELOW
+                    # iterator2 = slicer.itervalues_db_lifted()
+                    # res_lifted = np.array(sieve_dim*[0])
+                    # for tmp in iterator2:
+                    #     res_lifted = np.array(tmp)
+                    #     print(res_lifted)
+                    #     break
+
+                    # bab_01 = np.round(to_canonical_scaled( G, res_lifted,scale_fact=gh ))
+                    # bab_01 = np.array( G.babai( t-bab_01 ) )
                     # - - - END THIS BELOW
 
                     succ = all(c==bab_01)
@@ -242,7 +242,7 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2, nrand_param=1.):
     return Ds
 
 if __name__=="__main__":
-    nrand_param = 3.
+    nrand_param = 1.
     n_threads = 2
     ntests = 50
     n = 60

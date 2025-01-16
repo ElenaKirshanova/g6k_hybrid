@@ -279,7 +279,7 @@ if __name__=="__main__":
     #     param_sieve['saturation_radius'] = 1.335
     #     # g6k = Siever(G,param_sieve)
     #     g6k.params = param_sieve
-    #     print(f"Running sieving: {param_sieve}")
+    #     print(f"Running sieving: {param_st_gs_reducedieve}")
     #     g6k.initialize_local(H11r-n_slicer_coord, H11r-n_slicer_coord, H11r)
     #     then = perf_counter()
     #     g6k(alg="bdgl2")
