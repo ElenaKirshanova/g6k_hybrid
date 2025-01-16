@@ -184,10 +184,11 @@ if __name__ == "__main__":
             slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
 
             iterator = slicer.itervalues_cdb_t()
+            out_gs_reduced = None
             for tmp in iterator:
                 out_gs_reduced = np.array(tmp)  #cdb[0]
                 break
-
+            assert not( out_gs_reduced is None ), "itervalues_cdb_t is empty"
             # out_gs = out_gs_reduced + t_gs_shift
             # out = to_canonical_scaled( G,out_gs,offset=sieve_dim,scale_fact=gh_sub )
             # N = GSO.Mat( G.B[:n-sieve_dim], float_type=ft )
