@@ -238,8 +238,9 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
 
     # dist_sq_bnd = 1.0 #TODO: implement
     G = g6k.M
-    B = G.B
     dim = G.d
+    gh_sub = gaussian_heuristic( G.r()[:dim-sieve_dim] )
+    B = G.B
     Gsub = GSO.Mat( G.B[:dim-sieve_dim], float_type=G.float_type )
     Gsub.update_gso()
 
@@ -262,19 +263,19 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     for target in target_candidates:
         if cntr%200 == 0:
             print(f"{cntr} grows done", flush=True)
-        t_gs = from_canonical_scaled( G,target,offset=sieve_dim )
+        t_gs = from_canonical_scaled( G,target,offset=sieve_dim,scale_fact=gh_sub )
 
         t_gs_non_scaled = G.from_canonical(target)[dim-sieve_dim:]
         shift_babai_c =  list( G.babai( list(t_gs_non_scaled), start=dim-sieve_dim, gso=True) )
         # print( f"shift_babai_c: {shift_babai_c}" )
         shift_babai = G.B.multiply_left( (dim-sieve_dim)*[0] + list( shift_babai_c ) )
-        t_gs_reduced = from_canonical_scaled( G,np.array(target)-shift_babai,offset=sieve_dim ) #this is the actual reduced target
+        t_gs_reduced = from_canonical_scaled( G,np.array(target)-shift_babai,offset=sieve_dim,scale_fact=gh_sub ) #this is the actual reduced target
 
 
         # assert len(t_gs_reduced) == sieve_dim
         # assert all( abs( t_gs_reduced[dim-sieve_dim:] ) <0.501 ) #assert that the last Sieve dim coords are size reduced
 
-        # B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
+        # B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim,scale_fact=gh_sub), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
         # t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
         # t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
         # shift_babai_c = G.babai((dim-sieve_dim)*[0] + list(t_gs_shift), start=dim-sieve_dim,gso=True)
@@ -301,7 +302,6 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     buckets = max(buckets, 2**(blocks-1))
 
     slicer.set_proj_error_bound(1.01*dist_sq_bnd)
-    slicer.set_lifted_error_bound(8.01*(dist_sq_bnd))
     slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
 
     print(f"t_gs_reduced: {t_gs_reduced}")
@@ -349,7 +349,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
         #we substitute the obtaied error from the target and call babai to
         #account for an fp error
 
-        out_reduced = np.array( to_canonical_scaled( G, out_gs_reduced, offset=sieve_dim ) )
+        out_reduced = np.array( to_canonical_scaled( G, out_gs_reduced, offset=sieve_dim,scale_fact=gh_sub ) )
         t_1 = t_1 - out_reduced
         bab_1 = G.babai(t_1,start=dim-sieve_dim, dimension=sieve_dim)
 

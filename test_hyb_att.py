@@ -75,7 +75,7 @@ def alg_3_debug_v2(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthrea
     then_start = perf_counter()
     dim = B.nrows
     print(f"dim: {dim}")
-    # t_gs = from_canonical_scaled( G,t,offset=sieve_dim )
+    # t_gs = from_canonical_scaled( G,t,offset=sieve_dim,scale_factor= )
 
     t1, t2 = target[:-n_guess_coord], target[-n_guess_coord:]
     distrib = centeredBinomial(eta)
@@ -135,7 +135,7 @@ def alg_3_debug(g6k,H11, B, target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthre
     then_start = perf_counter()
     dim = B.nrows
     print(f"dim: {dim}")
-    # t_gs = from_canonical_scaled( G,t,offset=sieve_dim )
+    # t_gs = from_canonical_scaled( G,t,offset=sieve_dim,scale_factor= )
 
     t1, t2 = target[:-n_guess_coord], target[-n_guess_coord:]
     distrib = centeredBinomial(eta)
@@ -227,6 +227,7 @@ def run_experiment(lat_index, params, stats_dict):
     g6k(alg="bdgl2")
     then = perf_counter()
     G = g6k.M
+    gh_sub = gaussian_heuristic(G.r()[-n_slicer_coord:])
 
     # g6k(alg="bdgl2")
     # print(f"Sieving-1 done in {perf_counter() - then}")
@@ -249,10 +250,9 @@ def run_experiment(lat_index, params, stats_dict):
 
         t = np.concatenate([b,n*[0]])
         e_ = np.concatenate([e,-s])[:-n_guess_coord]
-        e_ = from_canonical_scaled( G,e_,offset=n_slicer_coord )
+        e_ = from_canonical_scaled( G,e_,offset=n_slicer_coord,scale_fact=gh_sub )
 
         dist_sq_bnd = e_@e_
-        gh_sub = gaussian_heuristic(G.r()[-n_slicer_coord:])
         dist_bnd = dist_sq_bnd**0.5
         dist_threshold = ( G.r()[-n_slicer_coord] / gh_sub )**0.5
         print(f"dist_bnd: {dist_bnd} | dist_threshold: {dist_threshold} | ratio: {dist_bnd/dist_threshold}")
@@ -295,7 +295,7 @@ if __name__=="__main__":
     n, k = 140, 1
     q, eta = 3329, 3
     latnum = 10
-    n_guess_coord, n_slicer_coord = 15, 48
+    n_guess_coord, n_slicer_coord = 14, 51
     params = {}
     nthreads = 2
     nworkers = 2

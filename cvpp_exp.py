@@ -233,7 +233,7 @@ def run_exp(g6k,ntests,approx_facts, n_threads=2, nrand_param=1.):
     return Ds
 
 if __name__=="__main__":
-    nrand_param = 3.
+    # nrand_param = 3.
     n_threads = 2
     ntests = 200
     n = 60
@@ -261,6 +261,12 @@ if __name__=="__main__":
     # print(f"bdgl2-{n} done in {perf_counter()-then}")
     # g6k.M.update_gso()
 
-    Ds = run_exp(g6k,ntests,approx_facts,n_threads=n_threads, nrand_param=nrand_param)
-
-    print(Ds)
+    aggregated_data = []
+    for nrand_param in [1., 3., 5.]:
+        Ds = run_exp(g6k,ntests,approx_facts,n_threads=n_threads, nrand_param=nrand_param)
+        aggregated_data.append( Ds )
+        print( Ds )
+        print( f"Experiments for nrand_param={nrand_param} done..." )
+    for tmp in aggregated_data:
+        print(f"nrand_parameter: {aggregated_data[0]}")
+        print(aggregated_data[1])

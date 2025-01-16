@@ -67,6 +67,7 @@ def alg_3_debug_v2(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthrea
     # - - - prepare targets - - -
     then_start = perf_counter()
     dim = B.nrows
+    gh_sub = gaussian_heuristic(g6k.M.r()[-(g6k.r-g6k.l):])
     print(f"dim: {dim}")
     # t_gs = from_canonical_scaled( G,t,offset=sieve_dim )
 
@@ -140,6 +141,7 @@ def alg_3_debug_v2(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthrea
 def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
     # - - - prepare targets - - -
     then_start = perf_counter()
+    gh_sub = gaussian_heuristic(g6k.M.r()[-(g6k.r-g6k.l):])
     dim = B.nrows
     print(f"dim: {dim}")
     # t_gs = from_canonical_scaled( G,t,offset=sieve_dim )
@@ -296,7 +298,7 @@ if __name__=="__main__":
     #     # if cntr%200 == 0:
     #         # print(f"{cntr} dumped", end=", ", flush=True)
     #     v = g6k.M.B[-n_slicer_coord:].multiply_left( it )
-    #     v = np.array( from_canonical_scaled( g6k.M,v,offset=n_slicer_coord ) )
+    #     v = np.array( from_canonical_scaled( g6k.M,v,offset=n_slicer_coord,scale_fact=gh_sub ) )
     #     if ( v@v ) > 1.09**2 * (4/3.):
     #         break
     #     cntr+=1
@@ -319,8 +321,8 @@ if __name__=="__main__":
 
         t = np.concatenate([b,n*[0]])
         e_ = np.concatenate([e,-s])[:-n_guess_coord]
-        # e_ = from_canonical_scaled( G,e_,offset=n_slicer_coord )[-n_slicer_coord:]
-        e_ = from_canonical_scaled( G,e_,offset=n_slicer_coord )
+        gh_sub = gaussian_heuristic(g6k.M.r()[-(n_slicer_coord):])
+        e_ = from_canonical_scaled( G,e_,offset=n_slicer_coord,scale_fact=gh_sub )
 
         # for it in g6k.itervalues():
         #     v = g6k.M.B[-n_slicer_coord:].multiply_left( it )
