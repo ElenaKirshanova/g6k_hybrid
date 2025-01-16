@@ -179,7 +179,7 @@ if __name__ == "__main__":
             print("blocks: ", blocks, " buckets: ", buckets )
 
             slicer.set_proj_error_bound(1.01*(e_@e_))
-            # slicer.set_lifted_error_bound(1.01*(e@e))
+            slicer.set_lifted_error_bound(1.01*(e_@e_))
             slicer.set_max_slicer_interations(150)
             slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
 
