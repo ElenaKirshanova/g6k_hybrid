@@ -79,13 +79,14 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
     param_sieve = SieverParams()
     param_sieve['threads'] = nthreads
     g6k = Siever(G,param_sieve)
-    g6k.initialize_local(n-sieve_dim,n-sieve_dim,n)
+    g6k.initialize_local(0,n-sieve_dim,n)
     print("Running bdgl2...")
     g6k(alg="bdgl2")
     g6k.M.update_gso()
-    gh = min( gaussian_heuristic(G.r())**0.5, G.r()[0]**0.5 )
+    gh = min( gaussian_heuristic(G.r()), G.r()[0] )
     if nothing_to_load:
         g6k.dump_on_disk(filename)
+    gh_sub = gaussian_heuristic(G.r()[-sieve_dim:])
 
     print("db_dize:", g6k.db_size())
 
@@ -107,7 +108,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
     bs = []
     for i in range(Nexperiments):
         c = [ randrange(-10,10) for k in range(n) ]
-        e = np.array( random_on_sphere(n, 0.95 * gh) ) #error vector
+        e = np.array( random_on_sphere(n, 0.95 * gh**0.5) ) #error vector
         # e = uniform_in_ball( 1, n, 0.5 * gh )[0]
         b = G.B.multiply_left( c )
         cs.append( c )
@@ -122,8 +123,8 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
                 print(f"{i} out of {Nexperiments} done...", flush=True)
             c = cs[i] #[ randrange(-10,10) for k in range(n) ]
             e = es[i] #np.array( random_on_sphere(n, 0.95 * gh) ) #error vector
-            print(f"gauss: {gh} vs r_00: {G.get_r(0,0)**0.5} vs ||err||: {(e@e)**0.5}")
-            e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim) )
+            print(f"gauss: {gh**0.5} vs r_00: {G.get_r(0,0)**0.5} vs ||err||: {(e@e)**0.5}")
+            e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim,scale_fact=gh_sub) )
 
             b = bs[i] #G.B.multiply_left( c )
             b_ = np.array(b,dtype=np.int64)
@@ -131,19 +132,19 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
             t = [ int(tt) for tt in t_ ]
 
             #project onto the last projective lattice and babai reduce
-            t_gs = from_canonical_scaled( G,t,offset=sieve_dim )
+            t_gs = from_canonical_scaled( G,t,offset=sieve_dim,scale_fact=gh_sub )
             t_gs_non_scaled = G.from_canonical(t)[-sieve_dim:]
             shift_babai_c = G.babai((n-sieve_dim)*[0] + list(t_gs_non_scaled), start=n-sieve_dim,gso=True)
             shift_babai = G.B.multiply_left( (n-sieve_dim)*[0] + list( shift_babai_c ) )
-            t_gs_reduced = from_canonical_scaled( G,np.array(t)-shift_babai,offset=sieve_dim ) #this is the actual reduced target
-            t_gs_shift = from_canonical_scaled( G,shift_babai,offset=sieve_dim )
+            t_gs_reduced = from_canonical_scaled( G,np.array(t)-shift_babai,offset=sieve_dim,scale_fact=gh_sub ) #this is the actual reduced target
+            t_gs_shift = from_canonical_scaled( G,shift_babai,offset=sieve_dim,scale_fact=gh_sub )
 
             print("projected reduced target squared length:", (t_gs_reduced@t_gs_reduced))
             print("projected error squared length:", (e_@e_))
 
 
             # - - - Babai check - - -
-            out = to_canonical_scaled( G,t_gs_reduced,offset=sieve_dim )
+            out = to_canonical_scaled( G,t_gs_reduced,offset=sieve_dim,scale_fact=gh_sub )
             N = GSO.Mat( G.B[:n-sieve_dim], float_type=ft )
             N.update_gso()
             bab_1 = G.babai(t-np.array(out),start=n-sieve_dim) #last sieve_dim coordinates of s
@@ -158,38 +159,24 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
                 #would remain to be in db_t
                 slicer = RandomizedSlicer(g6k)
                 slicer.set_nthreads(nthreads);
-                n_per_target = ceil( nrand_param*(1./nrand_)**sieve_dim ) #10.8 for dim=55?
+                n_per_target = ceil( nrand_param*(1./nrand_)**sieve_dim )
                 print(f"Forcing nrerand = {n_per_target}")
                 slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=n_per_target)
                 try:
                     slicer.set_proj_error_bound(1.01*(e_@e_))
-                    # slicer.set_lifted_error_bound(8.01*(e_@e_))
                     slicer.set_max_slicer_interations(100)
                     slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
 
-                    # iterator = slicer.itervalues_cdb_t()
-                    # for tmp in iterator:
-                    #     out_gs_reduced = np.array( tmp )  #cdb[0]
-                    #     break
-                    # out_gs = out_gs_reduced + t_gs_shift
-
-                    # # - - - Check - - - -
-                    # out = to_canonical_scaled( G,out_gs,offset=sieve_dim )
-                    # bab_1 = G.babai(t-np.array(out),start=n-sieve_dim) #last sieve_dim coordinates of s
-
-                    # bab_01 =  np.array( bab_1 ) #shifted answer. Good since it is smaller, thus less rounding error
-                    # bab_01 += np.array(shift_babai_c)
-
-                    # TODO: fix empty iterator bug (done?)
-                    iterator2 = slicer.itervalues_db_lifted()
-                    res_lifted = np.array(sieve_dim*[0])
-                    for tmp in iterator2:
-                        res_lifted = np.array(tmp)
-                        print(res_lifted)
+                    iterator = slicer.itervalues_cdb_t()
+                    for tmp in iterator:
+                        out_gs_reduced = np.array( tmp )  #cdb[0]
                         break
 
-                    bab_01 = np.round(to_canonical_scaled( G, res_lifted ))
-                    bab_01 = np.array( G.babai( t-bab_01 ) )
+                    out = to_canonical_scaled( G,np.concatenate( [(G.d-sieve_dim)*[0], out_gs_reduced] ), scale_fact=gh_sub )
+                    bab_01 = np.array( G.babai( np.array(t)-out ) )
+
+                    # - - - Check - - - -
+
 
                     if (all(c==bab_01)):
                         print(f"SUCCESS")
@@ -226,8 +213,8 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
 if __name__ == '__main__':
 
-    Nexperiments = 1
-    Nlats = 1
+    Nexperiments = 5
+    Nlats = 5
     path = "saved_lattices/"
     isExist = os.path.exists(path)
     if not isExist:
@@ -243,7 +230,7 @@ if __name__ == '__main__':
 
     nthreads = 1 # number of workers
     slicer_threads = 1 # threads the slicer will use
-    nrand_param = 5.5
+    nrand_param = 5.
     shrink_factor = 0.7071 # ~ 1/sqrt(2)
     n_shrinkings = 9
     succ_criterion_factor = 1.0 #0 for uSVP check and >0 for approx_fact check

@@ -118,7 +118,7 @@ def alg_3_debug_v2(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthrea
     v1 = np.array( H11.multiply_left( ctilde1 ) )
     #keep a track of v2?
     argminv = None
-    minv = 10**12
+    minv = float("inf")
     cntr = 0
     # print("vv__: ", end="")
     for vtilde2 in vtilde2s:
@@ -163,8 +163,6 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=
             etilde2 = np.array( distrib.sample( n_guess_coord ) ) #= (0 | e2)
         else:
             etilde2 = np.array(-s[-n_guess_coord:])
-        # print(f"len etilde2: {len(etilde2)}")
-        # print(f"etilde2 babai: {etilde2}")
         vtilde2 = np.array(t2)-etilde2
         vtilde2s.append( vtilde2  )
         #compute H12*H22^-1 * vtilde2 = H12*vtilde2 since H22 is identity
@@ -172,11 +170,7 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=
         print(f"vtilde2 babai norm: {vtilde2@vtilde2}")
         print(f"tmp babai norm: {tmp@tmp}")
 
-        # print(f"len(vtilde2): {len(vtilde2)} len(t1): {len(t1)}")
-        # print(f"dim: {dim} n_guess_coord: {n_guess_coord}")
         t1_ = np.array( list(t1) ) - tmp
-        # print(t1_)
-        # print(f"len t1_: {len(t1_)}")
         target_candidates.append( t1_ )
     print()
 
@@ -187,8 +181,6 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=
     #TODO: deduce what is the betamax
     # betamax = 48
     ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=None )
-    # ctilde1 = batch_babai( g6k,target_candidates, dist_sq_bnd )
-    # print(f"target_candidates babai = {target_candidates}")
 
     v1 = np.array( H11.multiply_left( ctilde1 ) )
     #keep a track of v2?
@@ -200,12 +192,9 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=
         babshift = np.concatenate( [ np.array( H12.multiply_left(vtilde2) ), n_guess_coord*[0] ] )
         v = np.concatenate([v1,n_guess_coord*[0]]) + v2 + babshift
 
-        # print(v)
-        # t = target_candidates[cntr]
         v_t = v-np.array( target ) #+ tmp
         vv = v_t@v_t
         print(f"vv__: {vv**0.5}")
-        # print(f"babshift babai: {babshift}")
         print(f"v babai: {v}")
         if vv < minv:
             minv = vv
