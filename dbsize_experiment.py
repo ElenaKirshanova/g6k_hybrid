@@ -227,7 +227,7 @@ if __name__ == '__main__':
 
     FPLLL.set_precision(200)
 
-    n, betamax, sieve_dim = 60, 50, 60 #also 70, 25, 70 and 80, 25, 80
+    n, betamax, sieve_dim = 60, 50, 60
 
     nthreads = 2 # number of workers
     nworkers = 4
