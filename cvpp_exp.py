@@ -18,16 +18,17 @@ from copy import deepcopy
 from random import shuffle, randrange
 
 import pickle
-try:
-    from multiprocess import Pool  # you might need pip install multiprocess
-except ModuleNotFoundError:
-    from multiprocessing import Pool
+# try:
+#     from multiprocess import Pool  # you might need pip install multiprocess
+# except ModuleNotFoundError:
+#     from multiprocessing import Pool
+from multiprocessing import Pool 
 
 from LatticeReduction import LatticeReduction
 from utils import * #random_on_sphere, reduce_to_fund_par_proj
 from hybrid_estimator.batchCVP import batchCVPP_cost
 
-def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705):
+def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705,seed=0):
     betamax=n if betamax is None else betamax
     k = n//2 if k is None else k
     B = IntegerMatrix(n,n)
@@ -61,9 +62,9 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705):
     g6k.M.update_gso()
 
     print(f"dbsize: {len(g6k)}")
-    return g6k
+    g6k.dump_on_disk(f"cvppg6k_n{n}_{seed}_test.pkl")
 
-def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, n_threads=1, nrand_params=[1.]):
+def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, nthreads=1, nrand_params=[1.]):
     G = g6k.M
     B = G.B
     n = G.d
@@ -72,7 +73,7 @@ def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, n_threads=1, nra
     gh = gaussian_heuristic(G.r())
     lambda1 = min( [G.get_r(0, 0)**0.5, gh**0.5] )
     param_sieve = SieverParams()
-    param_sieve['threads'] = n_threads
+    param_sieve['threads'] = nthreads
     g6k = Siever(G,param_sieve) #temporary solution
     g6k.initialize_local(n-sieve_dim,n-sieve_dim,n)
     print("Running bdgl2...")
@@ -130,7 +131,7 @@ def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, n_threads=1, nra
                         t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
 
                         slicer = RandomizedSlicer(g6k)
-                        slicer.set_nthreads(n_threads);
+                        slicer.set_nthreads(nthreads);
 
                         nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
                         nrand = ceil(nrand_param*(1./nrand_)**sieve_dim)
@@ -167,7 +168,7 @@ def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, n_threads=1, nra
                             print(f"FAIL after slicer: {(err@err)}")
                         else:
                             nsucc_slic += 1
-                        del slicer
+                        # del slicer
                     except Exception as excpt: #if slicer fails for some reason,
                         #then prey, this is not a devastating segfault
                         print(excpt)
@@ -180,23 +181,49 @@ def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, n_threads=1, nra
     return aggregated_data
 
 if __name__=="__main__":
-    n_threads = 1
+    nthreads = 1
+    nworkers = 2
     max_slicer_interations = 300
-    ntests = 200
+    ntests = 20
+    nlats = 5
     n = 60
+    bits = 11.705
     betamax = 53
-    approx_facts = [ 0.4 + 0.05*i for i in range(13) ]
+    approx_facts = [ 0.4 + 0.05*i for i in range(10) ] #
     print(approx_facts)
-    try:
-        g6k = Siever.restore_from_file(f"cvppg6k_n{n}_test.pkl")
-    except FileNotFoundError:
-         g6k = gen_cvpp_g6k(n,betamax=betamax,k=None,bits=11.705)
-         g6k.dump_on_disk(f"cvppg6k_n{n}_test.pkl")
+
+    to_be_computed = []
+    g6ks = []
+    for cntr in range(nlats):
+        try:
+            g6ks.append( Siever.restore_from_file(f"cvppg6k_n{n}_{cntr}_test.pkl") )
+            print(f"g6k={cntr} loaded")
+        except FileNotFoundError:
+            to_be_computed.append( (cntr,n,betamax,None,bits) )
+            print(f"g6k={cntr} is yet to be processed")
+
+    tasks = []
+    output = []
+    pool = Pool( processes = nworkers )
+    for cntr,n,betamax,k,bits in to_be_computed:
+        tasks.append( pool.apply_async(
+            gen_cvpp_g6k, (n, betamax, k, bits, cntr)
+            ) )
+
+    start_writing_index = len(g6ks)
+    print(f"start_writing_index: {start_writing_index}")
+    for t in tasks:
+         t.get()
+
+    for cntr in range(start_writing_index,nlats):
+        Siever.restore_from_file(f"cvppg6k_n{n}_{cntr}_test.pkl")
 
     aggregated_data = []
     nrand_params = [1., 3., 5.]
 
-    aggregated_data = run_exp(g6k,ntests,approx_facts,max_slicer_interations=max_slicer_interations, n_threads=n_threads, nrand_params=nrand_params)
+    for g6k in g6ks:
+        aggregated_data += [ run_exp(g6k,ntests,approx_facts,max_slicer_interations=max_slicer_interations, nthreads=nthreads, nrand_params=nrand_params) ]
+
     for tmp in aggregated_data:
         print(f"nrand_parameter: {aggregated_data[0]}")
         print(aggregated_data[1])
