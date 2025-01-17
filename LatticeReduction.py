@@ -41,19 +41,23 @@ class LatticeReduction:
 
     self.__g6k = Siever(M, params_sieve)
 
-    self.basis = M.B
-    self.gso = M
+  @property
+  def basis(self):
+    return self.__g6k.M.B
+  
+  @property
+  def gso(self):
+    return self.__g6k.M
 
   def BKZ(self, beta, tours=2): #tours=8
 
-    par = BKZ_FPYLLL.Param(
-      beta,
-      strategies=BKZ_FPYLLL.DEFAULT_STRATEGY,
-      max_loops=tours,
-      flags=BKZ_FPYLLL.MAX_LOOPS
-    )
-
     if beta <=  BKZ_SIEVING_CROSSOVER: #65:
+      par = BKZ_FPYLLL.Param(
+        beta,
+        strategies=BKZ_FPYLLL.DEFAULT_STRATEGY,
+        max_loops=tours,
+        flags=BKZ_FPYLLL.MAX_LOOPS
+      )
       self.__bkz(par) #bkz-enum is faster this way
     else:
         for t in range(tours): #pnj-bkz is oblivious to ntours

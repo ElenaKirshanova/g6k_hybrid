@@ -75,8 +75,6 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
         int_type = bkz.gso.B.int_type
         G = GSO.Mat( bkz.gso.B, U=IntegerMatrix.identity(n,int_type=int_type), UinvT=IntegerMatrix.identity(n,int_type=int_type), float_type=ft )
         G.update_gso()
-        lll = LLL.Reduction( G )
-        lll()
     # - - - end Make all fpylll objects - - -
     # make Siver object
     param_sieve = SieverParams()
@@ -231,12 +229,13 @@ if __name__ == '__main__':
 
     n, betamax, sieve_dim = 60, 50, 60 #also 70, 25, 70 and 80, 25, 80
 
-    nthreads = 4 # number of workers
+    nthreads = 2 # number of workers
+    nworkers = 4
     slicer_threads = 1 # threads the slicer will use
     nrand_param = 5.
     shrink_factor = 0.7071 # ~ 1/sqrt(2)
     n_shrinkings = 9
-    pool = Pool(processes = nthreads )
+    pool = Pool(processes = nworkers )
     tasks = []
 
     density_plots = []

@@ -87,7 +87,7 @@ def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, nthreads=1, nran
         for approx_fact in approx_facts:
             nsucc_slic, nsucc_bab = 0, 0
             for tstnum in range(ntests):
-                print(f" - - - {approx_fact} #{tstnum} out of {ntests} - - -", flush=True)
+                print(f" - - - {approx_fact} #{tstnum} out of {ntests} - - - nrand: {nrand_param}", flush=True)
                 c = [ randrange(-2,3) for j in range(n) ]
                 e = np.array( random_on_sphere(n,approx_fact*lambda1) )
                 b = np.array( B.multiply_left( c ) )
@@ -189,7 +189,7 @@ if __name__=="__main__":
     n = 60
     bits = 11.705
     betamax = 53
-    approx_facts = [ 0.4 + 0.05*i for i in range(10) ] #
+    approx_facts = [ 0.4 + 0.05*i for i in range(15) ] #
     print(approx_facts)
 
     to_be_computed = []
@@ -218,6 +218,7 @@ if __name__=="__main__":
     for cntr in range(start_writing_index,nlats):
         Siever.restore_from_file(f"cvppg6k_n{n}_{cntr}_test.pkl")
 
+    pool.close()
     aggregated_data = []
     nrand_params = [1., 3., 5.]
 
