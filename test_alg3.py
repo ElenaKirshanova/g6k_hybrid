@@ -205,7 +205,7 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=
 if __name__=="__main__":
     n, k = 144, 1
     eta = 3
-    n_guess_coord, n_slicer_coord = 10, 68
+    n_guess_coord, n_slicer_coord = 10, 65
     betamax = 67
     sieve_dim_max = n_slicer_coord
     nsieves = 2
@@ -313,11 +313,6 @@ if __name__=="__main__":
         gh_sub = gaussian_heuristic(g6k.M.r()[-(n_slicer_coord):])
         e_ = from_canonical_scaled( G,e_,offset=n_slicer_coord,scale_fact=gh_sub )
 
-        # for it in g6k.itervalues():
-        #     v = g6k.M.B[-n_slicer_coord:].multiply_left( it )
-        #     v = np.array( from_canonical_scaled( g6k.M,v,offset=n_slicer_coord ) )
-        #     lambda1 = ( v@v )**0.5
-        #     break
 
         dist_sq_bnd = e_@e_
         gh_sub = gaussian_heuristic(G.r()[-n_slicer_coord:])

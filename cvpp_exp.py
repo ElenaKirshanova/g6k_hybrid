@@ -186,7 +186,7 @@ if __name__=="__main__":
     max_slicer_interations = 300
     ntests = 20
     nlats = 5
-    n = 60
+    n = 55
     bits = 11.705
     betamax = 53
     approx_facts = [ 0.4 + 0.05*i for i in range(15) ] #
@@ -194,11 +194,13 @@ if __name__=="__main__":
 
     to_be_computed = []
     g6ks = []
+    load_succ = True
     for cntr in range(nlats):
         try:
             g6ks.append( Siever.restore_from_file(f"cvppg6k_n{n}_{cntr}_test.pkl") )
             print(f"g6k={cntr} loaded")
         except FileNotFoundError:
+            load_succ = False
             to_be_computed.append( (cntr,n,betamax,None,bits) )
             print(f"g6k={cntr} is yet to be processed")
 
@@ -216,7 +218,7 @@ if __name__=="__main__":
          t.get()
 
     for cntr in range(start_writing_index,nlats):
-        Siever.restore_from_file(f"cvppg6k_n{n}_{cntr}_test.pkl")
+        g6ks.append( Siever.restore_from_file(f"cvppg6k_n{n}_{cntr}_test.pkl") )
 
     pool.close()
     aggregated_data = []

@@ -295,7 +295,7 @@ if __name__=="__main__":
     n, k = 140, 1
     q, eta = 3329, 3
     latnum = 10
-    n_guess_coord, n_slicer_coord = 14, 51
+    n_guess_coord, n_slicer_coord = 14, 52
     params = {}
     nthreads = 2
     nworkers = 2

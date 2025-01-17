@@ -239,7 +239,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     # dist_sq_bnd = 1.0 #TODO: implement
     G = g6k.M
     dim = G.d
-    gh_sub = gaussian_heuristic( G.r()[:dim-sieve_dim] )
+    gh_sub = gaussian_heuristic( G.r()[dim-sieve_dim:] )
     B = G.B
     Gsub = GSO.Mat( G.B[:dim-sieve_dim], float_type=G.float_type )
     Gsub.update_gso()
@@ -311,7 +311,8 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
         out_gs_reduced = np.array(tmp)  #db_t[0] is expected to contain the error vector
         cur_nrm_sq = out_gs_reduced@out_gs_reduced
         break
-    # print(f"cur_nrm ={cur_nrm_sq**0.5}")
+    out = to_canonical_scaled( G,np.concatenate( [(G.d-sieve_dim)*[0], out_gs_reduced] ), scale_fact=gh_sub )
+    print(f"cur_nrm ={cur_nrm_sq**0.5}")
 
     iterator = slicer.itervalues_cdb_t()
     nrms = []
@@ -349,18 +350,21 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
         #we substitute the obtaied error from the target and call babai to
         #account for an fp error
 
-        out_reduced = np.array( to_canonical_scaled( G, out_gs_reduced, offset=sieve_dim,scale_fact=gh_sub ) )
-        t_1 = t_1 - out_reduced
-        bab_1 = G.babai(t_1,start=dim-sieve_dim, dimension=sieve_dim)
+        # out_reduced = np.array( to_canonical_scaled( G, out_gs_reduced, offset=sieve_dim,scale_fact=gh_sub ) )
+        # t_1 = t_1 - out_reduced
+        # bab_1 = G.babai(t_1,start=dim-sieve_dim, dimension=sieve_dim)
 
-        tmp = G.B[-sieve_dim:].multiply_left( bab_1 )
-        tmp = np.array( G.from_canonical(tmp,start=0) )
-        for i in range(dim-sieve_dim,dim):
-            tmp[i] = 0.
-        tmp = G.to_canonical( tmp, start=0 )
-        t_0 = t_0 - tmp
-        bab_0 = G.babai(t_0,start=0, dimension=dim-sieve_dim)
-        bab_01 = np.concatenate( [bab_0,bab_1] )
+        # tmp = G.B[-sieve_dim:].multiply_left( bab_1 )
+        # tmp = np.array( G.from_canonical(tmp,start=0) )
+        # for i in range(dim-sieve_dim,dim):
+        #     tmp[i] = 0.
+        # tmp = G.to_canonical( tmp, start=0 )
+        # t_0 = t_0 - tmp
+        # bab_0 = G.babai(t_0,start=0, dimension=dim-sieve_dim)
+        # bab_01 = np.concatenate( [bab_0,bab_1] )
+        
+        bab_01 = np.array( G.babai( np.array(t)-out ) )
+
         solution_candidate = np.array( G.B.multiply_left( bab_01 ) )
 
         diff = t - solution_candidate
