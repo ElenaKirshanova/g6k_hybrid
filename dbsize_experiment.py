@@ -231,7 +231,6 @@ if __name__ == '__main__':
 
     nthreads = 2 # number of workers
     nworkers = 4
-    slicer_threads = 1 # threads the slicer will use
     nrand_param = 5.
     shrink_factor = 0.7071 # ~ 1/sqrt(2)
     n_shrinkings = 9
@@ -241,7 +240,7 @@ if __name__ == '__main__':
     density_plots = []
     for lat_id in range(Nlats):
         tasks.append( pool.apply_async(
-            run_exp, (lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperiments, slicer_threads, nrand_param)
+            run_exp, (lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperiments, nthreads, nrand_param)
         ) )
 
     for t in tasks:
