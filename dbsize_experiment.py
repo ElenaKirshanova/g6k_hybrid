@@ -227,10 +227,10 @@ if __name__ == '__main__':
 
     FPLLL.set_precision(200)
 
-    n, betamax, sieve_dim = 60, 50, 60
+    n, betamax, sieve_dim = 65, 50, 65
 
-    nthreads = 2 # number of workers
-    nworkers = 4
+    nthreads = 1
+    nworkers = 4 # number of workers
     nrand_param = 5.
     shrink_factor = 0.7071 # ~ 1/sqrt(2)
     n_shrinkings = 9

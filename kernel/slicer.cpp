@@ -479,7 +479,7 @@ void RandomizedSlicer::slicer_process_buckets_task(const size_t t_id,
 }
 
 
-bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t multi_hash){
+bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t multi_hash, bool verbose){
 
     //std::cout << "nr_buckets_aim:" << nr_buckets_aim << " blocks: " << blocks << " multi_hash: " <<multi_hash <<  std::endl;
     parallel_sort_cdb();
@@ -495,8 +495,10 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
     while( it < MAX_SLICER_ITERS ) {
 
         if(cdb_t[0].len<proj_error_bound){
-            std::cout << "proj_error_bound: " << proj_error_bound << std::endl;
-            std::cout << it <<  "-th it: solution found of norm:" << cdb_t[0].len << std::endl;
+            if(verbose) {
+                std::cout << "proj_error_bound: " << proj_error_bound << std::endl;
+                std::cout << it << "-th it: solution found of norm:" << cdb_t[0].len << std::endl;
+            }
             return true;
         }
 
@@ -513,7 +515,7 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
         parallel_sort_cdb();
         //std::cout << "parallel_sort_cdb finished" << std::endl;
 
-        if(it%100==0) {
+        if(it%100==0 && verbose) {
             std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << " cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
         }
         it++;
