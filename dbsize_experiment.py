@@ -177,7 +177,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
                 try:
                     slicer.set_proj_error_bound(norm_slack*(e_@e_))
                     slicer.set_max_slicer_interations(slicer_interations)
-                    slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
+                    slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False)
 
                     out_gs_reduced = [0]
                     iterator = slicer.itervalues_cdb_t()
