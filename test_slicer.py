@@ -183,7 +183,7 @@ if __name__ == "__main__":
             buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
             buckets = max(buckets, 2**(blocks-1))
 
-            print("blocks: ", blocks, " buckets: ", buckets )
+            #print("blocks: ", blocks, " buckets: ", buckets )
 
             slicer.set_proj_error_bound(norm_slack*(e_@e_))
             # slicer.set_lifted_error_bound(1.01*(e_@e_))

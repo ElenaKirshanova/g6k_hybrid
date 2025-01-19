@@ -36,6 +36,8 @@ cdef class RandomizedSlicer(object):
         self._core.set_max_slicer_interations(maxiter)
 
     def bdgl_like_sieve(self, size_t nr_buckets, size_t blocks, size_t multi_hash, verbose):
+
+
         sig_on()
         self._core.bdgl_like_sieve(nr_buckets, blocks, multi_hash, verbose)
         sig_off()
