@@ -304,7 +304,7 @@ cdef extern from "../kernel/slicer.h" nogil:
 
         RandomizedSlicer(Siever &sieve, unsigned long int seed)
         void grow_db_with_target( double* t_yr, size_t n_per_target);
-        void bdgl_like_sieve(size_t nr_buckets, size_t blocks, size_t multi_hash);
+        void bdgl_like_sieve(size_t nr_buckets, size_t blocks, size_t multi_hash, bool verbose);
         void set_nthreads(size_t nt);
         void set_proj_error_bound(FT len);
         void set_max_slicer_interations(size_t maxiter);

@@ -93,7 +93,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
     dbsize_start = g6k.db_size()
     nrand_, _ = batchCVPP_cost(sieve_dim,100,dbsize_start**(1./sieve_dim),1) #100 can be any constant >1
     n_per_target = ceil( nrand_param*(1./nrand_)**sieve_dim )
-    print(f"nrerand = {n_per_target}")
+    #print(f"nrerand = {n_per_target}")
 
     blocks = 2 # should be the same as in siever
     blocks = min(3, max(1, blocks))
@@ -110,6 +110,11 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
     cs = []
     es = []
     bs = []
+    b_s = []
+    ts = []
+    t_gss =[]
+    t_gs_reduced_s = []
+    B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim,scale_fact=gh_sub), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
     for i in range(Nexperiments):
         c = [ randrange(-10,10) for _ in range(n) ]
         e = np.array( random_on_sphere(n, approx_factor * gh**0.5) ) #error vector
@@ -118,6 +123,12 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
         cs.append( c )
         es.append( e )
         bs.append( b )
+        b_s.append(np.array(b,dtype=np.int64))
+        t_ = e+b_s[i]
+        ts.append( [ int(tt) for tt in t_ ])
+        t_gss.append(from_canonical_scaled( G,ts[i],offset=sieve_dim,scale_fact=gh_sub ))
+        t_gs_reduced_s.append(reduce_to_fund_par_proj(B_gs,(t_gss[i]),sieve_dim))
+
 
     for j in range(n_shrinkings):
         print("Running experiment ", j, "out of ", n_shrinkings)
@@ -129,17 +140,18 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
             e = es[i] #np.array( random_on_sphere(n, 0.95 * gh) ) #error vector
             #print(f"gauss: {gh**0.5} vs r_00: {G.get_r(0,0)**0.5} vs ||err||: {(e@e)**0.5}")
             e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim,scale_fact=gh_sub) )
-
-            b = bs[i] #G.B.multiply_left( c )
-            b_ = np.array(b,dtype=np.int64)
-            t_ = e+b_
-            t = [ int(tt) for tt in t_ ]
-
-            #project onto the last projective lattice and babai reduce
-            t_gs_non_scaled = G.from_canonical(t)[-sieve_dim:]
-            shift_babai_c = G.babai((n-sieve_dim)*[0] + list(t_gs_non_scaled), start=n-sieve_dim,gso=True)
-            shift_babai = G.B.multiply_left( (n-sieve_dim)*[0] + list( shift_babai_c ) )
-            t_gs_reduced = from_canonical_scaled( G,np.array(t)-shift_babai,offset=sieve_dim,scale_fact=gh_sub ) #this is the actual reduced target
+            t = ts[i]
+            t_gs_reduced = t_gs_reduced_s[i]
+            # b = bs[i] #G.B.multiply_left( c )
+            # b_ = np.array(b,dtype=np.int64)
+            # t_ = e+b_
+            # t = [ int(tt) for tt in t_ ]
+            #
+            # #project onto the last projective lattice and babai reduce
+            # t_gs_non_scaled = G.from_canonical(t)[-sieve_dim:]
+            # shift_babai_c = G.babai((n-sieve_dim)*[0] + list(t_gs_non_scaled), start=n-sieve_dim,gso=True)
+            # shift_babai = G.B.multiply_left( (n-sieve_dim)*[0] + list( shift_babai_c ) )
+            # t_gs_reduced = from_canonical_scaled( G,np.array(t)-shift_babai,offset=sieve_dim,scale_fact=gh_sub ) #this is the actual reduced target
 
             #print("projected reduced target squared length:", (t_gs_reduced@t_gs_reduced))
             #print("projected error squared length:", (e_@e_))
@@ -165,7 +177,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
                 try:
                     slicer.set_proj_error_bound(norm_slack*(e_@e_))
                     slicer.set_max_slicer_interations(slicer_interations)
-                    slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
+                    slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False)
 
                     out_gs_reduced = [0]
                     iterator = slicer.itervalues_cdb_t()
@@ -214,8 +226,8 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
 if __name__ == '__main__':
 
-    Nexperiments = 100
-    Nlats = 20
+    Nexperiments = 50
+    Nlats = 10
     path = "saved_lattices/"
     isExist = os.path.exists(path)
     if not isExist:
@@ -229,11 +241,11 @@ if __name__ == '__main__':
 
     n, betamax, sieve_dim = 60, 50, 60
 
-    nthreads = 2 # number of workers
-    nworkers = 4
-    nrand_param = 5.
+    nthreads = 1
+    nworkers = 4 # number of workers
+    nrand_param = 1.
     shrink_factor = 0.7071 # ~ 1/sqrt(2)
-    n_shrinkings = 9
+    n_shrinkings = 5
     pool = Pool(processes = nworkers )
     tasks = []
 

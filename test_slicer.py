@@ -9,8 +9,15 @@ import sys
 
 if __name__ == "__main__":
 
-    FPLLL.set_precision(250)
-    n, betamax, sieve_dim = 288, 55, 64
+    slicer_interations = 250
+    norm_slack = 1.01      #terminate slicer if norm_slack*||e_projected|| is found
+    approx_factor = 0.95
+    nrand_param = 5
+    nthreads = 1
+    nexp = 100
+
+    FPLLL.set_precision(200)
+    n, betamax, sieve_dim = 65, 50, 65
     ft = "ld" if n<90 else ( "dd" if config.have_qd else "mpfr")
     # - - - try load a lattice - - -
     filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
@@ -58,7 +65,7 @@ if __name__ == "__main__":
     gh_sub = gaussian_heuristic(G.r()[-sieve_dim:]) #min( [G.r()[-sieve_dim], gaussian_heuristic(G.r()[-sieve_dim:])] )
     print(f"gh: {gh**0.5}, gh_sub: {gh_sub**0.5}")
     param_sieve = SieverParams()
-    param_sieve['threads'] = 1
+    param_sieve['threads'] = nthreads
     g6k = Siever(G,param_sieve)
     g6k.initialize_local(0,n-sieve_dim,n)
     print("Running bdgl2...")
@@ -70,13 +77,13 @@ if __name__ == "__main__":
     print(f"dbsize: {len(g6k)}")
 
     nbab_succ, nsli_succ = 0, 0
-    nexp = 50
+
 
     es_ = []
     for _ in range(nexp):
         c = [ randrange(-33,34) for j in range(n) ]
         # e = np.array( [ randrange(-8,9) for j in range(n) ],dtype=np.int64 )
-        e = np.array( random_on_sphere(n,0.035*gh**0.5) )
+        e = np.array( random_on_sphere(n,approx_factor*gh**0.5) )
         e = np.round(e)
 
         print(f"gauss: {gh**0.5} vs r_00: {G.get_r(0,0)**0.5} vs ||err||: {(e@e)**0.5}")
@@ -162,7 +169,7 @@ if __name__ == "__main__":
             print("dbsize", g6k.db_size())
 
             nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
-            nrand = ceil(5*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
+            nrand = ceil(nrand_param*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
             # nrand = 6000
             print(f"nrand:{nrand}")
             slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=1100)
@@ -176,12 +183,12 @@ if __name__ == "__main__":
             buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
             buckets = max(buckets, 2**(blocks-1))
 
-            print("blocks: ", blocks, " buckets: ", buckets )
+            #print("blocks: ", blocks, " buckets: ", buckets )
 
-            slicer.set_proj_error_bound(1.01*(e_@e_))
+            slicer.set_proj_error_bound(norm_slack*(e_@e_))
             # slicer.set_lifted_error_bound(1.01*(e_@e_))
-            slicer.set_max_slicer_interations(150)
-            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
+            slicer.set_max_slicer_interations(slicer_interations)
+            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False)
 
             iterator = slicer.itervalues_cdb_t()
             out_gs_reduced = None
