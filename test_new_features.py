@@ -33,6 +33,7 @@ G = GSO.Mat( G.B, U=IntegerMatrix.identity(n,int_type=int_type), UinvT=IntegerMa
 G.update_gso()
 
 param_sieve = SieverParams()
+print(f"otf_lift: {param_sieve.otf_lift}")
 param_sieve['threads'] = 5
 # param_sieve['db_size_factor'] = 3.75
 param_sieve['default_sieve'] = "bdgl2" #"bgj1"

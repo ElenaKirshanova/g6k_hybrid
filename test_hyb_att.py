@@ -70,12 +70,14 @@ def batch_babai( g6k,target_candidates, dist_sq_bnd ):
     print(f"best_cb: {best_cb}")
     return best_cb
 
-def alg_3_debug_v2(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
+def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
+    # Emulates batch CVPP with guessing.
     # - - - prepare targets - - -
     then_start = perf_counter()
+    gh_sub = gaussian_heuristic(g6k.M.r()[-(g6k.r-g6k.l):])
     dim = B.nrows
     print(f"dim: {dim}")
-    # t_gs = from_canonical_scaled( G,t,offset=sieve_dim,scale_factor= )
+    # t_gs = from_canonical_scaled( G,t,offset=sieve_dim )
 
     t1, t2 = target[:-n_guess_coord], target[-n_guess_coord:]
     distrib = centeredBinomial(eta)
@@ -87,12 +89,26 @@ def alg_3_debug_v2(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthrea
     vtilde2s = []
 
     H12 = IntegerMatrix.from_matrix( [list(b)[:dim-n_guess_coord] for b in B[dim-n_guess_coord:]] )
-    for times in range(max_nsampl): #Alg 3 steps 4-7
-        etilde2 = np.array( distrib.sample( n_guess_coord ) ) #= (0 | e2)
+    sieve_dim = g6k.r-g6k.l
 
+    from hybrid_estimator.batchCVP import batchCVPP_cost
+    nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
+    nrand = ceil(5*(1./nrand_)**sieve_dim)
+    print(f"times: {ceil( len(g6k) / nrand )}")
+    for times in range( ceil( len(g6k) / nrand ) ): #Alg 3 steps 4-7 ceil( (nrand * nsampl) / len(g6k) )
+        # print(f"times: {times}")
+        if times!=0 and times%64 == 0:
+            print(f"{times} done out of {nsampl}", end=", ")
+        if times>0:
+            etilde2 = np.array( distrib.sample( n_guess_coord ) ) #= (0 | e2)
+        else:
+            etilde2 = np.array(-s[-n_guess_coord:])
         vtilde2 = np.array(t2)-etilde2
         vtilde2s.append( vtilde2  )
+        #compute H12*H22^-1 * vtilde2 = H12*vtilde2 since H22 is identity
         tmp = np.array( H12.multiply_left(vtilde2) )
+        print(f"vtilde2 babai norm: {vtilde2@vtilde2}")
+        print(f"tmp babai norm: {tmp@tmp}")
 
         t1_ = np.array( list(t1) ) - tmp
         target_candidates.append( t1_ )
@@ -103,32 +119,27 @@ def alg_3_debug_v2(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthrea
     """
     #TODO: dist_sq_bnd might have changed at this point (or even in attacker)
     #TODO: deduce what is the betamax
+    # betamax = 48
     ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=None )
-    # ctilde1 = batch_babai( g6k,target_candidates, dist_sq_bnd )
-    # print(f"target_candidates babai = {target_candidates}")
 
     v1 = np.array( H11.multiply_left( ctilde1 ) )
     #keep a track of v2?
     argminv = None
     minv = 10**12
     cntr = 0
-    # print("vv__: ", end="")
     for vtilde2 in vtilde2s:
         v2 = np.concatenate( [(dim-n_guess_coord)*[0],vtilde2] )
         babshift = np.concatenate( [ np.array( H12.multiply_left(vtilde2) ), n_guess_coord*[0] ] )
-        print
         v = np.concatenate([v1,n_guess_coord*[0]]) + v2 + babshift
 
-        # print(v)
-        # t = target_candidates[cntr]
         v_t = v-np.array( target ) #+ tmp
         vv = v_t@v_t
-        # print(f"{vv**0.5}", end = ", ")
+        # print(f"vv__: {vv**0.5}")
+        # print(f"v babai: {v}")
         if vv < minv:
             minv = vv
             argminv = v
         cntr+=1
-    print()
     return argminv
 
 def alg_3_debug(g6k,H11, B, target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
@@ -226,7 +237,7 @@ def run_experiment(lat_index, params, stats_dict):
         for j in range(k*n):
             Binit[i][j] = int( A[i-k*n,j] )
 
-    with open(out_path+f"kyb_prehybrid_{n}_{q}_{eta}_{k}_{lat_index}_{n_guess_coord}_{386}", "rb") as file:
+    with open(out_path+f"kyb_prehybrid_{n}_{q}_{eta}_{k}_{lat_index}_{n_guess_coord}_{284}", "rb") as file:
         H11 = pickle.load(file)["B"]
     H11r, H11c = H11.nrows, H11.ncols
     g6k = Siever.restore_from_file( out_path + filename_g6kdump )
@@ -276,7 +287,8 @@ def run_experiment(lat_index, params, stats_dict):
         B = IntegerMatrix.from_matrix(Binit)
 
         len_bound = dist_sq_bnd
-        v = alg_3_debug(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None)
+        # v = alg_3_debug(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None)
+        v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=1, tracer_alg3=None)
         if v is None:
             v = np.array( len(answer)*[0] )
         print(f"v: {v}")
@@ -306,10 +318,10 @@ def run_experiment(lat_index, params, stats_dict):
     return stats_dict
 
 if __name__=="__main__":
-    n, k = 160, 1
+    n, k = 120, 1
     q, eta = 3329, 3
-    latnum = 10
-    n_guess_coord, n_slicer_coord = 16, 71
+    latnum = 2
+    n_guess_coord, n_slicer_coord = 4, 49
     params = {}
     nthreads = 2
     nworkers = 1
@@ -342,3 +354,4 @@ if __name__=="__main__":
 
     # print(ex_cntr, succ_cntr)
     print(stats_dict_agr)
+    pool.close()

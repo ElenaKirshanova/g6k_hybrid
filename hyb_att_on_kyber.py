@@ -168,6 +168,7 @@ def attacker(input_dict, n_guess_coord, sieve_dim_max, nsieves, nthreads=1, trac
                 print("g6k load supposedly successfull.")
                 pass
 
+
 def alg_3(g6k,B,H11,t,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
     #TODO: inject correct target and see what happens
     # raise NotImplementedError
