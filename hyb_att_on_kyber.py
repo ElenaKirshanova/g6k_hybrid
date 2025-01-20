@@ -241,6 +241,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     dim = G.d
     gh_sub = gaussian_heuristic( G.r()[dim-sieve_dim:] )
     B = G.B
+    print(f"Alg2: enforcing float_type={G.float_type}")
     Gsub = GSO.Mat( G.B[:dim-sieve_dim], float_type=G.float_type )
     Gsub.update_gso()
 
@@ -302,10 +303,11 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     buckets = max(buckets, 2**(blocks-1))
 
     slicer.set_proj_error_bound(1.01*dist_sq_bnd)
+    slicer.set_max_slicer_interations(250)
     slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
 
-    print(f"t_gs_reduced: {t_gs_reduced}")
-    print(f"t_gs_reduced norm: {t_gs_reduced@t_gs_reduced}")
+    # print(f"t_gs_reduced: {t_gs_reduced}")
+    # print(f"t_gs_reduced norm: {t_gs_reduced@t_gs_reduced}")
     iterator = slicer.itervalues_cdb_t()
     for tmp in iterator:
         out_gs_reduced = np.array(tmp)  #db_t[0] is expected to contain the error vector
@@ -339,14 +341,19 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     for index in range(len(shift_babai_c_list)):
 
         t = np.array( target_candidates[index] )
-        t_1 = np.array( G.from_canonical( t,start=0 ) )
-        for i in range(dim-sieve_dim):
-            t_1[i] = 0.
-        t_1 = np.array( G.to_canonical( t_1,start=0 ) )
-        t_0 = np.array( G.from_canonical( t,start=0 ) )
-        for i in range(dim-sieve_dim, dim):
-            t_0[i] = 0.
-        t_0 = np.array( G.to_canonical( t_0,start=0 ) )
+
+        # t_1 = np.array( G.from_canonical( t,start=0 ) )
+        # for i in range(dim-sieve_dim):
+        #     t_1[i] = 0.
+        # t_1 = np.array( G.to_canonical( t_1,start=0 ) )
+        # t_0 = np.array( G.from_canonical( t,start=0 ) )
+        # for i in range(dim-sieve_dim, dim):
+        #     t_0[i] = 0.
+        # t_0 = np.array( G.to_canonical( t_0,start=0 ) )
+        # if index==0:
+        #     print(f"alg2 t_1: {t_1}")
+        #     print(f"alg2 t_0: {t_0}")
+
         #we substitute the obtaied error from the target and call babai to
         #account for an fp error
 
@@ -364,6 +371,14 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
         # bab_01 = np.concatenate( [bab_0,bab_1] )
         
         bab_01 = np.array( G.babai( np.array(t)-out ) )
+        # if index==0:
+        #     print(f"alg2 t: {t}")
+        #     float_formatter = "{:.2f}".format
+        #     np.set_printoptions(formatter={'float_kind':float_formatter})
+        #     print(f"alg2 out_gs_reduced: {out_gs_reduced}")
+        #     print(f"alg2 |out|: {(out_gs_reduced@out_gs_reduced)**0.5}")
+        #     print(f"alg2 np.array(t)-out: {np.array(t)-out}")
+        #     print(f"alg2 bab_01: {bab_01}")
 
         solution_candidate = np.array( G.B.multiply_left( bab_01 ) )
 

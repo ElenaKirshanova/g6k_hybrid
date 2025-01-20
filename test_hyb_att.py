@@ -116,6 +116,7 @@ def alg_3_debug_v2(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthrea
     for vtilde2 in vtilde2s:
         v2 = np.concatenate( [(dim-n_guess_coord)*[0],vtilde2] )
         babshift = np.concatenate( [ np.array( H12.multiply_left(vtilde2) ), n_guess_coord*[0] ] )
+        print
         v = np.concatenate([v1,n_guess_coord*[0]]) + v2 + babshift
 
         # print(v)
@@ -182,11 +183,15 @@ def alg_3_debug(g6k,H11, B, target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthre
     for vtilde2 in vtilde2s:
         v2 = np.concatenate( [(dim-n_guess_coord)*[0],vtilde2] )
         babshift = np.concatenate( [ np.array( H12.multiply_left(vtilde2) ), n_guess_coord*[0] ] )
+        print(f"ctilde1: {ctilde1}") #something's odd sometimes
+        # print(f"v1: {v1}") #something's odd sometimes
+        # print(f"v2: {v2}") #seems ok
         v = np.concatenate([v1,n_guess_coord*[0]]) + v2 + babshift
 
         v_t = v-np.array( target ) #+ tmp
         vv = v_t@v_t
         print(f"vv__: {vv**0.5}")
+        print(f"v_t: {v_t}")
         print(f"v babai: {v}")
         if vv < minv:
             minv = vv
@@ -199,7 +204,9 @@ def run_experiment(lat_index, params, stats_dict):
     n, k, q, eta = params["n"], params["k"], params["q"], params["eta"]
     n_guess_coord, n_slicer_coord = params["n_guess_coord"], params["n_slicer_coord"]
 
-    ft = "ld" if 2*k*n<140 else ( "dd" if config.have_qd else "mpfr")
+    # ft = "ld" if 2*k*n<140 else ( "dd" if config.have_qd else "mpfr")
+    ft = "mpfr"
+    FPLLL.set_precision(210)
     dim = 2*k*n
 
     print(f"float_type: {ft}")
@@ -219,7 +226,7 @@ def run_experiment(lat_index, params, stats_dict):
         for j in range(k*n):
             Binit[i][j] = int( A[i-k*n,j] )
 
-    with open(out_path+f"kyb_prehybrid_{n}_{q}_{eta}_{k}_{lat_index}_{n_guess_coord}_{327}", "rb") as file:
+    with open(out_path+f"kyb_prehybrid_{n}_{q}_{eta}_{k}_{lat_index}_{n_guess_coord}_{386}", "rb") as file:
         H11 = pickle.load(file)["B"]
     H11r, H11c = H11.nrows, H11.ncols
     g6k = Siever.restore_from_file( out_path + filename_g6kdump )
@@ -238,6 +245,11 @@ def run_experiment(lat_index, params, stats_dict):
     for (b, s, e) in bse:
         ex_cntr+=1
         print(f"running exp # {ex_cntr}")
+        #TODO: n=160, kappa=16, n_slicer_coord=71 returns large output.
+        #Investigate, if this is correct.
+        # if not ex_cntr==9: 
+        #     print(f"debug, omitting exp {ex_cntr}")
+        #     continue
         ex_timer = perf_counter()
         assert ( all( (s@A+e)%q == b ) ), f"wrong lwe instance! {(A@s+e)%q , b}"
         print(f"len {len(Binit), len(Binit[0])}")
@@ -265,6 +277,8 @@ def run_experiment(lat_index, params, stats_dict):
 
         len_bound = dist_sq_bnd
         v = alg_3_debug(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None)
+        if v is None:
+            v = np.array( len(answer)*[0] )
         print(f"v: {v}")
         print(f"vs: {np.concatenate([b-e,s]) }")
         # v = np.concatenate([b-e,s]) #uncomment this to verify that does indeed belong to B
@@ -292,13 +306,13 @@ def run_experiment(lat_index, params, stats_dict):
     return stats_dict
 
 if __name__=="__main__":
-    n, k = 140, 1
+    n, k = 160, 1
     q, eta = 3329, 3
     latnum = 10
-    n_guess_coord, n_slicer_coord = 14, 52
+    n_guess_coord, n_slicer_coord = 16, 71
     params = {}
     nthreads = 2
-    nworkers = 2
+    nworkers = 1
 
     params["nthreads"] = nthreads
     params["n"], params["k"], params["q"], params["eta"] = n, k, q, eta
