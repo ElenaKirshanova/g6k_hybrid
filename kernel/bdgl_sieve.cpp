@@ -82,6 +82,7 @@ inline int Siever::bdgl_reduce_with_delayed_replace(const size_t i1, const size_
     }
     else if (params.otf_lift && (new_l < params.lift_radius))
     {
+        std::cout << "bdgl_lift: " << i1 << " " << i2 << " " << new_l << std::endl; 
         bdgl_lift(i1, i2, new_l, sign);
     }
     return -1;

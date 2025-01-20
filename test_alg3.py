@@ -156,7 +156,13 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=
     vtilde2s = []
 
     H12 = IntegerMatrix.from_matrix( [list(b)[:dim-n_guess_coord] for b in B[dim-n_guess_coord:]] )
-    for times in range(1): #Alg 3 steps 4-7
+    sieve_dim = g6k.r-g6k.l
+
+    from hybrid_estimator.batchCVP import batchCVPP_cost
+    nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
+    nrand = ceil(5*(1./nrand_)**sieve_dim)
+    for times in range( ceil( (nrand * nsampl) / len(g6k) ) ): #Alg 3 steps 4-7
+        print(f"times: {times}")
         if times!=0 and times%64 == 0:
             print(f"{times} done out of {nsampl}", end=", ")
         if times>0:
@@ -194,8 +200,8 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=
 
         v_t = v-np.array( target ) #+ tmp
         vv = v_t@v_t
-        print(f"vv__: {vv**0.5}")
-        print(f"v babai: {v}")
+        # print(f"vv__: {vv**0.5}")
+        # print(f"v babai: {v}")
         if vv < minv:
             minv = vv
             argminv = v

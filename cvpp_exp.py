@@ -74,6 +74,7 @@ def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, nthreads=1, nran
     lambda1 = min( [G.get_r(0, 0)**0.5, gh**0.5] )
     param_sieve = SieverParams()
     param_sieve['threads'] = nthreads
+    param_sieve['otf_lift'] = False
     g6k = Siever(G,param_sieve) #temporary solution
     g6k.initialize_local(n-sieve_dim,n-sieve_dim,n)
     print("Running bdgl2...")
@@ -147,7 +148,7 @@ def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, nthreads=1, nran
                         buckets = max(buckets, 2**(blocks-1))
 
                         slicer.set_max_slicer_interations(max_slicer_interations)
-                        slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
+                        slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False)
 
                         iterator = slicer.itervalues_cdb_t()
                         for tmp in iterator:
@@ -184,9 +185,9 @@ if __name__=="__main__":
     nthreads = 1
     nworkers = 2
     max_slicer_interations = 300
-    ntests = 20
-    nlats = 5
-    n = 55
+    ntests = 10
+    nlats = 2
+    n = 51
     bits = 11.705
     betamax = 53
     approx_facts = [ 0.4 + 0.05*i for i in range(15) ] #
