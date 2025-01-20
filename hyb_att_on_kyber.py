@@ -303,8 +303,8 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     buckets = max(buckets, 2**(blocks-1))
 
     slicer.set_proj_error_bound(1.01*dist_sq_bnd)
-    slicer.set_max_slicer_interations(250)
-    slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"])
+    slicer.set_max_slicer_interations(500)
+    slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False)
 
     # print(f"t_gs_reduced: {t_gs_reduced}")
     # print(f"t_gs_reduced norm: {t_gs_reduced@t_gs_reduced}")
