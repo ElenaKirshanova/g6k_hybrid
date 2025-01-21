@@ -139,6 +139,7 @@ def alg_3_debug_v2(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthrea
     return argminv
 
 def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
+    # Emulates batch CVPP with guessing.
     # - - - prepare targets - - -
     then_start = perf_counter()
     gh_sub = gaussian_heuristic(g6k.M.r()[-(g6k.r-g6k.l):])
@@ -209,10 +210,10 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=
     return argminv
 
 if __name__=="__main__":
-    n, k = 144, 1
+    n, k = 176, 1
     eta = 3
-    n_guess_coord, n_slicer_coord = 10, 65
-    betamax = 67
+    n_guess_coord, n_slicer_coord = 8, 75
+    betamax = 82
     sieve_dim_max = n_slicer_coord
     nsieves = 2
     nthreads = 5

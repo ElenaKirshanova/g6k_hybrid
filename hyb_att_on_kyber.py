@@ -25,7 +25,7 @@ from hybrid_estimator.batchCVP import batchCVPP_cost
 
 approx_fact = 1.0001
 
-max_nsampl = 1500 #10**7
+max_nsampl = 2**31-1
 inp_path = "lwe instances/saved_lattices/"
 out_path = "lwe instances/reduced_lattices/"
 
@@ -233,11 +233,9 @@ def alg_3(g6k,B,H11,t,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads=1, tracer_al
     return argminv
 
 def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_alg2=None ):
-    # raise NotImplementedError
     sieve_dim = g6k.r-g6k.l #n_slicer_coord
     print(f"in alg2 sieve_dim={sieve_dim}", flush=True)
 
-    # dist_sq_bnd = 1.0 #TODO: implement
     G = g6k.M
     dim = G.d
     gh_sub = gaussian_heuristic( G.r()[dim-sieve_dim:] )
@@ -250,9 +248,6 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     slicer = RandomizedSlicer(g6k)
     slicer.set_nthreads(nthreads);
     # - - - END prepare Slicer for batch cvp - - -
-    #WARNING: we do not store t_gs_reduced_list since t_gs_list =  t_gs - gs(shift_babai_c*B)
-    #this is a time-memory tradeoff. Since Slicer returns only an error vector, we don\'t
-    #know which of the target candidates it corresponds to. TODO: or should we?
     target_list_size =  2 * g6k.db_size() #len(g6k)
     nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
     nrand = ceil(5*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
@@ -267,29 +262,22 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
             print(f"{cntr} grows done", flush=True)
         t_gs = from_canonical_scaled( G,target,offset=sieve_dim,scale_fact=gh_sub )
 
+        # We reduce each projected target to ensure that the slicer's imput targets are
+        # not too large.
         t_gs_non_scaled = G.from_canonical(target)[dim-sieve_dim:]
         shift_babai_c =  list( G.babai( list(t_gs_non_scaled), start=dim-sieve_dim, gso=True) )
-        # print( f"shift_babai_c: {shift_babai_c}" )
         shift_babai = G.B.multiply_left( (dim-sieve_dim)*[0] + list( shift_babai_c ) )
         t_gs_reduced = from_canonical_scaled( G,np.array(target)-shift_babai,offset=sieve_dim,scale_fact=gh_sub ) #this is the actual reduced target
-
-
-        # assert len(t_gs_reduced) == sieve_dim
-        # assert all( abs( t_gs_reduced[dim-sieve_dim:] ) <0.501 ) #assert that the last Sieve dim coords are size reduced
-
-        # B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim,scale_fact=gh_sub), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
-        # t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
-        # t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
-        # shift_babai_c = G.babai((dim-sieve_dim)*[0] + list(t_gs_shift), start=dim-sieve_dim,gso=True)
 
         t_gs_list.append(t_gs)
         shift_babai_c_list.append(shift_babai_c)
         t_gs_reduced_list.append(t_gs_reduced)
 
+        # for each guess we add corresponding randomized vectors
         # print(f"Doing grow_db")
-        then_gdbwt = perf_counter()
+        # then_gdbwt = perf_counter()
         slicer.grow_db_with_target(t_gs_reduced, n_per_target=nrand) #add a candidate to the Slicer
-        gdbwt_t = perf_counter() - then_gdbwt #TODO: collect this stat
+        # gdbwt_t = perf_counter() - then_gdbwt #TODO: collect this stat
         # print(f"grow_db done in {gdbwt_t}",flush=True)
         cntr += 1
     #run slicer
@@ -311,7 +299,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     # print(f"t_gs_reduced norm: {t_gs_reduced@t_gs_reduced}")
     iterator = slicer.itervalues_cdb_t()
     for tmp in iterator:
-        out_gs_reduced = np.array(tmp)  #db_t[0] is expected to contain the error vector
+        out_gs_reduced = np.array(tmp)  #db_t[0] is now expected to contain the error vector
         cur_nrm_sq = out_gs_reduced@out_gs_reduced
         break
     out = to_canonical_scaled( G,np.concatenate( [(G.d-sieve_dim)*[0], out_gs_reduced] ), scale_fact=gh_sub )
@@ -323,9 +311,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
         tmp = np.array(tmp)  #db_t[0] is expected to contain the error vector
         tmp_nrm_sq = ( tmp@tmp )**0.5
         nrms.append( tmp_nrm_sq )
-    # print(f"Targets nrms post: {[float(tt) for tt in nrms]}")
     setnrms = set(nrms)
-    # print(setnrms)
     print(f"{len(setnrms)} out of {len(nrms)} targets are unique", flush=True)
 
     print(f"out_gs_reduced-t_gs_reduced: {out_gs_reduced-t_gs_reduced}")
@@ -333,45 +319,18 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     print(f"out_gs_reduced norm: {(out_gs_reduced@out_gs_reduced)**0.5} vs {dist_sq_bnd**0.5}")
     index = 0
     #Now we deduce which target candidate the error vector corresponds to.
-    #The idea is that if t_gs is an answer then t_gs_reduced - out_gs_reduced is in the projective lat
-    #and is (close to) zero.
     min_norm_err_sq = float("inf")
     index_best = None
     b_best = None
     print(f"LEN: {len(target_candidates)}")
     for index in range(len(shift_babai_c_list)):
 
+        # if we substract the projection of the error from the target, babai is likely to recover the cvp solution.
         t = np.array( target_candidates[index] )
-
-        # t_1 = np.array( G.from_canonical( t,start=0 ) )
-        # for i in range(dim-sieve_dim):
-        #     t_1[i] = 0.
-        # t_1 = np.array( G.to_canonical( t_1,start=0 ) )
-        # t_0 = np.array( G.from_canonical( t,start=0 ) )
-        # for i in range(dim-sieve_dim, dim):
-        #     t_0[i] = 0.
-        # t_0 = np.array( G.to_canonical( t_0,start=0 ) )
-        # if index==0:
-        #     print(f"alg2 t_1: {t_1}")
-        #     print(f"alg2 t_0: {t_0}")
-
-        #we substitute the obtaied error from the target and call babai to
-        #account for an fp error
-
-        # out_reduced = np.array( to_canonical_scaled( G, out_gs_reduced, offset=sieve_dim,scale_fact=gh_sub ) )
-        # t_1 = t_1 - out_reduced
-        # bab_1 = G.babai(t_1,start=dim-sieve_dim, dimension=sieve_dim)
-
-        # tmp = G.B[-sieve_dim:].multiply_left( bab_1 )
-        # tmp = np.array( G.from_canonical(tmp,start=0) )
-        # for i in range(dim-sieve_dim,dim):
-        #     tmp[i] = 0.
-        # tmp = G.to_canonical( tmp, start=0 )
-        # t_0 = t_0 - tmp
-        # bab_0 = G.babai(t_0,start=0, dimension=dim-sieve_dim)
-        # bab_01 = np.concatenate( [bab_0,bab_1] )
-        
         bab_01 = np.array( G.babai( np.array(t)-out ) )
+        solution_candidate = np.array( G.B.multiply_left( bab_01 ) )
+
+        # the code below gives a glimpse of the fp errors we experience
         # if index==0:
         #     print(f"alg2 t: {t}")
         #     float_formatter = "{:.2f}".format
@@ -381,8 +340,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
         #     print(f"alg2 np.array(t)-out: {np.array(t)-out}")
         #     print(f"alg2 bab_01: {bab_01}")
 
-        solution_candidate = np.array( G.B.multiply_left( bab_01 ) )
-
+        # we now minimize the error to find the closest candidate
         diff = t - solution_candidate
         diff_nrm_sq = diff@diff
 
@@ -392,14 +350,12 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
             best_solution_candidate = solution_candidate
             best_bab_01 = bab_01
 
-    print(f"min_norm_err_sq: {min_norm_err_sq}")
-
-
     print(f"alg2 terminates")
     return best_bab_01
 
 
 if __name__=="__main__":
+    raise NotImplementedError("No properly implemented experiments here.")
     # (dimension, predicted kappa, predicted beta)
     # params = [(140, 12, 48), (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     # params = [(140, 12, 48)]#, (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
