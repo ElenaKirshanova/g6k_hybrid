@@ -223,7 +223,6 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
 
 
 void RandomizedSlicer::slicer_queue_create_task( const size_t t_id, const std::vector<QEntry> &queue, std::vector<Entry_t> &transaction_db, int64_t &write_index) {
-    const size_t S = cdb_t.size();
     const size_t Q = queue.size();
 
     for(unsigned int index = 0; index < Q; index++ )  {
@@ -422,7 +421,6 @@ void RandomizedSlicer::slicer_process_buckets_task(const size_t t_id,
     //LFT lenbound = fast_cdb[std::min(S-1, size_t(params.bdgl_improvement_db_ratio * S))].len;
     const size_t b_start = t_id;
 
-    size_t B = 0;
     for (size_t b = b_start; b < nr_buckets; b += threads)
     {
         const size_t i_start = bsize * b;
@@ -443,7 +441,7 @@ void RandomizedSlicer::slicer_process_buckets_task(const size_t t_id,
             CompressedVector cv = pce1->c;
 
             LFT best_reduction = pce1->len;
-            size_t best_j = -1;
+            int best_j = -1;
             int best_sign = 0;
 
             for (size_t j = i_start_s; j < i_end_s; ++j)

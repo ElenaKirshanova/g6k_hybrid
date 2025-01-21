@@ -226,7 +226,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
 if __name__ == '__main__':
 
-    Nexperiments = 50
+    Nexperiments = 100
     Nlats = 10
     path = "saved_lattices/"
     isExist = os.path.exists(path)
@@ -245,7 +245,7 @@ if __name__ == '__main__':
     nworkers = 4 # number of workers
     nrand_param = 1.
     shrink_factor = 0.7071 # ~ 1/sqrt(2)
-    n_shrinkings = 5
+    n_shrinkings = 8
     pool = Pool(processes = nworkers )
     tasks = []
 

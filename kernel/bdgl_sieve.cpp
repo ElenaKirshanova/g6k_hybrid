@@ -387,6 +387,7 @@ bool Siever::bdgl_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t
     size_t const S = cdb.size();
     recompute_histo();
 
+
     size_t saturation_index = 0.5 * params.saturation_ratio * std::pow(params.saturation_radius, n/2.0);
     if( saturation_index > 0.5 * S ) {
         std::cerr << "Saturation index larger than half of db size" << std::endl;
