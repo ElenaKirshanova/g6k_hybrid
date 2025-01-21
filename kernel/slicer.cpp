@@ -217,12 +217,11 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
             return 0;
         }
     }
-
     return -1;
 }
 
 
-void RandomizedSlicer::slicer_queue_create_task( const size_t t_id, const std::vector<QEntry> &queue, std::vector<Entry_t> &transaction_db, int64_t &write_index) {
+void RandomizedSlicer::slicer_queue_create_task(const std::vector<QEntry> &queue, std::vector<Entry_t> &transaction_db, int64_t &write_index) {
     const size_t Q = queue.size();
 
     for(unsigned int index = 0; index < Q; index++ )  {
@@ -290,14 +289,12 @@ void RandomizedSlicer::slicer_queue(std::vector<std::vector<QEntry>> &t_queues, 
     for( size_t t_id = 0; t_id < threads; ++t_id ) {
         threadpool.push([this, t_id, &t_queues, &transaction_db,&write_indices](){
             int64_t write_index = write_indices[t_id];
-            slicer_queue_create_task(t_id, t_queues[t_id], transaction_db[t_id], write_index);
+            slicer_queue_create_task(t_queues[t_id], transaction_db[t_id], write_index);
             write_indices[t_id] = write_index;
             t_queues[t_id].clear();
         });
     }
     threadpool.wait_work();
-
-    //std::cout << "slicer_queue_create_task finished" << std::endl;
 
     // Insert transaction DB
     std::vector<size_t> kk(threads);
@@ -338,7 +335,7 @@ void RandomizedSlicer::slicer_bucketing(const size_t blocks, const size_t multi_
 
     for (size_t t_id = 0; t_id < threads; ++t_id)
     {
-        threadpool.push([this, t_id, multi_hash, &buckets, &buckets_index, &lsh](){
+        threadpool.push([this, t_id, &buckets, &buckets_index, &lsh](){
             slicer_bucketing_task(t_id, buckets, buckets_index, lsh);
         });
     }
@@ -363,9 +360,6 @@ void RandomizedSlicer::slicer_bucketing_task(const size_t t_id, std::vector<uint
     const unsigned int nr_buckets = buckets_index.size();
     const size_t bsize = buckets.size() / nr_buckets;
     //const size_t threads = threads;
-
-    //std::cout << "bsize " << bsize <<  " nr_buckets: " << nr_buckets << " multi_hash " << multi_hash << std::endl;
-
 
     uint32_t i_start = t_id;
     int32_t res[multi_hash];

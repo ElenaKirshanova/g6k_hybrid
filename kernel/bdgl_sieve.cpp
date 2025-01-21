@@ -82,7 +82,6 @@ inline int Siever::bdgl_reduce_with_delayed_replace(const size_t i1, const size_
     }
     else if (params.otf_lift && (new_l < params.lift_radius))
     {
-        std::cout << "bdgl_lift: " << i1 << " " << i2 << " " << new_l << std::endl; 
         bdgl_lift(i1, i2, new_l, sign);
     }
     return -1;
@@ -345,10 +344,7 @@ void Siever::bdgl_queue(std::vector<std::vector<QEntry>> &t_queues, std::vector<
         transaction_db[i].resize(std::min(S-insert_after, Q)/params.threads + 1);
 
     std::vector<int> write_indices(params.threads, transaction_db[0].size()-1);
-    //std::cout << "t_queues sizes:" << std::endl;
-    //for(unsigned int i = 0; i<params.threads; i++) std::cout << t_queues[i].size() << " " << write_indices[i] <<  " ";
-    //std::cout << std::endl;
-    //std::cout << std::endl;
+
 
     // Prepare transaction DB from queue
     for( size_t t_id = 0; t_id < params.threads; ++t_id ) {

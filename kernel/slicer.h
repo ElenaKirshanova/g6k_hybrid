@@ -93,7 +93,7 @@ public:
 
     void slicer_queue_dup_remove_task( std::vector<QEntry> &queue);
     void slicer_queue(std::vector<std::vector<QEntry>> &t_queues, std::vector<std::vector<Entry_t>>& transaction_db );
-    void slicer_queue_create_task( const size_t t_id, const std::vector<QEntry> &queue, std::vector<Entry_t> &transaction_db, int64_t &write_index);
+    void slicer_queue_create_task( const std::vector<QEntry> &queue, std::vector<Entry_t> &transaction_db, int64_t &write_index);
     inline int slicer_reduce_with_delayed_replace(const size_t i1, const size_t i2, std::vector<Entry_t>& transaction_db, int64_t& write_index, LFT new_l, int8_t sign);
     size_t slicer_queue_insert_task( const size_t t_id, std::vector<Entry_t> &transaction_db, int64_t write_index);
     bool slicer_replace_in_db(size_t cdb_index, Entry_t &e);
