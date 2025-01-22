@@ -67,7 +67,7 @@ if __name__ == "__main__":
     param_sieve = SieverParams()
     param_sieve['threads'] = nthreads
     g6k = Siever(G,param_sieve)
-    g6k.initialize_local(0,n-sieve_dim,n)
+    g6k.initialize_local(n-sieve_dim,n-sieve_dim,n)
     print("Running bdgl2...")
     g6k(alg="bdgl2")
     g6k.M.update_gso()

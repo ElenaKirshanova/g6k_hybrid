@@ -240,7 +240,7 @@ def run_experiment(lat_index, params, stats_dict):
     then = perf_counter()
     #restore precomputed g6k and initialize it
     g6k = Siever.restore_from_file( out_path + filename_g6kdump ) 
-    g6k.initialize_local(0, H11r-n_slicer_coord, H11r)
+    g6k.initialize_local(H11r-n_slicer_coord, H11r-n_slicer_coord, H11r)
     # Needed to ensure that all locals are correct.
     # Ideally, already done.
     g6k(alg="bdgl2") 

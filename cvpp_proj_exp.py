@@ -32,7 +32,7 @@ def gen_cvpp_g6k(n,n_slicer_coord=None,betamax=None,k=None,bits=11.705,seed=0):
     betamax=n if betamax is None else betamax
     n_slicer_coord=n if n_slicer_coord is None else n_slicer_coord
 
-    
+
     k = n//2 if k is None else k
     B = IntegerMatrix(n,n)
     B.randomize("qary", bits=bits, k = k)
@@ -54,7 +54,7 @@ def gen_cvpp_g6k(n,n_slicer_coord=None,betamax=None,k=None,bits=11.705,seed=0):
     param_sieve['saturation_radius'] = 1.32
 
     g6k = Siever(G,param_sieve)
-    g6k.initialize_local(0,0,n)
+    g6k.initialize_local(n-n_slicer_coord,n-n_slicer_coord,n)
     print("Running bdgl2...")
     then=perf_counter()
     try:
@@ -68,22 +68,24 @@ def gen_cvpp_g6k(n,n_slicer_coord=None,betamax=None,k=None,bits=11.705,seed=0):
     g6k.dump_on_disk(f"cvppg6k_n{n}_d{n_slicer_coord}_{seed}_test.pkl")
 
 def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, nthreads=1, nrand_params=[1.]):
+    g6k()
     G = g6k.M
     B = G.B
     n = G.d
     n_slicer_coord = g6k.r-g6k.l
+    sieve_dim = n_slicer_coord
 
-    sieve_dim = n
     gh = gaussian_heuristic(G.r())
     lambda1 = min( [G.get_r(0, 0)**0.5, gh**0.5] )
     param_sieve = SieverParams()
     param_sieve['threads'] = nthreads
     param_sieve['otf_lift'] = False
-    g6k = Siever(G,param_sieve) #temporary solution
-    g6k.initialize_local(n-sieve_dim,n-sieve_dim,n)
-    print("Running bdgl2...")
-    g6k(alg="bdgl2")
-    g6k.M.update_gso()
+    # g6k = Siever(G,param_sieve) #temporary solution
+    # g6k.initialize_local(n-sieve_dim,n-sieve_dim,n)
+    # print("Running bdgl2...")
+    # g6k(alg="bdgl2")
+    # g6k.M.update_gso()
+    print(f"debug r(): {G.r()}, l, r: {g6k.l, g6k.r}")
 
     gh_sub = gaussian_heuristic( G.r()[-sieve_dim:] )
     rii_sqrt = [ sqrt(rii/gh_sub) for rii in G.r()[:n-n_slicer_coord] ] 
@@ -101,9 +103,9 @@ def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, nthreads=1, nran
                 # e = np.array( random_on_sphere(n,approx_fact*lambda1) )
                 # e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim,scale_fact=gh) )
                 e_ = np.array( random_on_sphere(n_slicer_coord,approx_fact) ) #the projected part of the error 
-                e0_ = np.array( [np.random.uniform(0, -rii/2.01, rii/2.01) for rii in rii_sqrt] ) #the projected part of the error
+                e0_ = np.array( [np.random.uniform(-rii/2.01, rii/2.01,1)[0] for rii in rii_sqrt] ) #the projected part of the error
                 e_proj = np.concatenate( [e0_,e_] )
-                e = np.array( to_canonical_scaled(G,e_proj,offset=sieve_dim,scale_fact=gh_sub) )
+                e = np.array( to_canonical_scaled(G,e_proj,scale_fact=gh_sub) )
                 print(f"e_proj: {e_proj}")
                 print(f"e: {e}")
 
@@ -130,7 +132,6 @@ def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, nthreads=1, nran
                 Testing Slicer.
                 """
                 if not succ_bab:
-                    sieve_dim = n
                     t_gs = from_canonical_scaled( G,t,offset=sieve_dim,scale_fact=gh )
 
                     #retrieve the projective sublattice
@@ -152,6 +153,7 @@ def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, nthreads=1, nran
 
                         nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
                         nrand = ceil(nrand_param*(1./nrand_)**sieve_dim)
+                        # print(f"nrand: {nrand}, sieve_dim: {sieve_dim} nrand_:{1/nrand_} nrand_param: {nrand_param}")
                         slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
 
                         blocks = 2 # should be the same as in siever
@@ -198,15 +200,15 @@ def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, nthreads=1, nran
     return aggregated_data
 
 if __name__=="__main__":
-    nthreads = 1
+    nthreads = 2
     nworkers = 2
-    max_slicer_interations = 300
-    ntests = 10
+    max_slicer_interations = 200
+    ntests = 20
     nlats = 2
 
-    n = 360
+    n = 80
     n_slicer_coord = 60
-    betamax = 60
+    betamax = 42
 
     bits = 11.705
     approx_facts = [ 0.4 + 0.05*i for i in range(15) ] #
@@ -224,12 +226,13 @@ if __name__=="__main__":
             to_be_computed.append( (cntr,n,betamax,None,bits) )
             print(f"g6k={cntr} is yet to be processed")
 
+    print(f"Test {n} {n_slicer_coord}")
     tasks = []
     output = []
     pool = Pool( processes = nworkers )
     for cntr,n,betamax,k,bits in to_be_computed:
         tasks.append( pool.apply_async(
-            gen_cvpp_g6k, (n, betamax, k, bits, cntr)
+            gen_cvpp_g6k, (n, n_slicer_coord, betamax, k, bits, cntr)
             ) )
 
     start_writing_index = len(g6ks)
@@ -244,12 +247,17 @@ if __name__=="__main__":
     aggregated_data = []
     nrand_params = [1., 3., 5.]
 
+    lol = 0
     for g6k in g6ks:
+        print(f"new exp: {lol}")
+        lol+=1
         aggregated_data += [ run_exp(g6k,ntests,approx_facts,max_slicer_interations=max_slicer_interations, nthreads=nthreads, nrand_params=nrand_params) ]
 
     for tmp in aggregated_data:
         print(f"nrand_parameter: {aggregated_data[0]}")
-        print(aggregated_data[1])
+        print(aggregated_data)
 
-    with open(f"slicsucc_{n}_{n_slicer_coord}.pkl","wb") as file:
+    filename = f"slicsucc_{n}_{n_slicer_coord}.pkl"
+    with open(filename,"wb") as file:
         pickle.dump(aggregated_data, file)
+    print(f"dumped data to {filename}")
