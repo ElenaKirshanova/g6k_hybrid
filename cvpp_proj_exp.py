@@ -106,8 +106,8 @@ def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, nthreads=1, nran
                 e0_ = np.array( [np.random.uniform(-rii/2.01, rii/2.01,1)[0] for rii in rii_sqrt] ) #the projected part of the error
                 e_proj = np.concatenate( [e0_,e_] )
                 e = np.array( to_canonical_scaled(G,e_proj,scale_fact=gh_sub) )
-                print(f"e_proj: {e_proj}")
-                print(f"e: {e}")
+                # print(f"e_proj: {e_proj}")
+                # print(f"e: {e}")
 
                 b = np.array( B.multiply_left( c ) )
                 t = b+e
@@ -132,19 +132,19 @@ def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, nthreads=1, nran
                 Testing Slicer.
                 """
                 if not succ_bab:
-                    t_gs = from_canonical_scaled( G,t,offset=sieve_dim,scale_fact=gh )
+                    t_gs = from_canonical_scaled( G,t,offset=sieve_dim,scale_fact=gh_sub )
 
                     #retrieve the projective sublattice
-                    B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim,scale_fact=gh), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
+                    B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim,scale_fact=gh_sub), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
 
                     try:
                         # e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim,scale_fact=gh) )
                         gh_sub = gaussian_heuristic( G.r()[-sieve_dim:] )
                         print("projected target squared length:", (e_@e_))
 
-                        t_gs = from_canonical_scaled( G,t,offset=sieve_dim,scale_fact=gh )
+                        t_gs = from_canonical_scaled( G,t,offset=sieve_dim,scale_fact=gh_sub )
                         #retrieve the projective sublattice
-                        B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim,scale_fact=gh), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
+                        B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim,scale_fact=gh_sub), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
                         t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
                         t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
 
@@ -173,6 +173,10 @@ def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, nthreads=1, nran
                             out_gs_reduced = tmp  #cdb[0]
                             break
                         out_gs = out_gs_reduced + t_gs_shift
+
+                        print(f"e_: {e_}")
+                        print(f"out_gs_reduced: {out_gs_reduced}")
+                        print(f"out_gs_reduced-e_:{out_gs_reduced-e_}")
 
                         # - - - Check - - - -
                         out = to_canonical_scaled( G,out_gs,offset=sieve_dim,scale_fact=gh_sub )
