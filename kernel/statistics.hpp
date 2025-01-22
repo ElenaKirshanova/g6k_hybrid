@@ -85,13 +85,15 @@
 
 */
 
-#if defined ENABLE_EXTENDED_STATS
-    #define COLLECT_STATISTICS 2
-#elif defined ENABLE_STATS
-    #define COLLECT_STATISTICS 1
-#else
-    #define COLLECT_STATISTICS 0
-#endif
+// #if defined ENABLE_EXTENDED_STATS
+//     #define COLLECT_STATISTICS 2
+// #elif defined ENABLE_STATS
+//     #define COLLECT_STATISTICS 1
+// #else
+//     #define COLLECT_STATISTICS 0
+// #endif
+
+#define COLLECT_STATISTICS 1
 
 /**
     Define macros COLLECT_STATISTICS_*:
@@ -228,6 +230,14 @@
 #endif
 #endif
 
+#ifndef COLLECT_STATISTICS_SLICER
+#if COLLECT_STATISTICS
+    #define COLLECT_STATISTICS_SLICER 1
+#else
+    #define COLLECT_STATISTICS_SLICER 0
+#endif
+#endif
+
 /**
     ENABLE_IF_STATS_*(x) is equal to x if COLLECT_STATISTICS_* is != 0
     This is intended to make more concise statements in the rest of the code that are conditional
@@ -311,6 +321,12 @@
     #define ENABLE_IF_STATS_MEMORY(s) s
 #else
     #define ENABLE_IF_STATS_MEMORY(s)
+#endif
+
+#if COLLECT_STATISTICS_SLICER
+    #define ENABLE_IF_STATS_SLICER(s) s
+#else
+    #define ENABLE_IF_STATS_SLICER(s)
 #endif
 
 /**
@@ -482,6 +498,18 @@ private:
     static constexpr unsigned long stats_memory_snapshots = 0; // we might meaningfully write 2 here for bgj1
 #endif
 
+#if COLLECT_STATISTICS_SLICER // vars for loop stats
+    std::atomic_ulong stats_siever_loopnum;
+    std::atomic_ulong stats_slicer_loopnum;
+    std::atomic<double> stats_siever_total_time_in;
+    std::atomic<double> stats_slicer_total_time_in;
+#else
+    static constexpr unsigned long stats_siever_loopnum = 0;
+    static constexpr unsigned long stats_slicer_loopnum = 0;
+    static constexpr double stats_siever_total_time_in = 0.;
+    static constexpr double stats_slicer_total_time_in = 0.;
+#endif
+
 /**
     To avoid at least some boilerplate, we use macros to create incrementers / getters:
     MAKE_ATOMIC_INCREMENTER(INCNAME,STAT) will create a
@@ -564,6 +592,10 @@ FORCE_INLINE static constexpr auto get_stats_##GETTERNAME() noexcept -> mystd::r
 
 #define MAKE_GETTER_AND_INCREMENTER(NAME, NONTRIVIAL) \
 MAKE_INCREMENTER(NAME, NONTRIVIAL) \
+MAKE_GETTER(NAME, NONTRIVIAL)
+
+#define MAKE_GETTER_AND_SETTER(NAME, NONTRIVIAL) \
+MAKE_SETTER(NAME, NONTRIVIAL) \
 MAKE_GETTER(NAME, NONTRIVIAL)
 
 public:
@@ -730,6 +762,20 @@ public:
     MAKE_SETTER(memory_transactions,                    COLLECT_STATISTICS_MEMORY)
     MAKE_SETTER(memory_snapshots,                       COLLECT_STATISTICS_MEMORY)
 
+/** SLICER */
+    static constexpr bool collect_statistics_siever_loopnum = (COLLECT_STATISTICS_SLICER >= 1);
+    static constexpr bool collect_statistics_slicer_loopnum = (COLLECT_STATISTICS_SLICER >= 1);
+    static constexpr bool collect_statistics_siever_total_time_in = (COLLECT_STATISTICS_SLICER >= 1);
+    static constexpr bool collect_statistics_slicer_total_time_in = (COLLECT_STATISTICS_SLICER >= 1);
+    MAKE_GETTER_AND_SETTER(siever_loopnum,                      COLLECT_STATISTICS_SLICER)
+    MAKE_GETTER_AND_SETTER(slicer_loopnum,                      COLLECT_STATISTICS_SLICER)
+    MAKE_GETTER_AND_SETTER(siever_total_time_in,                      COLLECT_STATISTICS_SLICER)
+    MAKE_GETTER_AND_SETTER(slicer_total_time_in,                      COLLECT_STATISTICS_SLICER)
+    // unsigned long get_stats_siever_loopnum() const { return get_stats_sorting_sieve(); }
+    // unsigned long get_stats_slicer_loopnum() const { return get_stats_sorting_sieve(); }
+    // double get_stats_siever_total_time_in() const { return get_stats_sorting_sieve(); }
+    // double get_stats_slicer_total_time_in() const { return get_stats_sorting_sieve(); }
+
     inline void clear_statistics() noexcept
     {
     #if COLLECT_STATISTICS_REDS
@@ -815,6 +861,13 @@ public:
         stats_memory_buckets = 0;
         stats_memory_transactions = 0;
         stats_memory_snapshots = 0;
+    #endif
+
+    #if COLLECT_STATISTICS_SLICER
+        stats_siever_loopnum = 0;
+        stats_slicer_loopnum = 0;
+        stats_siever_total_time_in = 0.;
+        stats_slicer_total_time_in = 0.;
     #endif
     }
 

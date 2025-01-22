@@ -933,6 +933,26 @@ cdef class Siever(object):
     def _stat_c_memory_snapshots(self):
         return self._core.statistics.collect_statistics_memory_snapshots
 
+    @property
+    def _stat_siever_loopnum(self):
+        return self._core.statistics.collect_statistics_siever_loopnum
+
+    @property
+    def _stat_siever_loopnum(self):
+        return self._core.statistics.collect_statistics_siever_loopnum
+
+    @property
+    def _stat_slicer_loopnum(self):
+        return self._core.statistics.collect_statistics_slicer_loopnum
+
+    @property
+    def _stat_siever_loopnum(self):
+        return self._core.statistics.collect_statistics_siever_total_time_in
+
+    @property
+    def _stat_siever_loopnum(self):
+        return self._core.statistics.collect_statistics_slicer_total_time_in
+
 
     # This dictionary controls how statistics are exported / displayed.
     #

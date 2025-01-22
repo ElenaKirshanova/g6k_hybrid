@@ -164,6 +164,16 @@ cdef extern from "../kernel/siever.h" nogil:
         bool collect_statistics_memory_snapshots
         unsigned long get_stats_memory_snapshots() const
 
+        bool collect_statistics_siever_loopnum
+        unsigned long get_stats_siever_loopnum
+        bool collect_statistics_slicer_loopnum
+        unsigned long get_stats_slicer_loopnum
+        bool collect_statistics_siever_total_time_in
+        double get_stats_siever_total_time_in
+        bool collect_statistics_slicer_total_time_in
+        double get_stats_slicer_total_time_in
+
+
     cdef void show_cpu_stats()
 
     # Note: x and yr are std::arrays, not std::vectors...
