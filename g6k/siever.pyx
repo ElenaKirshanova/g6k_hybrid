@@ -1021,6 +1021,10 @@ cdef class Siever(object):
         "memory_buckets"        : [160, "MemB:", "Total number of bucket elements we reserved memory for",              {        "triple_mt"}, "max"],
         "memory_transactions"   : [161, "MemT:", "Total number of transactions we reserved memory for",                 {        "triple_mt"}, "max"],
         "memory_snapshots"      : [162, "MemS:", "Maximum number of concurrent CDB snapshots",                          {        "triple_mt"}, "max"], # Note: For bgj1, this value is always 2 (and hence not collected). For other sieves, it is 1.
+        "siever_loopnum"        : [163, "SiL:",  "Number of loops done in siever"            ,                          {             "bdgl"}],
+        "slicer_loopnum"        : [164, "SlL:",  "Number of loops done in slicer"            ,                          {             "bdgl"}],
+        "siever_total_time_in"  : [165, "SiT:",  "Number of time spent in siever"            ,                          {             "bdgl"}],
+        "slicer_total_time_in"  : [166, "SlT:",  "Number of time spent in siever"            ,                          {             "bdgl"}],
     }
 
     @property
