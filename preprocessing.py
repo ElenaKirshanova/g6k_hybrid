@@ -13,8 +13,8 @@ except ModuleNotFoundError:
     from multiprocessing import Pool
 
 import pickle
-inp_path = "lwe instances/saved_lattices/"
-out_path = "lwe instances/reduced_lattices/"
+inp_path = "lwe_instances/saved_lattices/"
+out_path = "lwe_instances/reduced_lattices/"
 #path = "saved_lattices/"
 does_exist = os.path.exists(inp_path)
 if not does_exist:

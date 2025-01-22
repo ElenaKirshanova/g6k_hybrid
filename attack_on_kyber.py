@@ -24,8 +24,8 @@ from LatticeReduction import LatticeReduction, BKZ_SIEVING_CROSSOVER
 
 import pickle
 MAX_LOOPS = 2
-inp_path = "lwe instances/saved_lattices/"
-out_path = "lwe instances/reduced_lattices/"
+inp_path = "lwe_instances/saved_lattices/"
+out_path = "lwe_instances/reduced_lattices/"
 
 def flatter_interface( fpylllB ):
     flatter_is_installed = os.system( "flatter -h > /dev/null" ) == 0

@@ -29,6 +29,7 @@ from utils import * #random_on_sphere, reduce_to_fund_par_proj
 from hybrid_estimator.batchCVP import batchCVPP_cost
 
 def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705,seed=0):
+    #TODO: consider if we may load an already reduced basis and extend the context
     betamax=n if betamax is None else betamax
     k = n//2 if k is None else k
     B = IntegerMatrix(n,n)

@@ -28,8 +28,11 @@ from LatticeReduction import LatticeReduction
 from utils import * #random_on_sphere, reduce_to_fund_par_proj
 from hybrid_estimator.batchCVP import batchCVPP_cost
 
-def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705,seed=0):
+def gen_cvpp_g6k(n,n_slicer_coord=None,betamax=None,k=None,bits=11.705,seed=0):
     betamax=n if betamax is None else betamax
+    n_slicer_coord=n if n_slicer_coord is None else n_slicer_coord
+
+    
     k = n//2 if k is None else k
     B = IntegerMatrix(n,n)
     B.randomize("qary", bits=bits, k = k)

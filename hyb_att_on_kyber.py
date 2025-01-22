@@ -26,8 +26,8 @@ from hybrid_estimator.batchCVP import batchCVPP_cost
 approx_fact = 1.0001
 
 max_nsampl = 2**31-1
-inp_path = "lwe instances/saved_lattices/"
-out_path = "lwe instances/reduced_lattices/"
+inp_path = "lwe_instances/saved_lattices/"
+out_path = "lwe_instances/reduced_lattices/"
 
 def kyberGen(n, q = 3329, eta = 3, k=1):
     polys = []

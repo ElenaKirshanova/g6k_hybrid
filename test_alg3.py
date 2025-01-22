@@ -14,8 +14,8 @@ from sample import *
 from g6k.siever import SaturationError
 from test_alg2 import alg_2_batched_debug
 
-inp_path = "lwe instances/saved_lattices/"
-out_path = "lwe instances/reduced_lattices/"
+inp_path = "lwe_instances/saved_lattices/"
+out_path = "lwe_instances/reduced_lattices/"
 max_nsampl = 2**10
 
 def kyberGen(n, q = 3329, eta = 3, k=1):
