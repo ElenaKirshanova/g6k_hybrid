@@ -261,8 +261,8 @@ if __name__ == "__main__":
     lats_per_dim = 2 #10
     inst_per_lat = 2 #10 #how many instances per A, q
     q, eta = 3329, 3
-    nks = [ (120+10*i,3) for i in range(1) ]
-    betapre,betamax = 42, 51
+    nks = [ (130+10*i,3) for i in range(1) ]
+    betapre,betamax = 47, 62
 
     output = []
     pool = Pool( processes = nworkers )

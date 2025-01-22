@@ -84,7 +84,7 @@ def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthrea
     H11 = LR.basis
 
     if dump_bkz:
-        with open(out_path+f"/kyb_prehybrid_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}_{sieve_dim_max-nsieves+i}", "wb") as f:
+        with open(out_path+f"/kyb_prehybrid_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}", "wb") as f:
             pickle.dump({"B": H11}, f)
 
 
@@ -129,9 +129,9 @@ if __name__=="__main__":
     # (dimension, predicted kappa, predicted beta)
     # params = [(140, 12, 48), (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     #params = [(140, 12, 48)]#, (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
-    params = [(120, 4, 45)]
+    params = [(130, 4, 49)]
     nsieves = 5
-    nworkers, nthreads =  2,2 #20, 4
+    nworkers, nthreads =  2, 2 #20, 4
 
     # lats_per_dim = 10
     # inst_per_lat = 10 #how many instances per A, q
