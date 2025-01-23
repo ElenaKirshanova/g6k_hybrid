@@ -169,11 +169,15 @@ if __name__ == "__main__":
             print("dbsize", g6k.db_size())
 
             # nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
-            # nrand = ceil(nrand_param*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
+            # nrand = ceil(5*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
 
-            nrand = ceil( nrand_param * len(g6k) )
-            print(f"nrand:{nrand}")
-            slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
+            # print(f"nrand:{nrand}")
+            slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand_param*len(g6k))
+            # slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
+            # assert len(g6k)>=nrand, f"NO! {len(g6k)} < {nrand}"
+            # left_to_append = len(g6k)-nrand
+            # add_err = np.array( random_on_sphere(len(t_gs_reduced),2.) )
+            # slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced+add_err], n_per_target=nrand_param*len(g6k) - nrand)
 
             blocks = 2 # should be the same as in siever
             blocks = min(3, max(1, blocks))

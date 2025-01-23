@@ -135,8 +135,9 @@ def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, nthreads=1, nran
                         slicer = RandomizedSlicer(g6k)
                         slicer.set_nthreads(nthreads);
 
-                        nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
-                        nrand = ceil(nrand_param*(1./nrand_)**sieve_dim)
+                        # nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
+                        # nrand = ceil(nrand_param*(1./nrand_)**sieve_dim)
+                        nrand = nrand_param*len(g6k)
                         slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
 
                         blocks = 2 # should be the same as in siever
@@ -148,6 +149,7 @@ def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, nthreads=1, nran
                         buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
                         buckets = max(buckets, 2**(blocks-1))
 
+                        slicer.set_proj_error_bound(1.01*(e_@e_))
                         slicer.set_max_slicer_interations(max_slicer_interations)
                         slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False)
 
@@ -186,12 +188,13 @@ if __name__=="__main__":
     nthreads = 1
     nworkers = 2
     max_slicer_interations = 300
-    ntests = 10
-    nlats = 2
-    n = 51
+    ntests = 40
+    nlats = 5
+    n = 70
     bits = 11.705
     betamax = 53
-    approx_facts = [ 0.4 + 0.05*i for i in range(15) ] #
+    approx_facts = [ 0.9 + 0.05*i for i in range(2) ] #
+    nrand_params = [0.75]
     print(approx_facts)
 
     to_be_computed = []
@@ -224,7 +227,6 @@ if __name__=="__main__":
 
     pool.close()
     aggregated_data = []
-    nrand_params = [1., 3., 5.]
 
     for g6k in g6ks:
         aggregated_data += [ run_exp(g6k,ntests,approx_facts,max_slicer_interations=max_slicer_interations, nthreads=nthreads, nrand_params=nrand_params) ]
