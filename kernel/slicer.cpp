@@ -1,7 +1,7 @@
 #include "siever.h"
 #include "slicer.h"
 #include "fht_lsh.h"
-
+#include <chrono>
 
 
 inline bool compare_QEntry(QEntry const& lhs, QEntry const& rhs) { return lhs.len > rhs.len; }
@@ -484,13 +484,24 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
     //TODO: assert that all input parameters are equal to those from bdgl_sieve
 
     size_t it = 0;
+    std::chrono::time_point<std::chrono::high_resolution_clock> start;
+    std::chrono::time_point<std::chrono::high_resolution_clock> finish;
+    long long delta_t;
+    double delta_t_dbl;
+    cur_time = 0;
     while( it < MAX_SLICER_ITERS ) {
-
+        start = std::chrono::high_resolution_clock::now();
         if(cdb_t[0].len<proj_error_bound){
             if(verbose) {
                 std::cout << "proj_error_bound: " << proj_error_bound << std::endl;
                 std::cout << it << "-th it: solution found of norm:" << cdb_t[0].len << std::endl;
             }
+            finish = std::chrono::high_resolution_clock::now();
+            delta_t = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
+            delta_t_dbl = (double)delta_t / 1000000000.0;
+            cur_time += delta_t_dbl;
+            std::cout << "slicer cur_time: " << cur_time << " it: " << it << " avg: " << cur_time/(double)(++it) << std::endl;
+            
             return true;
         }
 
@@ -510,8 +521,13 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
         if(it%100==0 && verbose) {
             std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << " cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
         }
+        finish = std::chrono::high_resolution_clock::now();
+        delta_t = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
+        delta_t_dbl = (double)delta_t / 1000000000.0;
+        cur_time += delta_t_dbl;
         it++;
     }
     if(verbose) std::cerr << "Couldn't find a close vector after " << MAX_SLICER_ITERS << " iterations" << std::endl;
+    std::cout << "slicer cur_time: " << cur_time << " it: " << it << " avg: " << cur_time/(double)(it) << std::endl;
     return false;
 }

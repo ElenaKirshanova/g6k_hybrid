@@ -12,9 +12,9 @@ if __name__ == "__main__":
     slicer_interations = 250
     norm_slack = 1.01      #terminate slicer if norm_slack*||e_projected|| is found
     approx_factor = 0.95
-    nrand_param = 5
+    nrand_param = 1.0
     nthreads = 1
-    nexp = 100
+    nexp = 250
 
     FPLLL.set_precision(200)
     n, betamax, sieve_dim = 60, 50, 60
@@ -168,11 +168,12 @@ if __name__ == "__main__":
             print("target:", [float(tt) for tt in t_gs_reduced])
             print("dbsize", g6k.db_size())
 
-            nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
-            nrand = ceil(nrand_param*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
-            # nrand = 6000
+            # nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
+            # nrand = ceil(nrand_param*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
+
+            nrand = ceil( nrand_param * len(g6k) )
             print(f"nrand:{nrand}")
-            slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=1100)
+            slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
 
             blocks = 2 # should be the same as in siever
             blocks = min(3, max(1, blocks))

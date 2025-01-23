@@ -31,7 +31,7 @@
 #include <iostream>
 #include <iomanip>
 #include <numeric>
-
+#include <chrono>
 
 
 
@@ -395,7 +395,18 @@ bool Siever::bdgl_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t
     std::vector<std::vector<QEntry>> t_queues(params.threads);
 
     size_t it = 0;
+    unsigned long long curit;
+    std::chrono::time_point<std::chrono::high_resolution_clock> start;
+    std::chrono::time_point<std::chrono::high_resolution_clock> finish;
+    long long delta_t;
+    double delta_t_dbl;
+    cur_time = 0;
     while( true ) {
+        //TODO: this counter is to use an incrementer
+        // curit = statistics.get_siever_loopnum();
+        // statistics.set_siever_loopnum(++curit);
+        start = std::chrono::high_resolution_clock::now();
+
         bdgl_bucketing(blocks, multi_hash, nr_buckets_aim, buckets, buckets_i, lsh_seed);
 
         bdgl_process_buckets(buckets, buckets_i, t_queues);
@@ -413,6 +424,13 @@ bool Siever::bdgl_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t
             //    std::cout << i << " " << buckets_i[i].val << std::endl;
             //}
 
+            finish = std::chrono::high_resolution_clock::now();
+            delta_t = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
+            delta_t_dbl = (double)delta_t / 1000000000.0;
+            cur_time += delta_t_dbl;
+            std::cout << "siever cur_time: " << cur_time << " it: " << it << " avg: " << cur_time/(double)(it+1) << std::endl;
+            // cur_time = statistics.get_siever_total_time_in();
+            // statistics.set_siever_total_time_in(cur_time+delta_t);
             return true;
         }
 
@@ -420,9 +438,14 @@ bool Siever::bdgl_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t
             std::cerr << "Not saturated after 10000 iterations" << std::endl;
             return false;
         }
-
+        finish = std::chrono::high_resolution_clock::now();
+        delta_t = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
+        delta_t_dbl = (double)delta_t / 1000000000.0;
+        cur_time += delta_t_dbl;
+        // cur_time = statistics.get_siever_total_time_in();
+        // statistics.set_siever_total_time_in(cur_time+delta_t);
         it++;
     }
-
+    std::cout << "siever cur_time: " << cur_time << " it: " << it << " avg: " << cur_time/(double)(it) << std::endl;
 
 }

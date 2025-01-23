@@ -85,15 +85,13 @@
 
 */
 
-// #if defined ENABLE_EXTENDED_STATS
-//     #define COLLECT_STATISTICS 2
-// #elif defined ENABLE_STATS
-//     #define COLLECT_STATISTICS 1
-// #else
-//     #define COLLECT_STATISTICS 0
-// #endif
-
-#define COLLECT_STATISTICS 1
+#if defined ENABLE_EXTENDED_STATS
+    #define COLLECT_STATISTICS 2
+#elif defined ENABLE_STATS
+    #define COLLECT_STATISTICS 1
+#else
+    #define COLLECT_STATISTICS 0
+#endif
 
 /**
     Define macros COLLECT_STATISTICS_*:

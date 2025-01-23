@@ -619,7 +619,9 @@ public: // TODO: Make more things private and do not export to Python.
     unsigned int r;                           // current context right position
     unsigned int n;                           // current context dimension, n = r - l
     unsigned int n_rerand_sli = 0; //number of rerandomizations last randomized_iterative_slice of slicer did
+    double cur_time = 0; //temporary value to store time.
     //TODO @Sasha n_rerand_sli should be implemented as any other stat sata
+    // and other things too
 
     // gso_update_postprocessing post-processes the database with the change-of-basis transformation M
     // - Thread-safety ensured by each thread working on different data

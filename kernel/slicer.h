@@ -74,6 +74,8 @@ public:
     thread_pool::thread_pool threadpool;
     size_t sorted_until = 0;
 
+    double cur_time = 0; //temporary value to store time.
+
     void parallel_sort_cdb();
 
 
