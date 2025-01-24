@@ -90,10 +90,11 @@ def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, nthreads=1, nran
             nsucc_slic, nsucc_bab = 0, 0
             for tstnum in range(ntests):
                 print(f" - - - {approx_fact} #{tstnum} out of {ntests} - - - nrand: {nrand_param}", flush=True)
-                c = [ randrange(-2,3) for j in range(n) ]
+                c = [ randrange(-1002,1003) for j in range(n) ]
                 e = np.array( random_on_sphere(n,approx_fact*lambda1) )
                 b = np.array( B.multiply_left( c ) )
                 t = b+e
+                print(f"|t|: {(t@t)**0.5}")
 
                 """
                 Testing Babai.

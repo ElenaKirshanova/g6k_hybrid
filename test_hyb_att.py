@@ -173,8 +173,8 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
         vtilde2s.append( vtilde2  )
         #compute H12*H22^-1 * vtilde2 = H12*vtilde2 since H22 is identity
         tmp = np.array( H12.multiply_left(vtilde2) )
-        print(f"vtilde2 babai norm: {vtilde2@vtilde2}")
-        print(f"tmp babai norm: {tmp@tmp}")
+        print(f"vtilde2 babai norm: {(vtilde2@vtilde2)**0.5}")
+        print(f"tmp babai norm: {(tmp@tmp)**0.5}")
 
         t1_ = np.array( list(t1) ) - tmp
         target_candidates.append( t1_ )
@@ -244,13 +244,24 @@ def run_experiment(lat_index, params, stats_dict):
     # Needed to ensure that all locals are correct.
     # Ideally, already done.
     param_sieve = SieverParams()
-    param_sieve['threads'] =1
-    param_sieve['db_size_base'] = (4/3.)**0.5 #(4/3.)**0.5 ~ 1.1547
-    param_sieve['db_size_factor'] = 3.35 #3.2
-    param_sieve['saturation_ratio'] = 0.7
-    param_sieve['saturation_radius'] = 1.3
-    g6k.params = param_sieve
-    g6k(alg="bdgl2") 
+    param_sieve['threads'] = nthreads
+    param_sieve['otf_lift'] = False
+    g6k = Siever(g6k.M,param_sieve) #temporary solution
+    print(g6k.M.d-n_slicer_coord)
+    g6k.initialize_local(g6k.M.d-n_slicer_coord,g6k.M.d-n_slicer_coord,g6k.M.d)
+    print("Running bdgl2...")
+    g6k(alg="bdgl2")
+    g6k.M.update_gso()
+
+    # param_sieve = SieverParams()
+    # param_sieve['threads'] =1
+    # param_sieve['db_size_base'] = (4/3.)**0.5 #(4/3.)**0.5 ~ 1.1547
+    # param_sieve['db_size_factor'] = 3.35 #3.2
+    # param_sieve['saturation_ratio'] = 0.7
+    # param_sieve['saturation_radius'] = 1.3
+    # g6k.params = param_sieve
+    # g6k(alg="bdgl2") 
+
     G = g6k.M #the GSO obj. for first k*n-kappa vectors.
     # Gaussian heuristic for the last sieve_dim dimensioal projective lattice of G.
     # ALL {from/to}_canonical_scaled calls must use scale_fact=gh_sub, or things go out of hand.
@@ -335,10 +346,10 @@ if __name__=="__main__":
     preprocessing.py (preprocess the data) and then run this file. 
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
-    n, k = 144, 1
+    n, k = 140, 1
     q, eta = 3329, 3
-    latnum = 5
-    n_guess_coord, n_slicer_coord = 7, 66
+    latnum = 2
+    n_guess_coord, n_slicer_coord = 15, 52
     nthreads = 2
     nworkers = 1
 

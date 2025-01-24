@@ -158,8 +158,9 @@ DTYPE = np.float64 #np.longdouble or np.float64
 #     print(f"alg2 terminates")
 #     return best_bab_01
 
-def alg_2_batched_debug( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_alg2=None ):
+def alg_2_batched_debug( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_alg2=None ): #this works
     # raise NotImplementedError
+    print(f"aaaaaaaaaa")
     sieve_dim = g6k.r-g6k.l #n_slicer_coord
     print(f"in alg2 sieve_dim={sieve_dim}", flush=True)
 
@@ -252,8 +253,9 @@ def alg_2_batched_debug( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tra
     # print(setnrms)
     print(f"{len(setnrms)} out of {len(nrms)} targets are unique", flush=True)
 
-    print(f"out_gs_reduced-t_gs_reduced: {out_gs_reduced-t_gs_reduced}")
+    # print(f"out_gs_reduced-t_gs_reduced: {out_gs_reduced-t_gs_reduced}")
     print(f"out_gs_reduced: {out_gs_reduced}")
+    print(f"e_-out_gs_reduced: {e_-out_gs_reduced}")
     print(f"out_gs_reduced norm: {(out_gs_reduced@out_gs_reduced)**0.5} vs {dist_sq_bnd**0.5}")
     index = 0
     #Now we deduce which target candidate the error vector corresponds to.
@@ -306,9 +308,11 @@ def alg_2_batched_debug( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tra
     print(f"alg2 terminates")
     return best_bab_01
 
+from hyb_att_on_kyber import alg_2_batched as alg_2_batched_debug
+
 if __name__=="__main__":
     # n, betamax, sieve_dim = 140, 45, 45 #n=170 is liikely to fail
-    nexp = 5
+    nexp = 20
     n, betamax, sieve_dim = 90, 57, 55 #n=170 is liikely to fail
     print(f"n, betamax, sieve_dim: {(n, betamax, sieve_dim)}")
 
@@ -399,7 +403,7 @@ if __name__=="__main__":
             #alg_2_batched( g6k,target_candidates,H11, nthreads=1, tracer_alg2=None )
             # bab_01 = np.array( alg_2_batched( g6k,target_candidates,dist_sq_bnd=1.001*e_@e_  ) )
             # bab_01 = np.array( alg_2_batched_debug( g6k,target_candidates,dist_sq_bnd=1.001*e_@e_,e=e  ) )
-            bab_01 = np.array( alg_2_batched_debug( g6k,target_candidates,dist_sq_bnd=1.001*e_@e_  ) )
+            bab_01 = np.array( alg_2_batched_debug( g6k,target_candidates,dist_sq_bnd=1.001*e_@e_ ) )
             print(f"e_: {e_}")
             print(f"c: {c}")
             print(f"bab01:{bab_01}")

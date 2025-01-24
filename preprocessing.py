@@ -78,7 +78,7 @@ def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthrea
         then_round=time.perf_counter()
         LR.BKZ(beta,tours=5)
         round_time = time.perf_counter()-then_round
-        print(f"BKZ-{beta} done in {round_time}\n")
+        print(f"BKZ-{beta} done in {round_time}")
         sys.stdout.flush()
     report["bkz_runtime"] = time.perf_counter() - bkz_start
     H11 = LR.basis
@@ -89,8 +89,8 @@ def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthrea
 
 
     #---------run sieving------------
-    FPLLL.set_precision(250)
     int_type = H11.int_type
+    FPLLL.set_precision(210)
     ft = "dd" if config.have_qd else "mpfr"
     G = GSO.Mat( H11, U=IntegerMatrix.identity(H11r,int_type=int_type), UinvT=IntegerMatrix.identity(H11r,int_type=int_type), float_type=ft )
     G.update_gso()
@@ -101,24 +101,24 @@ def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthrea
     g6k.initialize_local(H11r-sieve_dim_max, H11r-sieve_dim_max+nsieves ,H11r)
 
     sieve_start = time.perf_counter()
-    g6k(alg="bdgl")
+    g6k(alg="bdgl2")
     i = 0
     report["bdgl_runtime"][i] = time.perf_counter()-sieve_start
     print(f"siever-{seed[0]}-{kappa}-{sieve_dim_max-nsieves+i} finished in added time {time.perf_counter()-sieve_start}\n" )
     sys.stdout.flush()
     #NOTE: this dumps
     assert g6k.r - g6k.l == sieve_dim_max-nsieves+i, f"g6k context: {g6k.r - g6k.l} != {sieve_dim_max-nsieves+i}"
-    g6k.dump_on_disk(out_path+f'g6kdump_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}_{sieve_dim_max-nsieves+i}.pkl')
+    g6k.dump_on_disk(out_path+f'g6kdump_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}.pkl')
     for i in range(1,nsieves):
         g6k.extend_left(1)
         sieve_start = time.perf_counter()
-        g6k(alg="bdgl")
+        g6k(alg="bdgl2")
         report["bdgl_runtime"][i] = time.perf_counter()-sieve_start
         print(f"siever-{seed[0]}-{kappa}-{sieve_dim_max-nsieves+i} finished in added time {time.perf_counter()-sieve_start}\n" )
         sys.stdout.flush()
         #NOTE: this dumps
         assert g6k.r - g6k.l == sieve_dim_max-nsieves+i, f"g6k context: {g6k.r - g6k.l} != {sieve_dim_max-nsieves+i}"
-        g6k.dump_on_disk(out_path+f'g6kdump_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}_{sieve_dim_max-nsieves+i}.pkl')
+        g6k.dump_on_disk(out_path+f'g6kdump_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}.pkl')
 
 
     print(report)
@@ -129,7 +129,7 @@ if __name__=="__main__":
     # (dimension, predicted kappa, predicted beta)
     # params = [(140, 12, 48), (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     #params = [(140, 12, 48)]#, (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
-    params = [(125, 4, 46)]
+    params = [(125, 4, 48)]
     nsieves = 5
     nworkers, nthreads =  2, 2 #20, 4
 
