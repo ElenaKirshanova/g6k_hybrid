@@ -232,6 +232,18 @@ def alg_3(g6k,B,H11,t,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads=1, tracer_al
         cntr += 1
     return argminv
 
+def reduce_to_fund_par_proj(B_gs,t_gs,dim):
+    t_gs_save = deepcopy( t_gs )
+    c = [0 for i in range(dim)]
+    # for i in range(dim):
+    for j in range(dim-1,-1,-1):
+        mu = round( t_gs[j] / B_gs[j][j] )
+        t_gs -= B_gs[j] * mu
+        c[j] -= mu
+    for i in range(dim):
+        t_gs_save += c[i] * B_gs[i]
+    return t_gs_save, -np.array( c )
+
 def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_alg2=None ):
     sieve_dim = g6k.r-g6k.l #n_slicer_coord
     print(f"in alg2 sieve_dim={sieve_dim}", flush=True)
@@ -248,9 +260,8 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     slicer = RandomizedSlicer(g6k)
     slicer.set_nthreads(nthreads);
     # - - - END prepare Slicer for batch cvp - - -
-    target_list_size =  2 * g6k.db_size() #len(g6k)
     nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
-    nrand = ceil(5*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
+    nrand = ceil(5*(1./nrand_)**sieve_dim)
     # nrand = ceil( 0.75*len(g6k) ) #TODO: remove this in a such way that alg3 does not break
     print(f"len(target_candidates): {len(target_candidates)} nrand: {nrand}")
     t_gs_list = []
@@ -268,6 +279,9 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
         shift_babai_c =  list( G.babai( list(t_gs_non_scaled), start=dim-sieve_dim, gso=True) )
         shift_babai = G.B.multiply_left( (dim-sieve_dim)*[0] + list( shift_babai_c ) )
         t_gs_reduced = from_canonical_scaled( G,np.array(target)-shift_babai,offset=sieve_dim,scale_fact=gh_sub ) #this is the actual reduced target
+
+        # B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim,scale_fact=gh_sub), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
+        # t_gs_reduced, shift_babai_c = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
 
         t_gs_list.append(t_gs)
         shift_babai_c_list.append(shift_babai_c)
@@ -292,14 +306,14 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     buckets = max(buckets, 2**(blocks-1))
 
     slicer.set_proj_error_bound(1.01*dist_sq_bnd)
-    slicer.set_max_slicer_interations(500)
-    slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False)
+    slicer.set_max_slicer_interations(144)
+    slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], True)
 
     # print(f"t_gs_reduced: {t_gs_reduced}")
     # print(f"t_gs_reduced norm: {t_gs_reduced@t_gs_reduced}")
     iterator = slicer.itervalues_cdb_t()
     for tmp in iterator:
-        out_gs_reduced = np.array(tmp)  #db_t[0] is now expected to contain the error vector
+        out_gs_reduced = np.array(tmp, dtype=np.float64)  #db_t[0] is now expected to contain the error vector
         cur_nrm_sq = out_gs_reduced@out_gs_reduced
         break
     out = to_canonical_scaled( G,np.concatenate( [(G.d-sieve_dim)*[0], out_gs_reduced] ), scale_fact=gh_sub )
@@ -314,7 +328,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     setnrms = set(nrms)
     print(f"{len(setnrms)} out of {len(nrms)} targets are unique", flush=True)
 
-    print(f"out_gs_reduced-t_gs_reduced: {out_gs_reduced-t_gs_reduced}")
+    # print(f"out_gs_reduced-t_gs_reduced: {out_gs_reduced-t_gs_reduced}")
     print(f"out_gs_reduced: {out_gs_reduced}")
     print(f"out_gs_reduced norm: {(out_gs_reduced@out_gs_reduced)**0.5} vs {dist_sq_bnd**0.5}")
     index = 0

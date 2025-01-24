@@ -259,10 +259,10 @@ if __name__ == "__main__":
     nthreads = 5
     nworkers = 2
     lats_per_dim = 2 #10
-    inst_per_lat = 2 #10 #how many instances per A, q
+    inst_per_lat = 5 #10 #how many instances per A, q
     q, eta = 3329, 3
-    nks = [ (130+10*i,3) for i in range(1) ]
-    betapre,betamax = 47, 62
+    nks = [ (125+10*i,3) for i in range(1) ]
+    betapre,betamax = 46, 62
 
     output = []
     pool = Pool( processes = nworkers )

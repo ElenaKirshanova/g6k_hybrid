@@ -84,7 +84,7 @@ DTYPE = np.float64 #np.longdouble or np.float64
 #     buckets = max(buckets, 2**(blocks-1))
 #     slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], ((dist_sq_bnd)))
 #     print(f"t_gs_reduced: {t_gs_reduced}")
-#     iterator = slicer.itervalues_t()
+#     iterator = slicer.itervalues_cdb_t()
 #     for tmp in iterator:
 #         out_gs_reduced = np.array(tmp)  #db_t[0] is expected to contain the error vector
 #         cur_nrm_sq = out_gs_reduced@out_gs_reduced
@@ -163,8 +163,8 @@ def alg_2_batched_debug( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tra
     sieve_dim = g6k.r-g6k.l #n_slicer_coord
     print(f"in alg2 sieve_dim={sieve_dim}", flush=True)
 
-    # dist_sq_bnd = 1.0 #TODO: implement
     G = g6k.M
+    gh_sub = gaussian_heuristic( G.r()[-sieve_dim:] )
     B = G.B
     dim = G.d
     Gsub = GSO.Mat( G.B[:dim-sieve_dim], float_type=G.float_type )
@@ -173,26 +173,27 @@ def alg_2_batched_debug( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tra
     # - - - prepare Slicer for batch cvp - - -
     slicer = RandomizedSlicer(g6k)
     slicer.set_nthreads(nthreads);
+    slicer.set_max_slicer_interations(400)
     # - - - END prepare Slicer for batch cvp - - -
     #WARNING: we do not store t_gs_reduced_list since t_gs_list =  t_gs - gs(shift_babai_c*B)
     #this is a time-memory tradeoff. Since Slicer returns only an error vector, we don\'t
     #know which of the target candidates it corresponds to. TODO: or should we?
     target_list_size =  2 * g6k.db_size() #len(g6k)
     nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
-    nrand = ceil(2*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
+    nrand = ceil(5*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
     # nrand = ceil( 0.75*len(g6k) ) #TODO: remove this in a such way that alg3 does not break
     print(f"len(target_candidates): {len(target_candidates)} nrand: {nrand}")
     t_gs_list = []
     t_gs_reduced_list = []
     shift_babai_c_list = []
     for target in target_candidates:
-        t_gs = from_canonical_scaled( G,target,offset=sieve_dim )
+        t_gs = from_canonical_scaled( G,target,offset=sieve_dim, scale_fact=gh_sub )
 
         t_gs_non_scaled = G.from_canonical(target)[dim-sieve_dim:]
         shift_babai_c =  list( G.babai( list(t_gs_non_scaled), start=dim-sieve_dim, gso=True) )
         # print( f"shift_babai_c: {shift_babai_c}" )
         shift_babai = G.B.multiply_left( (dim-sieve_dim)*[0] + list( shift_babai_c ) )
-        t_gs_reduced = from_canonical_scaled( G,np.array(target, dtype=DTYPE)-shift_babai,offset=sieve_dim ) #this is the actual reduced target
+        t_gs_reduced = from_canonical_scaled( G,np.array(target, dtype=DTYPE)-shift_babai,offset=sieve_dim,scale_fact=gh_sub ) #this is the actual reduced target
 
 
         # assert len(t_gs_reduced) == sieve_dim
@@ -233,14 +234,14 @@ def alg_2_batched_debug( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tra
 
     print(f"t_gs_reduced: {t_gs_reduced}")
     print(f"t_gs_reduced norm: {t_gs_reduced@t_gs_reduced}")
-    iterator = slicer.itervalues_t()
+    iterator = slicer.itervalues_cdb_t()
     for tmp in iterator:
         out_gs_reduced = np.array(tmp, dtype=DTYPE)  #db_t[0] is expected to contain the error vector
         cur_nrm_sq = out_gs_reduced@out_gs_reduced
         break
     # print(f"cur_nrm ={cur_nrm_sq**0.5}")
 
-    iterator = slicer.itervalues_t()
+    iterator = slicer.itervalues_cdb_t()
     nrms = []
     for tmp in iterator:
         tmp = np.array(tmp, dtype=DTYPE)  #db_t[0] is expected to contain the error vector
@@ -276,7 +277,7 @@ def alg_2_batched_debug( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tra
         #we substitute the obtaied error from the target and call babai to
         #account for an fp error
 
-        out_reduced = np.array( to_canonical_scaled( G, out_gs_reduced, offset=sieve_dim ), dtype=DTYPE )
+        out_reduced = np.array( to_canonical_scaled( G, out_gs_reduced, offset=sieve_dim, scale_fact=gh_sub ), dtype=DTYPE )
         t_1 = t_1 - out_reduced
         bab_1 = G.babai(t_1,start=dim-sieve_dim, dimension=sieve_dim)
 
@@ -307,8 +308,8 @@ def alg_2_batched_debug( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tra
 
 if __name__=="__main__":
     # n, betamax, sieve_dim = 140, 45, 45 #n=170 is liikely to fail
-    nexp = 120
-    n, betamax, sieve_dim = 90, 75, 55 #n=170 is liikely to fail
+    nexp = 5
+    n, betamax, sieve_dim = 90, 57, 55 #n=170 is liikely to fail
     print(f"n, betamax, sieve_dim: {(n, betamax, sieve_dim)}")
 
     bits=11.705
@@ -353,6 +354,7 @@ if __name__=="__main__":
     G.update_gso()
     lll = LLL.Reduction( G )
     lll()
+    gh_sub = gaussian_heuristic( G.r()[-sieve_dim:] )
 
     gh = gaussian_heuristic(G.r())**0.5
     param_sieve = SieverParams()
@@ -369,7 +371,7 @@ if __name__=="__main__":
     nsli_succ = 0
     af_fail = []
     af_succ = []
-    for gamma_fact in [0.48+0.05*i for i in range(5)]:
+    for gamma_fact in [0.55+0.05*i for i in range(2)]:
         for cntrtmp in range(nexp):
             print(f" - - - processing {cntrtmp+1} of {nexp} - - -", flush=True)
             c = [ randrange(-30,31) for j in range(n) ]
@@ -378,11 +380,11 @@ if __name__=="__main__":
             b_ = np.array(b,dtype=np.int64)
             t_ = e+b_
             t = [ float(tt) for tt in t_ ]
-            e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim) , dtype=DTYPE )
+            e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim,scale_fact=gh_sub) , dtype=DTYPE )
             # egs_ = np.array( G.from_canonical(e)[n-sieve_dim:], dtype=np.float64 )
             # egs_ = np.array( G.to_canonical(egs_,start=n-sieve_dim), dtype=np.float64 )
             print(f"sqrt ee_: {(e_@e_)**0.5}")
-            gh_sub = gaussian_heuristic( G.r()[-sieve_dim:] )
+            
             print(f"sqrt rii: {(G.r()[-sieve_dim] / gh_sub)**0.5 }")
             # print(f"r: {[rr**0.5 for rr in G.r()]}")
 

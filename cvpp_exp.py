@@ -45,11 +45,11 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705,seed=0):
     ft = "ld" if n<145 else ( "dd" if config.have_qd else "mpfr")
     G = GSO.Mat( LR.gso.B, U=IntegerMatrix.identity(n,int_type=int_type), UinvT=IntegerMatrix.identity(n,int_type=int_type), float_type=ft )
     param_sieve = SieverParams()
-    param_sieve['threads'] = 1
-    param_sieve['db_size_base'] = (4/3.)**0.5 #(4/3.)**0.5 ~ 1.1547
-    param_sieve['db_size_factor'] = 3.2 #3.2
-    param_sieve['saturation_ratio'] = 0.5
-    param_sieve['saturation_radius'] = 1.32
+    # param_sieve['threads'] =1
+    # param_sieve['db_size_base'] = (4/3.)**0.5 #(4/3.)**0.5 ~ 1.1547
+    # param_sieve['db_size_factor'] = 3.2 #3.2
+    # param_sieve['saturation_ratio'] = 0.5
+    # param_sieve['saturation_radius'] = 1.32
 
     g6k = Siever(G,param_sieve)
     g6k.initialize_local(0,0,n)
@@ -188,7 +188,7 @@ if __name__=="__main__":
     max_slicer_interations = 300
     ntests = 10
     nlats = 2
-    n = 51
+    n = 60
     bits = 11.705
     betamax = 53
     approx_facts = [ 0.4 + 0.05*i for i in range(15) ] #
@@ -231,7 +231,7 @@ if __name__=="__main__":
 
     for tmp in aggregated_data:
         print(f"nrand_parameter: {aggregated_data[0]}")
-        print(aggregated_data[1])
+        print(aggregated_data)
 
     with open(f"slicsucc_{n}.pkl","wb") as file:
         pickle.dump(aggregated_data, file)

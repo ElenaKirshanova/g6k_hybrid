@@ -137,17 +137,18 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
         cntr+=1
     return argminv
 
-"""
-def alg_3_debug(g6k,H11, B, target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
+def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
+    # Emulates batch CVPP with guessing.
     # - - - prepare targets - - -
     then_start = perf_counter()
+    gh_sub = gaussian_heuristic(g6k.M.r()[-(g6k.r-g6k.l):])
     dim = B.nrows
     print(f"dim: {dim}")
+    # t_gs = from_canonical_scaled( G,t,offset=sieve_dim )
 
     t1, t2 = target[:-n_guess_coord], target[-n_guess_coord:]
-    # instantiate the key enumerator
     distrib = centeredBinomial(eta)
-    #TODO: make/(check if is) practical (it, probably, is since we are likely to guess less than we do now)
+    #TODO: make/(check if is) practical
     nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord ) )
     print(f"nsampl: {nsampl}")
     nsampl = min(max_nsampl, nsampl)
@@ -155,12 +156,18 @@ def alg_3_debug(g6k,H11, B, target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthre
     vtilde2s = []
 
     H12 = IntegerMatrix.from_matrix( [list(b)[:dim-n_guess_coord] for b in B[dim-n_guess_coord:]] )
-    for times in range(1): #Alg 3 steps 4-7
+    sieve_dim = g6k.r-g6k.l
+
+    from hybrid_estimator.batchCVP import batchCVPP_cost
+    nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
+    nrand = ceil(5*(1./nrand_)**sieve_dim)
+    print(f"times: {ceil( len(g6k) / nrand )}")
+    for times in [0]: #Alg 3 steps 4-7 ceil( (nrand * nsampl) / len(g6k) )
         if times!=0 and times%64 == 0:
             print(f"{times} done out of {nsampl}", end=", ")
-        if times>0: #guess the key
+        if times>0:
             etilde2 = np.array( distrib.sample( n_guess_coord ) ) #= (0 | e2)
-        else: #the first guess is forced to be correct
+        else:
             etilde2 = np.array(-s[-n_guess_coord:])
         vtilde2 = np.array(t2)-etilde2
         vtilde2s.append( vtilde2  )
@@ -173,36 +180,29 @@ def alg_3_debug(g6k,H11, B, target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthre
         target_candidates.append( t1_ )
     print()
 
-    #We return (if we succeed) (-s,e)[dim-kappa-betamax:dim-kappa] to avoid fp errors.
-    
+    """
+    We return (if we succeed) (-s,e)[dim-kappa-betamax:dim-kappa] to avoid fp errors.
+    """
     #TODO: deduce what is the betamax
+    # def alg_2_batched is in hyb_att_on_kyber.py
     ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=None )
 
     v1 = np.array( H11.multiply_left( ctilde1 ) )
-    #keep a track of v2?
     argminv = None
     minv = 10**12
     cntr = 0
-    for vtilde2 in vtilde2s:
+    for vtilde2 in vtilde2s:       
         v2 = np.concatenate( [(dim-n_guess_coord)*[0],vtilde2] )
         babshift = np.concatenate( [ np.array( H12.multiply_left(vtilde2) ), n_guess_coord*[0] ] )
-        print(f"ctilde1: {ctilde1}") #something's odd sometimes
-        # print(f"v1: {v1}") #something's odd sometimes (n=160, exp. #9)
-        # print(f"v2: {v2}") #seems ok
         v = np.concatenate([v1,n_guess_coord*[0]]) + v2 + babshift
 
-        v_t = v-np.array( target ) #+ tmp
+        v_t = v-np.array( target )
         vv = v_t@v_t
-        print(f"vv__: {vv**0.5}")
-        print(f"v_t: {v_t}")
-        print(f"v babai: {v}")
         if vv < minv:
             minv = vv
             argminv = v
         cntr+=1
     return argminv
-
-"""
 
 def run_experiment(lat_index, params, stats_dict):
     nthreads = params["nthreads"]
@@ -243,13 +243,25 @@ def run_experiment(lat_index, params, stats_dict):
     g6k.initialize_local(H11r-n_slicer_coord, H11r-n_slicer_coord, H11r)
     # Needed to ensure that all locals are correct.
     # Ideally, already done.
+    param_sieve = SieverParams()
+    param_sieve['threads'] =1
+    param_sieve['db_size_base'] = (4/3.)**0.5 #(4/3.)**0.5 ~ 1.1547
+    param_sieve['db_size_factor'] = 3.35 #3.2
+    param_sieve['saturation_ratio'] = 0.7
+    param_sieve['saturation_radius'] = 1.3
+    g6k.params = param_sieve
     g6k(alg="bdgl2") 
     G = g6k.M #the GSO obj. for first k*n-kappa vectors.
     # Gaussian heuristic for the last sieve_dim dimensioal projective lattice of G.
     # ALL {from/to}_canonical_scaled calls must use scale_fact=gh_sub, or things go out of hand.
     gh_sub = gaussian_heuristic(G.r()[-n_slicer_coord:])
     print(f"Sieving-1 done in {perf_counter() - then}")
-
+    b0 = None
+    for tmp in g6k.itervalues():
+        b0 = G.B[-n_slicer_coord:].multiply_left( tmp )
+        break
+    b0 = from_canonical_scaled( G, b0, offset=n_slicer_coord,scale_fact=gh_sub )
+    lambda1 = (b0@b0)**0.5
 
     gh = gaussian_heuristic( g6k.M.r()[-n_slicer_coord:] )
     print(f"r / r = {(g6k.M.r()[-n_slicer_coord] / g6k.M.r()[-1])**0.5}")
@@ -278,6 +290,7 @@ def run_experiment(lat_index, params, stats_dict):
         dist_sq_bnd = e_@e_
         dist_bnd = dist_sq_bnd**0.5
         dist_threshold = ( G.r()[-n_slicer_coord] / gh_sub )**0.5
+        print(f"lambda1: {lambda1}")
         print(f"dist_bnd: {dist_bnd} | dist_threshold: {dist_threshold} | ratio: {dist_bnd/dist_threshold}")
         print(f"dist_sq_bnd: {dist_sq_bnd}")
         print(f"len(e_): {len(e_)} G.M.nrows(): {G.B.nrows}")
@@ -286,8 +299,9 @@ def run_experiment(lat_index, params, stats_dict):
 
         len_bound = dist_sq_bnd
         # no guessing version of alg_3
-        # v = alg_3_debug(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None)
-        v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
+        v = alg_3_debug(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None)
+        # v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
+        print(f"e_: {e_}")
         if v is None:
             v = np.array( len(answer)*[0] )
         print(f"v: {v}")
@@ -321,12 +335,12 @@ if __name__=="__main__":
     preprocessing.py (preprocess the data) and then run this file. 
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
-    n, k = 140, 1
+    n, k = 144, 1
     q, eta = 3329, 3
-    latnum = 2
-    n_guess_coord, n_slicer_coord = 11, 52
+    latnum = 5
+    n_guess_coord, n_slicer_coord = 7, 66
     nthreads = 2
-    nworkers = 2
+    nworkers = 1
 
     params={}
     params["nthreads"] = nthreads
