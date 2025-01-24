@@ -374,6 +374,14 @@ void Siever::bdgl_queue(std::vector<std::vector<QEntry>> &t_queues, std::vector<
     status_data.plain_data.sorted_until = min_kk;
 }
 
+void update_curtime( double &cur_time, std::chrono::time_point<std::chrono::high_resolution_clock> start, std::chrono::time_point<std::chrono::high_resolution_clock> finish ){
+            long long delta_t;
+            double delta_t_dbl;
+            delta_t = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
+            delta_t_dbl = (double)delta_t / 1000000000.0;
+            cur_time += delta_t_dbl;
+}
+
 bool Siever::bdgl_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t multi_hash) {
 
     //std::cout << "nr_buckets_aim:" << nr_buckets_aim << " blocks: " << blocks << " multi_hash: " <<multi_hash <<  std::endl;
@@ -398,8 +406,8 @@ bool Siever::bdgl_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t
     unsigned long long curit;
     std::chrono::time_point<std::chrono::high_resolution_clock> start;
     std::chrono::time_point<std::chrono::high_resolution_clock> finish;
-    long long delta_t;
-    double delta_t_dbl;
+    // long long delta_t;
+    // double delta_t_dbl;
     cur_time = 0;
     while( true ) {
         //TODO: this counter is to use an incrementer
@@ -425,9 +433,10 @@ bool Siever::bdgl_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t
             //}
 
             finish = std::chrono::high_resolution_clock::now();
-            delta_t = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
-            delta_t_dbl = (double)delta_t / 1000000000.0;
-            cur_time += delta_t_dbl;
+            update_curtime( cur_time, start, finish );
+            // delta_t = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
+            // delta_t_dbl = (double)delta_t / 1000000000.0;
+            // cur_time += delta_t_dbl;
             std::cout << "siever cur_time: " << cur_time << " it: " << it << " avg: " << cur_time/(double)(it+1) << std::endl;
             // cur_time = statistics.get_siever_total_time_in();
             // statistics.set_siever_total_time_in(cur_time+delta_t);
@@ -439,9 +448,10 @@ bool Siever::bdgl_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t
             return false;
         }
         finish = std::chrono::high_resolution_clock::now();
-        delta_t = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
-        delta_t_dbl = (double)delta_t / 1000000000.0;
-        cur_time += delta_t_dbl;
+        update_curtime( cur_time, start, finish );
+        // delta_t = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
+        // delta_t_dbl = (double)delta_t / 1000000000.0;
+        // cur_time += delta_t_dbl;
         // cur_time = statistics.get_siever_total_time_in();
         // statistics.set_siever_total_time_in(cur_time+delta_t);
         it++;
