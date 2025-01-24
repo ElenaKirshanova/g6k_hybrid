@@ -232,7 +232,7 @@ def run_experiment(lat_index, params, stats_dict):
 
     # loading the preprocessed H11 (see alg. 3 in the paper)
     #TODO: the next number after n_guess_coord does not carry any meaningful info. Consider deleting.
-    with open(out_path+f"kyb_prehybrid_{n}_{q}_{eta}_{k}_{lat_index}_{n_guess_coord}", "rb") as file:
+    with open(out_path+f"kyb_prehybrid_{n}_{q}_{eta}_{k}_{lat_index}_{n_guess_coord}.pkl", "rb") as file:
         H11 = pickle.load(file)["B"]
 
     H11r, H11c = H11.nrows, H11.ncols
@@ -348,7 +348,7 @@ if __name__=="__main__":
     """
     n, k = 140, 1
     q, eta = 3329, 3
-    latnum = 2
+    latnum = 5
     n_guess_coord, n_slicer_coord = 15, 52
     nthreads = 2
     nworkers = 1
