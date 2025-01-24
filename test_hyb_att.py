@@ -232,15 +232,17 @@ def run_experiment(lat_index, params, stats_dict):
 
     # loading the preprocessed H11 (see alg. 3 in the paper)
     #TODO: the next number after n_guess_coord does not carry any meaningful info. Consider deleting.
-    with open(out_path+f"kyb_prehybrid_{n}_{q}_{eta}_{k}_{lat_index}_{n_guess_coord}.pkl", "rb") as file:
-        H11 = pickle.load(file)["B"]
+    # with open(out_path+f"kyb_prehybrid_{n}_{q}_{eta}_{k}_{lat_index}_{n_guess_coord}.pkl", "rb") as file:
+    #     H11 = pickle.load(file)["B"]
+    # H11 = Binit[:len(Binit)-kappa] #the part of basis to be reduced
+    # H11 = IntegerMatrix.from_matrix( [ h11[:len(Binit)-kappa] for h11 in H11  ] )
 
-    H11r, H11c = H11.nrows, H11.ncols
+    # H11r, H11c = H11.nrows, H11.ncols
 
     then = perf_counter()
     #restore precomputed g6k and initialize it
     g6k = Siever.restore_from_file( out_path + filename_g6kdump ) 
-    g6k.initialize_local(H11r-n_slicer_coord, H11r-n_slicer_coord, H11r)
+    g6k.initialize_local(g6k.M.d-n_slicer_coord, g6k.M.d-n_slicer_coord, g6k.M.d)
     # Needed to ensure that all locals are correct.
     # Ideally, already done.
     param_sieve = SieverParams()
@@ -252,6 +254,8 @@ def run_experiment(lat_index, params, stats_dict):
     print("Running bdgl2...")
     g6k(alg="bdgl2")
     g6k.M.update_gso()
+
+    H11 = g6k.M.B
 
     # param_sieve = SieverParams()
     # param_sieve['threads'] =1
@@ -349,7 +353,7 @@ if __name__=="__main__":
     n, k = 140, 1
     q, eta = 3329, 3
     latnum = 5
-    n_guess_coord, n_slicer_coord = 15, 52
+    n_guess_coord, n_slicer_coord = 14, 52
     nthreads = 2
     nworkers = 1
 

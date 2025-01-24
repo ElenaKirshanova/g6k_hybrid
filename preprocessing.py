@@ -83,9 +83,9 @@ def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthrea
     report["bkz_runtime"] = time.perf_counter() - bkz_start
     H11 = LR.basis
 
-    if dump_bkz:
-        with open(out_path+f"/kyb_prehybrid_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}", "wb") as f:
-            pickle.dump({"B": H11}, f)
+    # if dump_bkz:
+    #     with open(out_path+f"/kyb_prehybrid_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}", "wb") as f:
+    #         pickle.dump({"B": H11}, f)
 
 
     #---------run sieving------------
