@@ -14,7 +14,7 @@ if __name__ == "__main__":
     approx_factor = 0.95
     nrand_param = 1.0
     nthreads = 1
-    nexp = 250
+    nexp = 50
 
     FPLLL.set_precision(200)
     n, betamax, sieve_dim = 65, 50, 65

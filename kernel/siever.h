@@ -482,6 +482,7 @@ public:
     int64_t lsh_seed;
     std::vector<uint32_t> buckets;
     std::vector<atomic_size_t_wrapper> buckets_i;
+    std::vector<uint32_t> siever_vect_access; //srores which vectors the slicer accesses  
 
 
     // - setting full dimension and setting full gso

@@ -473,12 +473,21 @@ void RandomizedSlicer::slicer_process_buckets_task(const size_t t_id,
             }
             if(best_j!=-1) {
                 t_queue.push_back({ pce1->i, fast_cdb[fast_buckets[best_j]].i, best_reduction, (int8_t)best_sign});
+                this->sieve.siever_vect_access[fast_cdb[fast_buckets[best_j]].i] += 1;
             }
         }
     }
     std::sort( t_queue.begin(), t_queue.end(), &compare_QEntry);
 }
 
+void RandomizedSlicer::print_siever_vect_access(){
+    size_t l = this->sieve.db_size();
+    std::cout << "siever_vect_access = [";
+    for (size_t tmp=0; tmp<l-1; tmp++){
+        std::cout << this->sieve.siever_vect_access[tmp] << ", ";
+    }
+    std::cout << this->sieve.siever_vect_access[l-1] << "]";
+}
 
 bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t multi_hash, bool verbose){
 
@@ -490,6 +499,9 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
     std::vector<atomic_size_t_wrapper> buckets_i;
     std::vector<std::vector<QEntry>> t_queues(threads);
 
+    std::vector<uint32_t> vec(this->sieve.db_size(),0);
+    this->sieve.siever_vect_access = vec;
+
     //TODO: assert that all input parameters are equal to those from bdgl_sieve
 
     size_t it = 0;
@@ -500,12 +512,14 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
     
         unsigned long long curit;
     hr_time start;
+    hr_time start_bdgl_bucketing;
     hr_time start_slicer_bucketing;
     hr_time start_slicer_process_buckets;
     hr_time start_slicer_queue;
     hr_time start_parallel_sort_cdb;
 
     hr_time finish;
+    hr_time finish_bdgl_bucketing;
     hr_time finish_slicer_bucketing;
     hr_time finish_slicer_process_buckets;
     hr_time finish_slicer_queue;
@@ -533,13 +547,16 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
             std::cout << "slicer cur_time_slicer_process_buckets: " << cur_time_slicer_process_buckets << " it: " << it << " avg: " << cur_time_slicer_process_buckets/(double)(it) << std::endl;
             std::cout << "slicer cur_time_slicer_queue: " << cur_time_slicer_queue << " it: " << it << " avg: " << cur_time_slicer_queue/(double)(it) << std::endl;
             std::cout << "slicer cur_time_parallel_sort_cdb: " << cur_time_parallel_sort_cdb << " it: " << it << " avg: " << cur_time_parallel_sort_cdb/(double)(it) << std::endl;
-            
+            // print_siever_vect_access();
             return true;
         }
 
         //DO WE NEED TO DO REBUCKETING? Every X-round?
+        start_bdgl_bucketing = std::chrono::high_resolution_clock::now();
         this->sieve.bdgl_bucketing(blocks, multi_hash, nr_buckets_aim, this->sieve.buckets, this->sieve.buckets_i,
                                    this->sieve.lsh_seed);
+        finish_bdgl_bucketing = std::chrono::high_resolution_clock::now();
+        update_curtime_slicer( cur_time_bdgl_bucketing, start_bdgl_bucketing, finish_bdgl_bucketing );
 
         start_slicer_bucketing = std::chrono::high_resolution_clock::now();
         slicer_bucketing(blocks, multi_hash, nr_buckets_aim, buckets, buckets_i);
@@ -574,5 +591,6 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
     }
     if(verbose) std::cerr << "Couldn't find a close vector after " << MAX_SLICER_ITERS << " iterations" << std::endl;
     std::cout << "slicer cur_time: " << cur_time << " it: " << it << " avg: " << cur_time/(double)(it) << std::endl;
+    // print_siever_vect_access();
     return false;
 }

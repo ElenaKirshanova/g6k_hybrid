@@ -25,7 +25,7 @@ except ModuleNotFoundError:
 import sys, os
 
 def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperiments, nthreads, nrand_param=1.):
-    slicer_interations = 250
+    slicer_interations = 300
     norm_slack = 1.01      #terminate slicer if norm_slack*||e_projected|| is found
     approx_factor = 0.95
 
@@ -243,7 +243,7 @@ if __name__ == '__main__':
 
     nthreads = 1
     nworkers = 4 # number of workers
-    nrand_param = 1.
+    nrand_param = 5.
     shrink_factor = 0.7071 # ~ 1/sqrt(2)
     n_shrinkings = 8
     pool = Pool(processes = nworkers )

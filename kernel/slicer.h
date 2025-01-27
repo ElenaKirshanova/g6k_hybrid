@@ -108,6 +108,7 @@ public:
 
     template<RecomputeSlicer what_to_recompute>
     inline void recompute_data_for_entry_t(Entry_t &e);
+    void print_siever_vect_access();
 
 };
 
