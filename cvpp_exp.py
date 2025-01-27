@@ -190,7 +190,7 @@ if __name__=="__main__":
     max_slicer_interations = 300
     ntests = 40
     nlats = 5
-    n = 70
+    n = 60
     bits = 11.705
     betamax = 53
     approx_facts = [ 0.9 + 0.05*i for i in range(2) ] #

@@ -9,7 +9,7 @@ import sys
 
 if __name__ == "__main__":
 
-    slicer_interations = 250
+    slicer_interations = 300
     norm_slack = 1.01      #terminate slicer if norm_slack*||e_projected|| is found
     approx_factor = 0.95
     nrand_param = 1.0
@@ -17,7 +17,7 @@ if __name__ == "__main__":
     nexp = 250
 
     FPLLL.set_precision(200)
-    n, betamax, sieve_dim = 60, 50, 60
+    n, betamax, sieve_dim = 65, 50, 65
     ft = "ld" if n<90 else ( "dd" if config.have_qd else "mpfr")
     # - - - try load a lattice - - -
     filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
@@ -163,7 +163,7 @@ if __name__ == "__main__":
 
             #out_gs = g6k.randomized_iterative_slice([float(tt) for tt in t_gs],samples=1000)
             slicer = RandomizedSlicer(g6k)
-            slicer.set_nthreads(2)
+            slicer.set_nthreads(nthreads)
 
             print("target:", [float(tt) for tt in t_gs_reduced])
             print("dbsize", g6k.db_size())

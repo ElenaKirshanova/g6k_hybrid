@@ -526,12 +526,13 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
             }
             finish = std::chrono::high_resolution_clock::now();
             update_curtime_slicer( cur_time, start, finish );
-            std::cout << "slicer cur_time: " << cur_time << " it: " << it << " avg: " << cur_time/(double)(++it) << std::endl;
-            std::cout << "siever cur_time_bdgl_bucketing: " << cur_time_bdgl_bucketing << " it: " << it << " avg: " << cur_time_bdgl_bucketing/(double)(it+1) << std::endl;
-            std::cout << "siever cur_time_slicer_bucketing: " << cur_time_slicer_bucketing << " it: " << it << " avg: " << cur_time_slicer_bucketing/(double)(it+1) << std::endl;
-            std::cout << "siever cur_time_slicer_process_buckets: " << cur_time_slicer_process_buckets << " it: " << it << " avg: " << cur_time_slicer_process_buckets/(double)(it+1) << std::endl;
-            std::cout << "siever cur_time_slicer_queue: " << cur_time_slicer_queue << " it: " << it << " avg: " << cur_time_slicer_queue/(double)(it+1) << std::endl;
-            std::cout << "siever cur_time_parallel_sort_cdb: " << cur_time_parallel_sort_cdb << " it: " << it << " avg: " << cur_time_parallel_sort_cdb/(double)(it+1) << std::endl;
+            ++it;
+            std::cout << "slicer cur_time: " << cur_time << " it: " << it << " avg: " << cur_time/(double)(it) << std::endl;
+            std::cout << "slicer cur_time_bdgl_bucketing: " << cur_time_bdgl_bucketing << " it: " << it << " avg: " << cur_time_bdgl_bucketing/(double)(it) << std::endl;
+            std::cout << "slicer cur_time_slicer_bucketing: " << cur_time_slicer_bucketing << " it: " << it << " avg: " << cur_time_slicer_bucketing/(double)(it) << std::endl;
+            std::cout << "slicer cur_time_slicer_process_buckets: " << cur_time_slicer_process_buckets << " it: " << it << " avg: " << cur_time_slicer_process_buckets/(double)(it) << std::endl;
+            std::cout << "slicer cur_time_slicer_queue: " << cur_time_slicer_queue << " it: " << it << " avg: " << cur_time_slicer_queue/(double)(it) << std::endl;
+            std::cout << "slicer cur_time_parallel_sort_cdb: " << cur_time_parallel_sort_cdb << " it: " << it << " avg: " << cur_time_parallel_sort_cdb/(double)(it) << std::endl;
             
             return true;
         }
