@@ -79,7 +79,10 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
     g6k = Siever(G,param_sieve) #temporary solution
     g6k.initialize_local(n-sieve_dim,n-sieve_dim,n)
     print("Running bdgl2...")
-    g6k(alg="bdgl2")
+    try:
+        g6k(alg="bdgl2")
+    except SaturationError:
+        pass
     g6k.M.update_gso()
 
     aggregated_data = []
