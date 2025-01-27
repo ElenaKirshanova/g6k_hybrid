@@ -3,6 +3,15 @@
 #include "fht_lsh.h"
 #include <chrono>
 
+#include "time_measurement.h"
+
+void update_curtime_slicer( double &cur_time, std::chrono::time_point<std::chrono::high_resolution_clock> start, std::chrono::time_point<std::chrono::high_resolution_clock> finish ){
+            long long delta_t;
+            double delta_t_dbl;
+            delta_t = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
+            delta_t_dbl = (double)delta_t / 1000000000.0;
+            cur_time += delta_t_dbl;
+}
 
 inline bool compare_QEntry(QEntry const& lhs, QEntry const& rhs) { return lhs.len > rhs.len; }
 
@@ -484,11 +493,30 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
     //TODO: assert that all input parameters are equal to those from bdgl_sieve
 
     size_t it = 0;
-    std::chrono::time_point<std::chrono::high_resolution_clock> start;
-    std::chrono::time_point<std::chrono::high_resolution_clock> finish;
-    long long delta_t;
-    double delta_t_dbl;
+    // std::chrono::time_point<std::chrono::high_resolution_clock> start;
+    // std::chrono::time_point<std::chrono::high_resolution_clock> finish;
+    // long long delta_t;
+    // double delta_t_dbl;
+    
+        unsigned long long curit;
+    hr_time start;
+    hr_time start_slicer_bucketing;
+    hr_time start_slicer_process_buckets;
+    hr_time start_slicer_queue;
+    hr_time start_parallel_sort_cdb;
+
+    hr_time finish;
+    hr_time finish_slicer_bucketing;
+    hr_time finish_slicer_process_buckets;
+    hr_time finish_slicer_queue;
+    hr_time finish_parallel_sort_cdb;
+
     cur_time = 0;
+    double cur_time_bdgl_bucketing = 0;
+    double cur_time_slicer_bucketing = 0;
+    double cur_time_slicer_process_buckets = 0;
+    double cur_time_slicer_queue = 0;
+    double cur_time_parallel_sort_cdb = 0;
     while( it < MAX_SLICER_ITERS ) {
         start = std::chrono::high_resolution_clock::now();
         if(cdb_t[0].len<proj_error_bound){
@@ -497,10 +525,13 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
                 std::cout << it << "-th it: solution found of norm:" << cdb_t[0].len << std::endl;
             }
             finish = std::chrono::high_resolution_clock::now();
-            delta_t = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
-            delta_t_dbl = (double)delta_t / 1000000000.0;
-            cur_time += delta_t_dbl;
+            update_curtime_slicer( cur_time, start, finish );
             std::cout << "slicer cur_time: " << cur_time << " it: " << it << " avg: " << cur_time/(double)(++it) << std::endl;
+            std::cout << "siever cur_time_bdgl_bucketing: " << cur_time_bdgl_bucketing << " it: " << it << " avg: " << cur_time_bdgl_bucketing/(double)(it+1) << std::endl;
+            std::cout << "siever cur_time_slicer_bucketing: " << cur_time_slicer_bucketing << " it: " << it << " avg: " << cur_time_slicer_bucketing/(double)(it+1) << std::endl;
+            std::cout << "siever cur_time_slicer_process_buckets: " << cur_time_slicer_process_buckets << " it: " << it << " avg: " << cur_time_slicer_process_buckets/(double)(it+1) << std::endl;
+            std::cout << "siever cur_time_slicer_queue: " << cur_time_slicer_queue << " it: " << it << " avg: " << cur_time_slicer_queue/(double)(it+1) << std::endl;
+            std::cout << "siever cur_time_parallel_sort_cdb: " << cur_time_parallel_sort_cdb << " it: " << it << " avg: " << cur_time_parallel_sort_cdb/(double)(it+1) << std::endl;
             
             return true;
         }
@@ -509,22 +540,35 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
         this->sieve.bdgl_bucketing(blocks, multi_hash, nr_buckets_aim, this->sieve.buckets, this->sieve.buckets_i,
                                    this->sieve.lsh_seed);
 
+        start_slicer_bucketing = std::chrono::high_resolution_clock::now();
         slicer_bucketing(blocks, multi_hash, nr_buckets_aim, buckets, buckets_i);
+        finish_slicer_bucketing = std::chrono::high_resolution_clock::now();
+        update_curtime_slicer( cur_time_slicer_bucketing, start_slicer_bucketing, finish_slicer_bucketing );
         //std::cout << "slicer_bucketing finished" << std::endl;
+
+        start_slicer_process_buckets = std::chrono::high_resolution_clock::now();
         slicer_process_buckets(buckets, buckets_i, t_queues);
+        finish_slicer_process_buckets= std::chrono::high_resolution_clock::now();
+        update_curtime_slicer( cur_time_slicer_process_buckets, start_slicer_process_buckets, finish_slicer_process_buckets );
         //std::cout << "slicer_process_buckets finished" << std::endl;
+
+        start_slicer_queue = std::chrono::high_resolution_clock::now();
         slicer_queue(t_queues, transaction_db);
+        finish_slicer_queue = std::chrono::high_resolution_clock::now();
+        update_curtime_slicer( cur_time_slicer_queue, start_slicer_queue, finish_slicer_queue );
         //std::cout << "slicer_queue finished" << std::endl;
+        
+        start_parallel_sort_cdb = std::chrono::high_resolution_clock::now();
         parallel_sort_cdb();
+        finish_parallel_sort_cdb = std::chrono::high_resolution_clock::now();
+        update_curtime_slicer( cur_time_parallel_sort_cdb, start_parallel_sort_cdb, finish_parallel_sort_cdb );
         //std::cout << "parallel_sort_cdb finished" << std::endl;
 
         if(it%100==0 && verbose) {
             std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << " cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
         }
         finish = std::chrono::high_resolution_clock::now();
-        delta_t = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
-        delta_t_dbl = (double)delta_t / 1000000000.0;
-        cur_time += delta_t_dbl;
+        update_curtime_slicer( cur_time, start, finish );
         it++;
     }
     if(verbose) std::cerr << "Couldn't find a close vector after " << MAX_SLICER_ITERS << " iterations" << std::endl;

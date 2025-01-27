@@ -120,6 +120,8 @@ typedef double FT;       // High precision floating points for vectors y
 typedef int16_t ZT;      // Integer for vectors x (i.e. coefficients of found vectors wrt the given basis)
 typedef uint32_t IT;     // Index type for indexing into the main database of vectors (32 bits for now, limiting db_size to 2^32-1)
 
+// typedef std::chrono::time_point<std::chrono::high_resolution_clock> hr_time; // Time measurement
+
 typedef std::array<uint64_t, XPC_WORD_LEN> CompressedVector;    // Compressed vector type for XOR-POPCNT
 
 // made a typedef to make it better customizable. (If we increase the size of IT from 32 bits, we

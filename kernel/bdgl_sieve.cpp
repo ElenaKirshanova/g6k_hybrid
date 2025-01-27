@@ -31,9 +31,15 @@
 #include <iostream>
 #include <iomanip>
 #include <numeric>
-#include <chrono>
 
-
+#include "time_measurement.h"
+void update_curtime( double &cur_time, std::chrono::time_point<std::chrono::high_resolution_clock> start, std::chrono::time_point<std::chrono::high_resolution_clock> finish ){
+            long long delta_t;
+            double delta_t_dbl;
+            delta_t = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
+            delta_t_dbl = (double)delta_t / 1000000000.0;
+            cur_time += delta_t_dbl;
+}
 
 inline bool compare_QEntry(QEntry const& lhs, QEntry const& rhs) { return lhs.len > rhs.len; }
 
@@ -374,14 +380,6 @@ void Siever::bdgl_queue(std::vector<std::vector<QEntry>> &t_queues, std::vector<
     status_data.plain_data.sorted_until = min_kk;
 }
 
-void update_curtime( double &cur_time, std::chrono::time_point<std::chrono::high_resolution_clock> start, std::chrono::time_point<std::chrono::high_resolution_clock> finish ){
-            long long delta_t;
-            double delta_t_dbl;
-            delta_t = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
-            delta_t_dbl = (double)delta_t / 1000000000.0;
-            cur_time += delta_t_dbl;
-}
-
 bool Siever::bdgl_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t multi_hash) {
 
     //std::cout << "nr_buckets_aim:" << nr_buckets_aim << " blocks: " << blocks << " multi_hash: " <<multi_hash <<  std::endl;
@@ -404,24 +402,48 @@ bool Siever::bdgl_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t
 
     size_t it = 0;
     unsigned long long curit;
-    std::chrono::time_point<std::chrono::high_resolution_clock> start;
-    std::chrono::time_point<std::chrono::high_resolution_clock> finish;
-    // long long delta_t;
-    // double delta_t_dbl;
+    hr_time start;
+    hr_time start_bdgl_bucketing;
+    hr_time start_bdgl_process_buckets;
+    hr_time start_bdgl_queue;
+    hr_time start_parallel_sort_cdb;
+
+    hr_time finish;
+    hr_time finish_bdgl_bucketing;
+    hr_time finish_bdgl_process_buckets;
+    hr_time finish_bdgl_queue;
+    hr_time finish_parallel_sort_cdb;
+
     cur_time = 0;
+    double cur_time_bdgl_bucketing = 0;
+    double cur_time_bdgl_process_buckets = 0;
+    double cur_time_bdgl_queue = 0;
+    double cur_time_parallel_sort_cdb = 0;
     while( true ) {
         //TODO: this counter is to use an incrementer
         // curit = statistics.get_siever_loopnum();
         // statistics.set_siever_loopnum(++curit);
         start = std::chrono::high_resolution_clock::now();
 
+        start_bdgl_bucketing = std::chrono::high_resolution_clock::now();
         bdgl_bucketing(blocks, multi_hash, nr_buckets_aim, buckets, buckets_i, lsh_seed);
+        finish_bdgl_bucketing = std::chrono::high_resolution_clock::now();
+        update_curtime( cur_time_bdgl_bucketing, start_bdgl_bucketing, finish_bdgl_bucketing );
 
+        start_bdgl_process_buckets = std::chrono::high_resolution_clock::now();
         bdgl_process_buckets(buckets, buckets_i, t_queues);
+        finish_bdgl_bucketing = std::chrono::high_resolution_clock::now();
+        update_curtime( cur_time_bdgl_process_buckets, start_bdgl_process_buckets, finish_bdgl_process_buckets );
 
+        start_bdgl_queue = std::chrono::high_resolution_clock::now();
         bdgl_queue(t_queues, transaction_db );
+        finish_bdgl_queue = std::chrono::high_resolution_clock::now();
+        update_curtime( cur_time_bdgl_queue, start_bdgl_queue, finish_bdgl_queue );
 
+        start_parallel_sort_cdb = std::chrono::high_resolution_clock::now();
         parallel_sort_cdb();
+        finish_parallel_sort_cdb = std::chrono::high_resolution_clock::now();
+        update_curtime( cur_time_parallel_sort_cdb, start_parallel_sort_cdb, finish_parallel_sort_cdb );
 
         if( cdb[saturation_index].len <= params.saturation_radius ) {
             assert(std::is_sorted(cdb.cbegin(),cdb.cend(), compare_CE()  ));
@@ -434,10 +456,11 @@ bool Siever::bdgl_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t
 
             finish = std::chrono::high_resolution_clock::now();
             update_curtime( cur_time, start, finish );
-            // delta_t = std::chrono::duration_cast<std::chrono::nanoseconds>(finish-start).count();
-            // delta_t_dbl = (double)delta_t / 1000000000.0;
-            // cur_time += delta_t_dbl;
             std::cout << "siever cur_time: " << cur_time << " it: " << it << " avg: " << cur_time/(double)(it+1) << std::endl;
+            std::cout << "siever cur_time_bdgl_bucketing: " << cur_time_bdgl_bucketing << " it: " << it << " avg: " << cur_time_bdgl_bucketing/(double)(it+1) << std::endl;
+            std::cout << "siever cur_time_bdgl_process_buckets: " << cur_time_bdgl_process_buckets << " it: " << it << " avg: " << cur_time_bdgl_process_buckets/(double)(it+1) << std::endl;
+            std::cout << "siever cur_time_bdgl_queue: " << cur_time_bdgl_queue << " it: " << it << " avg: " << cur_time_bdgl_queue/(double)(it+1) << std::endl;
+            std::cout << "siever cur_time_parallel_sort_cdb: " << cur_time_parallel_sort_cdb << " it: " << it << " avg: " << cur_time_parallel_sort_cdb/(double)(it+1) << std::endl;
             // cur_time = statistics.get_siever_total_time_in();
             // statistics.set_siever_total_time_in(cur_time+delta_t);
             return true;
@@ -456,6 +479,9 @@ bool Siever::bdgl_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t
         // statistics.set_siever_total_time_in(cur_time+delta_t);
         it++;
     }
-    std::cout << "siever cur_time: " << cur_time << " it: " << it << " avg: " << cur_time/(double)(it) << std::endl;
-
-}
+    std::cout << "siever cur_time: " << cur_time << " it: " << it << " avg: " << cur_time/(double)(it+1) << std::endl;
+    std::cout << "siever cur_time_bdgl_bucketing: " << cur_time_bdgl_bucketing << " it: " << it << " avg: " << cur_time_bdgl_bucketing/(double)(it+1) << std::endl;
+    std::cout << "siever cur_time_bdgl_process_buckets: " << cur_time_bdgl_process_buckets << " it: " << it << " avg: " << cur_time_bdgl_process_buckets/(double)(it+1) << std::endl;
+    std::cout << "siever cur_time_bdgl_queue: " << cur_time_bdgl_queue << " it: " << it << " avg: " << cur_time_bdgl_queue/(double)(it+1) << std::endl;
+    std::cout << "siever cur_time_parallel_sort_cdb: " << cur_time_parallel_sort_cdb << " it: " << it << " avg: " << cur_time_parallel_sort_cdb/(double)(it+1) << std::endl;
+    }

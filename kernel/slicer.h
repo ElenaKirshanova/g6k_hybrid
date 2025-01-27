@@ -5,6 +5,8 @@
 #ifndef G6K_HYBRID_SLICER_H
 #define G6K_HYBRID_SLICER_H
 
+#include <chrono>
+
 static constexpr unsigned int XPC_SLICER_SAMPLING_THRESHOLD = 75; // XPC Threshold for iterative slicer sampling //105
 static constexpr unsigned int XPC_SLICER_THRESHOLD = 96; // XPC Threshold for iterative slicer sampling
 
@@ -106,6 +108,7 @@ public:
 
     template<RecomputeSlicer what_to_recompute>
     inline void recompute_data_for_entry_t(Entry_t &e);
+
 };
 
 #endif //G6K_HYBRID_SLICER_H
