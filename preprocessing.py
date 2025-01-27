@@ -129,9 +129,9 @@ if __name__=="__main__":
     # (dimension, predicted kappa, predicted beta)
     # params = [(140, 12, 48), (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     #params = [(140, 12, 48)]#, (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
-    params = [(125, 4, 48)]
+    params = [(144, 8, 48)]
     nsieves = 5
-    nworkers, nthreads =  2, 2 #20, 4
+    nworkers, nthreads =  5, 2 #20, 4
 
     # lats_per_dim = 10
     # inst_per_lat = 10 #how many instances per A, q

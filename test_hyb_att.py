@@ -350,10 +350,10 @@ if __name__=="__main__":
     preprocessing.py (preprocess the data) and then run this file. 
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
-    n, k = 140, 1
+    n, k = 144, 1
     q, eta = 3329, 3
     latnum = 5
-    n_guess_coord, n_slicer_coord = 14, 52
+    n_guess_coord, n_slicer_coord = 7, 62
     nthreads = 2
     nworkers = 1
 

@@ -45,11 +45,11 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705,seed=0):
     ft = "ld" if n<145 else ( "dd" if config.have_qd else "mpfr")
     G = GSO.Mat( LR.gso.B, U=IntegerMatrix.identity(n,int_type=int_type), UinvT=IntegerMatrix.identity(n,int_type=int_type), float_type=ft )
     param_sieve = SieverParams()
-    # param_sieve['threads'] =1
-    # param_sieve['db_size_base'] = (4/3.)**0.5 #(4/3.)**0.5 ~ 1.1547
-    # param_sieve['db_size_factor'] = 3.2 #3.2
-    # param_sieve['saturation_ratio'] = 0.5
-    # param_sieve['saturation_radius'] = 1.32
+    param_sieve['threads'] = 1
+    param_sieve['db_size_base'] = (4/3.)**0.5 #(4/3.)**0.5 ~ 1.1547
+    param_sieve['db_size_factor'] = 3.2 #3.2
+    param_sieve['saturation_ratio'] = 0.5
+    param_sieve['saturation_radius'] = 1.32
 
     g6k = Siever(G,param_sieve)
     g6k.initialize_local(0,0,n)
@@ -65,10 +65,10 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705,seed=0):
     print(f"dbsize: {len(g6k)}")
     g6k.dump_on_disk(f"cvppg6k_n{n}_{seed}_test.pkl")
 
-def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, nthreads=1, nrand_params=[1.]):
+def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, nrand_params=[1.]):
+    g6k = Siever.restore_from_file(f"cvppg6k_n{n}_{cntr}_test.pkl")
     G = g6k.M
     B = G.B
-    n = G.d
 
     sieve_dim = n
     gh = gaussian_heuristic(G.r())
@@ -90,11 +90,10 @@ def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, nthreads=1, nran
             nsucc_slic, nsucc_bab = 0, 0
             for tstnum in range(ntests):
                 print(f" - - - {approx_fact} #{tstnum} out of {ntests} - - - nrand: {nrand_param}", flush=True)
-                c = [ randrange(-1002,1003) for j in range(n) ]
+                c = [ randrange(-2,3) for j in range(n) ]
                 e = np.array( random_on_sphere(n,approx_fact*lambda1) )
                 b = np.array( B.multiply_left( c ) )
                 t = b+e
-                print(f"|t|: {(t@t)**0.5}")
 
                 """
                 Testing Babai.
@@ -136,8 +135,9 @@ def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, nthreads=1, nran
                         slicer = RandomizedSlicer(g6k)
                         slicer.set_nthreads(nthreads);
 
-                        nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
-                        nrand = ceil(nrand_param*(1./nrand_)**sieve_dim)
+                        # nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
+                        # nrand = ceil(nrand_param*(1./nrand_)**sieve_dim)
+                        nrand = ceil( nrand_param*len(g6k) )
                         slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
 
                         blocks = 2 # should be the same as in siever
@@ -149,6 +149,7 @@ def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, nthreads=1, nran
                         buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
                         buckets = max(buckets, 2**(blocks-1))
 
+                        slicer.set_proj_error_bound(1.01*(e_@e_))
                         slicer.set_max_slicer_interations(max_slicer_interations)
                         slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False)
 
@@ -185,14 +186,15 @@ def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, nthreads=1, nran
 
 if __name__=="__main__":
     nthreads = 1
-    nworkers = 2
+    nworkers = 5
     max_slicer_interations = 300
-    ntests = 10
-    nlats = 2
-    n = 60
+    ntests = 50
+    nlats = 10
+    n = 65
     bits = 11.705
     betamax = 53
-    approx_facts = [ 0.4 + 0.05*i for i in range(15) ] #
+    approx_facts = [ 0.9 + 0.05*i for i in range(2) ] #
+    nrand_params = [1.0]
     print(approx_facts)
 
     to_be_computed = []
@@ -220,19 +222,29 @@ if __name__=="__main__":
     for t in tasks:
          t.get()
 
-    for cntr in range(start_writing_index,nlats):
-        g6ks.append( Siever.restore_from_file(f"cvppg6k_n{n}_{cntr}_test.pkl") )
+    # for cntr in range(start_writing_index,nlats):
+    #     g6ks.append( Siever.restore_from_file(f"cvppg6k_n{n}_{cntr}_test.pkl") )
 
     pool.close()
     aggregated_data = []
-    nrand_params = [1., 3., 5.]
 
-    for g6k in g6ks:
-        aggregated_data += [ run_exp(g6k,ntests,approx_facts,max_slicer_interations=max_slicer_interations, nthreads=nthreads, nrand_params=nrand_params) ]
+    tasks = []
+    output = []
+    pool = Pool( processes = nworkers )
+    for cntr in range(nlats):
+        tasks.append( pool.apply_async(
+            run_exp, (n,cntr,ntests,approx_facts,max_slicer_interations, nthreads, nrand_params)
+            ) )
+        print(cntr)
+
+    for t in tasks:
+        aggregated_data += [ t.get() ]
+        # aggregated_data += [ run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=max_slicer_interations, nthreads=nthreads, nrand_params=nrand_params) ]
+    pool.close()
 
     for tmp in aggregated_data:
         print(f"nrand_parameter: {aggregated_data[0]}")
-        print(aggregated_data)
+        print(aggregated_data[1])
 
     with open(f"slicsucc_{n}.pkl","wb") as file:
         pickle.dump(aggregated_data, file)
