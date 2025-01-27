@@ -188,13 +188,13 @@ if __name__=="__main__":
     nthreads = 1
     nworkers = 5
     max_slicer_interations = 300
-    ntests = 50
+    ntests = 200
     nlats = 10
-    n = 65
+    n = 60
     bits = 11.705
     betamax = 53
-    approx_facts = [ 0.9 + 0.05*i for i in range(2) ] #
-    nrand_params = [1.0]
+    approx_facts = [ 0.4 + 0.05*i for i in range(15) ] #
+    nrand_params = [ 1.0,3.0,5.0 ]
     print(approx_facts)
 
     to_be_computed = []
@@ -202,7 +202,7 @@ if __name__=="__main__":
     load_succ = True
     for cntr in range(nlats):
         try:
-            g6ks.append( Siever.restore_from_file(f"cvppg6k_n{n}_{cntr}_test.pkl") )
+            Siever.restore_from_file(f"cvppg6k_n{n}_{cntr}_test.pkl")
             print(f"g6k={cntr} loaded")
         except FileNotFoundError:
             load_succ = False
