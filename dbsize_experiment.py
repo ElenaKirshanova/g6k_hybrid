@@ -229,8 +229,8 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
 if __name__ == '__main__':
 
-    Nexperiments = 20
-    Nlats = 10
+    Nexperiments = 50
+    Nlats = 20
     path = "saved_lattices/"
     isExist = os.path.exists(path)
     if not isExist:
@@ -242,13 +242,13 @@ if __name__ == '__main__':
 
     FPLLL.set_precision(200)
 
-    n, betamax, sieve_dim = 60, 50, 60
+    n, betamax, sieve_dim = 80, 65, 80
 
-    nthreads = 1
-    nworkers = 4 # number of workers
+    nthreads = 2
+    nworkers = 10 # number of workers
     nrand_param = 1.
     shrink_factor = 0.7071 # ~ 1/sqrt(2)
-    n_shrinkings = 4
+    n_shrinkings = 8
     pool = Pool(processes = nworkers )
     tasks = []
 
