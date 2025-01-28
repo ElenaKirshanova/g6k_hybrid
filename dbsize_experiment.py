@@ -173,6 +173,9 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
                 #would remain to be in db_t
                 slicer = RandomizedSlicer(g6k)
                 slicer.set_nthreads(nthreads)
+                dbsize= g6k.db_size()
+                nrand_, _ = batchCVPP_cost(sieve_dim,100,dbsize**(1./sieve_dim),1) #100 can be any constant >1
+                n_per_target = ceil( nrand_param*(1./nrand_)**sieve_dim )
                 slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=n_per_target)
                 try:
                     slicer.set_proj_error_bound(norm_slack*(e_@e_))
@@ -226,7 +229,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
 if __name__ == '__main__':
 
-    Nexperiments = 100
+    Nexperiments = 20
     Nlats = 10
     path = "saved_lattices/"
     isExist = os.path.exists(path)
@@ -245,7 +248,7 @@ if __name__ == '__main__':
     nworkers = 4 # number of workers
     nrand_param = 1.
     shrink_factor = 0.7071 # ~ 1/sqrt(2)
-    n_shrinkings = 8
+    n_shrinkings = 4
     pool = Pool(processes = nworkers )
     tasks = []
 
