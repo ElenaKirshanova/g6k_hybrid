@@ -266,6 +266,7 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
     # TODO: we can try inserting a vector from siever into the basis, since it was already computed.
     n_slicer_coord += delta_slicer_coord
     overhead_t_start = time.perf_counter()
+    beta = 0
     if not bkz_beta_range is None:
         G = g6k.M #the GSO obj. for first k*n-kappa vectors.
         LR = LatticeReduction( G.B, threads_bkz=nthreads )
@@ -274,7 +275,7 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
             lens = test_vect_proj(G, n_slicer_coord, n_tests=2048, eta=eta)
             est_norm = np.percentile(lens,50)
             print(f"#{lat_index} est_proj_norm is: {est_norm}")
-            if est_norm <= 0.88:
+            if est_norm <= 0.95:
                 break
             
             then_round=time.perf_counter()

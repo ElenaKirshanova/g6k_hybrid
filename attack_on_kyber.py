@@ -182,6 +182,7 @@ def attack_on_kyber(n,q,eta,k,betapre,betamax,ntours=5,seed=[0,0],nthreads=5):
         "time": llltime,
         "projinfo": {}
     }
+    beta = betapre
     if lll.M.get_r(0,0) <= tarnrmsq:
         print(f"LLL recovered secret!")
         report["beta"] = beta
@@ -258,24 +259,24 @@ if __name__ == "__main__":
 
     nthreads = 5
     nworkers = 2
-    lats_per_dim = 5 #10
-    inst_per_lat = 100 #10 #how many instances per A, q
+    lats_per_dim = 2 #10
+    inst_per_lat = 2 #10 #how many instances per A, q
     q, eta = 3329, 3
-    nks = [ (144+10*i,3) for i in range(1) ]
-    betapre,betamax = 46, 62
+    nks = [ (110+10*i,3) for i in range(1) ]
+    betapre,betamax = 32, 62
 
     output = []
     pool = Pool( processes = nworkers )
     tasks = []
-
     RECOMPUTE_INSTANCE = False
-    RECOMPUTE_KYBER = True
+    RECOMPUTE_KYBER = False
     if RECOMPUTE_INSTANCE:
         print(f"Generating Kyber...")
         for nk in nks:
             n, k = nk[0], 1
             for latnum in range(lats_per_dim):
                 gen_and_dump_lwe(nk[0], q, eta,k, ntar=inst_per_lat, seed=latnum)
+
     if RECOMPUTE_KYBER or RECOMPUTE_INSTANCE:
         pretasks = []
         for nk in nks:

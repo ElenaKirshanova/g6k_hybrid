@@ -108,7 +108,7 @@ def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthrea
     sys.stdout.flush()
     #NOTE: this dumps
     assert g6k.r - g6k.l == sieve_dim_max-nsieves+i, f"g6k context: {g6k.r - g6k.l} != {sieve_dim_max-nsieves+i}"
-    g6k.dump_on_disk(out_path+f'g6kdump_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}.pkl')
+    g6k.dump_on_disk(out_path+f'g6kdump_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}_{g6k.n}.pkl')
     for i in range(1,nsieves):
         g6k.extend_left(1)
         sieve_start = time.perf_counter()
@@ -118,7 +118,7 @@ def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthrea
         sys.stdout.flush()
         #NOTE: this dumps
         assert g6k.r - g6k.l == sieve_dim_max-nsieves+i, f"g6k context: {g6k.r - g6k.l} != {sieve_dim_max-nsieves+i}"
-        g6k.dump_on_disk(out_path+f'g6kdump_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}.pkl')
+        g6k.dump_on_disk(out_path+f'g6kdump_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}_{g6k.n}.pkl')
 
 
     print(report)
@@ -129,14 +129,14 @@ if __name__=="__main__":
     # (dimension, predicted kappa, predicted beta)
     # params = [(140, 12, 48), (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     #params = [(140, 12, 48)]#, (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
-    params = [(144, 8, 48)]
-    nsieves = 5
-    nworkers, nthreads =  5, 2 #20, 4
+    params = [(110, 8, 45)]
+    nsieves = 1
+    nworkers, nthreads =  2, 5 #20, 4
 
     # lats_per_dim = 10
     # inst_per_lat = 10 #how many instances per A, q
     lats_per_dim = 2
-    inst_per_lat = 5 #how many instances per A, q
+    inst_per_lat = 100 #how many instances per A, q
     q, eta = 3329, 3
     #def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthreads=1)
     output = []
@@ -144,7 +144,7 @@ if __name__=="__main__":
     tasks = []
     for param in params:
         for latnum in range(lats_per_dim):
-            for kappa in range(param[1]-1, param[1]+4,1):
+            for kappa in range(param[1], param[1]+1,1):
                 tasks.append( pool.apply_async(
                     run_preprocessing, (
                         param[0], #n
@@ -152,9 +152,9 @@ if __name__=="__main__":
                         eta, #eta
                         1, #k
                         [latnum,0], #seed, second value is irrelevant
-                        param[2]+1, #beta_bkz
+                        param[2]+3, #beta_bkz
                         param[2]+5, #sieve_dim_max
-                        5,  #nsieves
+                        1,  #nsieves
                         kappa, #kappa
                         nthreads #nthreads
                         )
