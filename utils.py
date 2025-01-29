@@ -14,6 +14,7 @@ from g6k.siever_params import SieverParams
 from math import sqrt, ceil, floor, log, exp
 from copy import deepcopy
 from random import shuffle, randrange
+from sample import centeredBinomial
 
 from discretegauss import sample_dgauss
 
@@ -186,3 +187,21 @@ def uniform_in_ball(num_points, dimension, radius=1):
     random_radii = random.random(num_points) ** (1/dimension)
     # Return the list of random (direction & length) points.
     return radius * (random_directions * random_radii).T
+
+def test_vect_proj( G, n_slicer_coord, n_tests, eta=3 ):
+    # Gives norms of n_tests projected and scaled vectors ~Bin(eta). The projection is onto
+    # the last n_slicer_coord dimensional projective lattice.
+    dist = centeredBinomial(eta)
+
+    gh_sub = gaussian_heuristic( G.r()[-n_slicer_coord:] )
+    lens = []
+    for cntr in range(n_tests):
+        v = dist.sample(G.d)
+        v_ = from_canonical_scaled( G, v, offset=n_slicer_coord,scale_fact=gh_sub )
+        lv_ = (v_@v_)**0.5
+        lens.append(lv_)
+    return(lens)
+
+def proj_percentile_is_leq(G, n_slicer_coord, n_tests, perc=50, threshold=0.95, eta=3):
+    l = test_vect_proj( G, n_slicer_coord, n_tests, eta )
+    return np.percentile( l,perc ) <= threshold
