@@ -265,7 +265,7 @@ def run_experiment(lat_index, params, stats_dict):
     # Gaussian heuristic for the last sieve_dim dimensioal projective lattice of G.
     # ALL {from/to}_canonical_scaled calls must use scale_fact=gh_sub, or things go out of hand.
     gh_sub = gaussian_heuristic(G.r()[-n_slicer_coord:])
-    print(f"Sieving-1 done in {perf_counter() - then}")
+    # print(f"Sieving-1 done in {perf_counter() - then}")
     b0 = None
     for tmp in g6k.itervalues():
         b0 = G.B[-n_slicer_coord:].multiply_left( tmp )
@@ -345,10 +345,10 @@ if __name__=="__main__":
     preprocessing.py (preprocess the data) and then run this file. 
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
-    n, k = 150, 1
+    n, k = 140, 1
     q, eta = 3329, 3
-    latnum = 5
-    n_guess_coord, n_slicer_coord = 16, 61
+    latnum = 10
+    n_guess_coord, n_slicer_coord = 15, 52
     nthreads = 2
     nworkers = 1
 

@@ -265,6 +265,7 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
     #since it will be altered by the reduction. 
     # TODO: we can try inserting a vector from siever into the basis, since it was already computed.
     n_slicer_coord += delta_slicer_coord
+    overhead_t_start = time.perf_counter()
     if not bkz_beta_range is None:
         G = g6k.M #the GSO obj. for first k*n-kappa vectors.
         LR = LatticeReduction( G.B, threads_bkz=nthreads )
@@ -273,7 +274,7 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
             lens = test_vect_proj(G, n_slicer_coord, n_tests=2048, eta=eta)
             est_norm = np.percentile(lens,50)
             print(f"#{lat_index} est_proj_norm is: {est_norm}")
-            if est_norm <= 0.95:
+            if est_norm <= 0.88:
                 break
             
             then_round=time.perf_counter()
@@ -293,7 +294,7 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
         then = time.perf_counter()
         g6k(alg="bdgl2")
         print(f"bdgl2 done in {time.perf_counter()-then}")
-        
+    overhead_t = time.perf_counter() - overhead_t_start  
     H11 = g6k.M.B 
 
     # Gaussian heuristic for the last sieve_dim dimensioal projective lattice of G.
@@ -366,7 +367,9 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
             "walltime": perf_counter() - ex_timer, 
             "dist_bnd": dist_bnd, 
             "succ": all(sli_succ),
-            "key_num": 0 #number of guessed keys
+            "key_num": 0, #number of guessed keys
+            "beta": beta,
+            "overhead_t": overhead_t,
         }
 
         print(f" - - - {all(answer==v2)} - - - ")
@@ -381,8 +384,8 @@ if __name__=="__main__":
     """
     n, k = 140, 1
     q, eta = 3329, 3
-    latnum = 5
-    n_guess_coord, n_slicer_coord = 11, 52
+    latnum = 10
+    n_guess_coord, n_slicer_coord = 15, 52
     bkz_beta_range = range(n_slicer_coord,n_slicer_coord+6) #range of values of beta or None if no additional reduction to be performed
     delta_slicer_coord = 5 #integer >=0, n_slicer_coord + delta_slicer_coord will be the slicer dimension
     nthreads = 2
@@ -412,6 +415,8 @@ if __name__=="__main__":
     # print(ex_cntr, succ_cntr)
     print(stats_dict_agr)
 
-    with open(f"tha_{n}_{n_guess_coord}_{n_slicer_coord}.pkl", "wb") as file:
+    filename = f"tha_{n}_{n_guess_coord}_{n_slicer_coord+delta_slicer_coord}.pkl"
+    print(f"saving results to {filename}")
+    with open(filename, "wb") as file:
         pickle.dump( stats_dict_agr, file )
     pool.close()
