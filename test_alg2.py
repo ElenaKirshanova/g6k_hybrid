@@ -8,6 +8,7 @@ import sys
 
 import time, pickle
 from random import shuffle
+from sample import centeredBinomial
 
 from hyb_att_on_kyber import alg_2_batched
 
@@ -312,11 +313,12 @@ from hyb_att_on_kyber import alg_2_batched as alg_2_batched_debug
 
 if __name__=="__main__":
     # n, betamax, sieve_dim = 140, 45, 45 #n=170 is liikely to fail
-    nexp = 20
-    n, betamax, sieve_dim = 90, 57, 55 #n=170 is liikely to fail
+    nexp = 50
+    n, betamax, sieve_dim = 512, 144, 88 #n=170 is liikely to fail
     print(f"n, betamax, sieve_dim: {(n, betamax, sieve_dim)}")
 
     bits=11.705
+    dist = centeredBinomial(3)
     ft = "ld" if n<145 else ( "dd" if config.have_qd else "mpfr")
 
     loadsucc = False
@@ -366,7 +368,9 @@ if __name__=="__main__":
     g6k = Siever(G,param_sieve)
     g6k.initialize_local(n-sieve_dim,n-sieve_dim,n)
     print("Running bdgl2...")
+    then = time.perf_counter()
     g6k(alg="bdgl2")
+    print(f"bdgl done in {time.perf_counter()-then}")
     g6k.M.update_gso()
 
     print(f"dbsize: {len(g6k)}")
@@ -375,11 +379,13 @@ if __name__=="__main__":
     nsli_succ = 0
     af_fail = []
     af_succ = []
-    for gamma_fact in [0.55+0.05*i for i in range(2)]:
+    
+    for gamma_fact in [0.0398+0.02*i for i in range(1)]:
         for cntrtmp in range(nexp):
             print(f" - - - processing {cntrtmp+1} of {nexp} - - -", flush=True)
             c = [ randrange(-30,31) for j in range(n) ]
             e = np.array( random_on_sphere(n,(gamma_fact)*gh), dtype=DTYPE )
+            # e = np.array( dist.sample(G.d) )
             b = G.B.multiply_left( c )
             b_ = np.array(b,dtype=np.int64)
             t_ = e+b_
@@ -403,7 +409,10 @@ if __name__=="__main__":
             #alg_2_batched( g6k,target_candidates,H11, nthreads=1, tracer_alg2=None )
             # bab_01 = np.array( alg_2_batched( g6k,target_candidates,dist_sq_bnd=1.001*e_@e_  ) )
             # bab_01 = np.array( alg_2_batched_debug( g6k,target_candidates,dist_sq_bnd=1.001*e_@e_,e=e  ) )
-            bab_01 = np.array( alg_2_batched_debug( g6k,target_candidates,dist_sq_bnd=1.001*e_@e_ ) )
+            bab_01 = alg_2_batched_debug( g6k,target_candidates,dist_sq_bnd=1.001*e_@e_ )
+            if bab_01 is None:
+                bab_01 = len(c)*[0]
+            bab_01 = np.array( bab_01 )
             print(f"e_: {e_}")
             print(f"c: {c}")
             print(f"bab01:{bab_01}")
@@ -419,5 +428,5 @@ if __name__=="__main__":
             tmp = np.array( G.babai(t) )
             print(f"babai succsess: {(tmp==c)}")
     print(f"nsli_succ: {nsli_succ}")
-    print(af_succ)
-    print(af_fail)
+    print("af_succ = ", sorted(af_succ))
+    print("af_fail = ", sorted(af_fail))

@@ -24,7 +24,7 @@ try:
 except ModuleNotFoundError:
     from multiprocessing import Pool
 
-DTYPE = np.float64 #np.longdouble or np.float64
+DTYPE = np.float128 #np.longdouble or np.float64
 save_folder = "./saved_lattices/"
 
 def gsomat_copy(M):
@@ -202,6 +202,6 @@ def test_vect_proj( G, n_slicer_coord, n_tests, eta=3 ):
         lens.append(lv_)
     return(lens)
 
-def proj_percentile_is_leq(G, n_slicer_coord, n_tests, perc=50, threshold=0.95, eta=3):
-    l = test_vect_proj( G, n_slicer_coord, n_tests, eta )
-    return np.percentile( l,perc ) <= threshold
+# def proj_percentile_is_leq(G, n_slicer_coord, n_tests, perc=50, threshold=0.95, eta=3):
+#     l = test_vect_proj( G, n_slicer_coord, n_tests, eta )
+#     return np.percentile( l,perc ) <= threshold

@@ -1360,10 +1360,14 @@ cdef class Siever(object):
       ll, l, r = data['ll'], data["l"], data["r"]
       coeffs = data["coeffs"]
 
-      B = IntegerMatrix.from_matrix( B, int_type="long" )
-      U = IntegerMatrix.identity(B.nrows, int_type="long")
-      UinvT = IntegerMatrix.identity(B.nrows, int_type="long")
-      G = GSO.Mat( B, float_type="dd", U=U, UinvT=UinvT ) #TODO: choose the float_type dynamically
+      ft, it = "dd", "mpz"
+      if len(B) > 320:
+        ft = "dd" #qd and mpfr do not support to/from_canonical
+        it = "mpz"
+      B = IntegerMatrix.from_matrix( B, int_type=it )
+      U = IntegerMatrix.identity(B.nrows, int_type=it)
+      UinvT = IntegerMatrix.identity(B.nrows, int_type=it)
+      G = GSO.Mat( B, float_type=ft, U=U, UinvT=UinvT ) #TODO: choose the float_type dynamically
       G.update_gso()
 
       param_sieve = SieverParams()

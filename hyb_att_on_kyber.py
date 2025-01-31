@@ -192,16 +192,16 @@ def alg_3(g6k,B,H11,t,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads=1, tracer_al
     for times in range(nsampl): #Alg 3 steps 4-7
         if times!=0 and times%64 == 0:
             print(f"{times} done out of {nsampl}", end=", ")
-        etilde2 = np.array( distrib.sample( n_guess_coord ) ) #= (0 | e2)
+        etilde2 = np.array( distrib.sample( n_guess_coord ), dtype=DTYPE ) #= (0 | e2)
         # print(f"len etilde2: {len(etilde2)}")
-        vtilde2 = np.array(t2)-etilde2
+        vtilde2 = np.array(t2, dtype=DTYPE)-etilde2
         vtilde2s.append( vtilde2  )
         #compute H12*H22^-1 * vtilde2 = H12*vtilde2 since H22 is identity
         tmp = H12.multiply_left(vtilde2)
 
         # print(f"len(vtilde2): {len(vtilde2)} len(t1): {len(t1)}")
         # print(f"dim: {dim} n_guess_coord: {n_guess_coord}")
-        t1_ = np.array( list(t1) ) - tmp
+        t1_ = np.array( list(t1), dtype=DTYPE ) - tmp
         # print(t1_)
         # print(f"len t1_: {len(t1_)}")
         target_candidates.append( t1_ )
@@ -412,6 +412,8 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
         shift_babai = G.B.multiply_left( (dim-sieve_dim)*[0] + list( shift_babai_c ) )
         t_gs_reduced = from_canonical_scaled( G,np.array(target, dtype=DTYPE)-shift_babai,offset=sieve_dim,scale_fact=gh_sub ) #this is the actual reduced target
 
+        print( f"|t_gs|: {(t_gs@t_gs)**0.5}" )
+        print( f"shift_babai_cshift_babai_c: {shift_babai_c}" )
         # B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
         # t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
         # t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
@@ -453,7 +455,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     iterator = slicer.itervalues_cdb_t()
     for tmp in iterator:
         out_gs_reduced = np.array(tmp, dtype=DTYPE)  #db_t[0] is expected to contain the error vector
-        cur_nrm_sq = out_gs_reduced@out_gs_reduced
+        # cur_nrm_sq = out_gs_reduced@out_gs_reduced
         break
     # print(f"cur_nrm ={cur_nrm_sq**0.5}")
 
@@ -471,40 +473,56 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
     print(f"out_gs_reduced: {out_gs_reduced}")
     # print(f"e_-out_gs_reduced: {e_-out_gs_reduced}")
     print(f"out_gs_reduced norm: {(out_gs_reduced@out_gs_reduced)**0.5} vs {dist_sq_bnd**0.5}")
+    if not (tracer_alg2 is None):
+        e_ = tracer_alg2["e_"]
+        es = tracer_alg2["es"]
+        print(f"e_-out_gs_reduced: {e_-out_gs_reduced}")
+        # err = to_canonical_scaled( G,e_,offset=sieve_dim, scale_fact=gh_sub )
+        # out_gs_reduced = e_
     index = 0
     #Now we deduce which target candidate the error vector corresponds to.
     #The idea is that if t_gs is an answer then t_gs_reduced - out_gs_reduced is in the projective lat
     #and is (close to) zero.
     min_norm_err_sq = float("inf")
-    index_best = None
-    b_best = None
+    out_reduced = np.array( to_canonical_scaled( G, out_gs_reduced, offset=sieve_dim, scale_fact=gh_sub ), dtype=DTYPE )
+    # the line below projects the error away from first basis vectors
+    out_reduced = G.to_canonical( (G.d-sieve_dim)*[0] + list( G.from_canonical( out_reduced,start=G.d-sieve_dim ) ), start=0 )
     for index in range(len(shift_babai_c_list)):
         # print(f"LEN: {len(target_candidates)}")
 
+        # out_reduced = np.array( to_canonical_scaled( G, out_gs_reduced, offset=sieve_dim, scale_fact=gh_sub ), dtype=DTYPE )
         t = np.array( target_candidates[index], dtype=DTYPE )
-        t_1 = np.array( G.from_canonical( t,start=0 ), dtype=DTYPE )
-        for i in range(dim-sieve_dim):
-            t_1[i] = 0.
-        t_1 = np.array( G.to_canonical( t_1,start=0 ), dtype=DTYPE )
-        t_0 = np.array( G.from_canonical( t,start=0 ), dtype=DTYPE )
-        for i in range(dim-sieve_dim, dim):
-            t_0[i] = 0.
-        t_0 = np.array( G.to_canonical( t_0,start=0 ), dtype=DTYPE )
-        #we substitute the obtaied error from the target and call babai to
-        #account for an fp error
+        print(f"t:{t}")
+        # t_1 = np.array( G.from_canonical( t,start=0 ), dtype=DTYPE )
+        # for i in range(dim-sieve_dim):
+        #     t_1[i] = 0.
+        # t_1 = np.array( G.to_canonical( t_1,start=0 ), dtype=DTYPE )
+        # t_0 = np.array( G.from_canonical( t,start=0 ), dtype=DTYPE )
+        # for i in range(dim-sieve_dim, dim):
+        #     t_0[i] = 0.
+        # t_0 = np.array( G.to_canonical( t_0,start=0 ), dtype=DTYPE )
+        # #we substitute the obtaied error from the target and call babai to
+        # #account for an fp error
 
-        out_reduced = np.array( to_canonical_scaled( G, out_gs_reduced, offset=sieve_dim, scale_fact=gh_sub ), dtype=DTYPE )
-        t_1 = t_1 - out_reduced
-        bab_1 = G.babai(t_1,start=dim-sieve_dim, dimension=sieve_dim)
+        # t_1 = t_1 - out_reduced
+        # bab_1 = G.babai(t_1,start=dim-sieve_dim, dimension=sieve_dim)
 
-        tmp = G.B[-sieve_dim:].multiply_left( bab_1 )
-        tmp = np.array( G.from_canonical(tmp,start=0), dtype=DTYPE )
-        for i in range(dim-sieve_dim,dim):
-            tmp[i] = 0.
-        tmp = G.to_canonical( tmp, start=0 )
-        t_0 = t_0 - tmp
-        bab_0 = G.babai(t_0,start=0, dimension=dim-sieve_dim)
-        bab_01 = np.concatenate( [bab_0,bab_1] )
+        # tmp = G.B[-sieve_dim:].multiply_left( bab_1 )
+        # print(f"alg2 tmp plain: {tmp}")
+        # tmp = np.array( G.from_canonical(tmp,start=0), dtype=DTYPE )
+        # print(f"alg2 tmp proj: {tmp}")
+        # for i in range(dim-sieve_dim,dim):
+        #     tmp[i] = 0.
+        # tmp = np.array( G.to_canonical( tmp, start=0 ), dtype=DTYPE )
+        # t_0 = t_0 - tmp
+        # bab_0 = G.babai(t_0,start=0, dimension=dim-sieve_dim)
+        # bab_01 = np.concatenate( [bab_0,bab_1] )
+        # print(f"somewhat correct bab_01: {bab_01}")
+
+        
+        bab_01 = np.array( G.babai(t-out_reduced) )
+        # print(f"{bab_01_-bab_01}")
+
         solution_candidate = np.array( G.B.multiply_left( bab_01 ), dtype=DTYPE )
 
         diff = t - solution_candidate
@@ -521,6 +539,41 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=1, tracer_al
 
     print(f"alg2 terminates")
     print(f"best_bab_01: {best_bab_01}")
+    if not (tracer_alg2 is None):
+        observed_diff = out_gs_reduced - e_
+        flag = (observed_diff@observed_diff)**0.5 < 0.1 and min_norm_err_sq > 150**2
+        if flag:
+            print(f"Gotcha, bug!")
+            with open(f"broken_lat.pkl","wb") as file:
+                efull = tracer_alg2["efull"]
+                e_full = tracer_alg2["e_full"]
+                D = {
+                    "B": B,
+                    "t": target_candidates[0],
+                    "e_": e_,
+                    "es": es,
+                    "efull": efull,
+                    "e_full": e_full,
+                    "sieve_dim": sieve_dim,
+                    "solution_candidate": solution_candidate,
+                }
+                pickle.dump( D,file )
+        if (observed_diff@observed_diff)**0.5 < 0.1 and min_norm_err_sq < 80**2:
+            print(f"Gotcha, good!")
+            with open(f"ok_lat.pkl","wb") as file:
+                efull = tracer_alg2["efull"]
+                e_full = tracer_alg2["e_full"]
+                D = {
+                    "B": B,
+                    "t": target_candidates[0],
+                    "e_": e_,
+                    "es": es,
+                    "efull": efull,
+                    "e_full": e_full,
+                    "sieve_dim": sieve_dim,
+                    "solution_candidate": solution_candidate,
+                }
+                pickle.dump( D,file )
     return best_bab_01
 
 

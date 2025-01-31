@@ -177,6 +177,7 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
         print(f"tmp babai norm: {(tmp@tmp)**0.5}")
 
         t1_ = np.array( list(t1) ) - tmp
+        tracer_alg3["es"] -= tmp
         target_candidates.append( t1_ )
     print()
 
@@ -185,7 +186,7 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
     """
     #TODO: deduce what is the betamax
     # def alg_2_batched is in hyb_att_on_kyber.py
-    ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=None )
+    ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg3 )
 
     v1 = np.array( H11.multiply_left( ctilde1 ) )
     argminv = None
@@ -204,7 +205,7 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
         cntr+=1
     return argminv
 
-def run_experiment(lat_index, params, stats_dict):
+def run_experiment(lat_index, params, stats_dict, tracer=None):
     nthreads = params["nthreads"]
     n, k, q, eta = params["n"], params["k"], params["q"], params["eta"]
     n_guess_coord, n_slicer_coord = params["n_guess_coord"], params["n_slicer_coord"]
@@ -275,7 +276,11 @@ def run_experiment(lat_index, params, stats_dict):
 
     gh = gaussian_heuristic( g6k.M.r()[-n_slicer_coord:] )
     print(f"r / r = {(g6k.M.r()[-n_slicer_coord] / g6k.M.r()[-1])**0.5}")
+    cntr=0
     for (b, s, e) in bse:
+        # if ex_cntr<9:
+        #     ex_cntr+=1
+        #     continue
         ex_cntr+=1
         print(f"running exp # {ex_cntr}")
         #TODO: n=160, kappa=16, n_slicer_coord=71 returns large output far from the target when slicer fails.
@@ -309,9 +314,20 @@ def run_experiment(lat_index, params, stats_dict):
 
         len_bound = dist_sq_bnd
         # no guessing version of alg_3
-        v = alg_3_debug(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=None)
+        # project the error vector onto the last n_sieve_dim GS-vectors.
+        es = np.concatenate([e,-s])[:-n_guess_coord]
+        efull = np.concatenate([e,-s])[:-n_guess_coord]
+        e_full = from_canonical_scaled( G,efull,offset=n_slicer_coord,scale_fact=gh_sub )
+        tracer = {"e_": e_, "es": es, "efull": efull, "e_full": e_full}
+        v = alg_3_debug(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=tracer)
         # v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
         print(f"e_: {e_}")
+
+        # print(f"ehhh: {G.from_canonical(np.concatenate([e,-s]))}")
+        # print(f"eh: {G.from_canonical(np.concatenate([e,-s]))[:-n_slicer_coord-n_guess_coord]}")
+        # wth = G.from_canonical(np.concatenate([e,-s]))[:-n_slicer_coord-n_guess_coord]
+        # print( f"any wth moments: {any( np.abs(w)>0.48 for w in wtf )}" )
+
         if v is None:
             v = np.array( len(answer)*[0] )
         print(f"v: {v}")
@@ -345,11 +361,11 @@ if __name__=="__main__":
     preprocessing.py (preprocess the data) and then run this file. 
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
-    n, k = 110, 1
+    n, k = 170, 1
     q, eta = 3329, 3
-    latnum = 1
-    n_guess_coord, n_slicer_coord = 8, 49
-    nthreads = 2
+    latnum = 10
+    n_guess_coord, n_slicer_coord = 16, 80
+    nthreads = 5
     nworkers = 1
 
     params={}
