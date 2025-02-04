@@ -43,10 +43,10 @@ def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthrea
         "params": (n,q,eta,k,seed),
         "beta_bkz": beta_bkz,
         "sieve_dim_max": sieve_dim_max,
-        "sieve_dim_min": sieve_dim_max-nsieves+1,
+        "sieve_dim_min": sieve_dim_max-nsieves,
         "kappa": kappa,
         "bkz_runtime": 0,
-        "bdgl_runtime": [0]*nsieves,
+        "bdgl_runtime": [0]*(nsieves+1),
     }
     dim = n*k
     A, q, eta, k, bse = load_lwe(n,q,eta,k,seed[0]) #D["A"], D["q"], D["bse"]
@@ -128,18 +128,17 @@ if __name__=="__main__":
     # (dimension, predicted kappa, predicted beta)
     # params = [(140, 12, 48), (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     #params = [(140, 12, 48)]#, (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
-    # params = [(140, 6, 56)]
-    params = [(140, 6, 55)]
-    nworkers, nthreads =  2, N_SIEVE_THREADS #20, 4
+    params = [(140, 6, 55),(150, 6, 65),(140, 6, 74)]
+    nworkers, nthreads =  5, N_SIEVE_THREADS #20, 4
 
     beta_bkz_offset = 1 #bkz blocksize would surpass the predicted value by this offset
-    sieve_dim_max_offset = 4 #slicer will work on dim=prediceted beta + this offset
+    sieve_dim_max_offset = 4 #the largest slicer will work on dim=prediceted beta + this offset
     kappa_offset = 2 #data for predicted kappa up to predicted kappa + kappa_offset - 1 will be saved
 
     # lats_per_dim = 10
     # inst_per_lat = 10 #how many instances per A, q
-    lats_per_dim = 10
-    inst_per_lat = 10 #how many instances per A, q
+    lats_per_dim = 2
+    inst_per_lat = 2 #how many instances per A, q
     q, eta = 3329, 3
     #def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthreads=1)
     output = []

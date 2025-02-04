@@ -317,9 +317,9 @@ if __name__=="__main__":
     n, k = 140, 1
     q, eta = 3329, 3
     latnum = 10
-    n_guess_coord, n_slicer_coord = 15, 52
+    n_guess_coord, n_slicer_coord = 6, 52
     nthreads = 5
-    nworkers = 1
+    nworkers = 5
 
     params={}
     params["nthreads"] = nthreads

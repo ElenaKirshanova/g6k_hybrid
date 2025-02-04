@@ -24,7 +24,8 @@ try:
 except ModuleNotFoundError:
     from multiprocessing import Pool
 
-DTYPE = np.float128 #np.longdouble or np.float64
+from global_consts import DTYPE
+
 save_folder = "./saved_lattices/"
 
 def gsomat_copy(M):
