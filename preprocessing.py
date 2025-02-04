@@ -132,8 +132,9 @@ if __name__=="__main__":
     params = [(140, 6, 55)]
     nworkers, nthreads =  2, N_SIEVE_THREADS #20, 4
 
-    beta_bkz_offset = 1
-    sieve_dim_max_offset = 4
+    beta_bkz_offset = 1 #bkz blocksize would surpass the predicted value by this offset
+    sieve_dim_max_offset = 4 #slicer will work on dim=prediceted beta + this offset
+    kappa_offset = 2 #data for predicted kappa up to predicted kappa + kappa_offset - 1 will be saved
 
     # lats_per_dim = 10
     # inst_per_lat = 10 #how many instances per A, q
@@ -146,7 +147,7 @@ if __name__=="__main__":
     tasks = []
     for param in params:
         for latnum in range(lats_per_dim):
-            for kappa in range(param[1], param[1]+1,1):
+            for kappa in range(param[1], param[1]+kappa_offset,1):
                 tasks.append( pool.apply_async(
                     run_preprocessing, (
                         param[0], #n
