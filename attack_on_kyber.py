@@ -20,10 +20,12 @@ try:
 except ImportError:
   raise ImportError("g6k not installed")
 
-from LatticeReduction import LatticeReduction, BKZ_SIEVING_CROSSOVER
+from LatticeReduction import LatticeReduction
 
 import pickle
-MAX_LOOPS = 2
+# MAX_LOOPS = 2
+from global_consts import *
+
 inp_path = "lwe_instances/saved_lattices/"
 out_path = "lwe_instances/reduced_lattices/"
 
@@ -191,7 +193,6 @@ def attack_on_kyber(n,q,eta,k,betapre,betamax,ntours=5,seed=[0,0],nthreads=5):
     flags = BKZ.AUTO_ABORT|BKZ.MAX_LOOPS|BKZ.GH_BND
     bkz = BKZReduction(G)
 
-    cumtime = 0
     for beta in range(betapre-1,min(betamax+1,BKZ_SIEVING_CROSSOVER)):    #BKZ reduce the basis
         par = BKZ.Param(beta,
                                max_loops=MAX_LOOPS,
@@ -257,12 +258,12 @@ if __name__ == "__main__":
         except:
             pass    #still in docker if isExists==False, for some reason folder can exist and this will throw an exception.
 
-    nthreads = 5
+    nthreads = 2
     nworkers = 2
     lats_per_dim = 2 #10
-    inst_per_lat = 2 #10 #how many instances per A, q
+    inst_per_lat = 20 #10 #how many instances per A, q
     q, eta = 3329, 3
-    nks = [ (110+10*i,3) for i in range(1) ]
+    nks = [ (132+10*i,3) for i in range(1) ]
     betapre,betamax = 32, 62
 
     output = []

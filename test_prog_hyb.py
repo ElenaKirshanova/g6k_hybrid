@@ -386,7 +386,7 @@ if __name__=="__main__":
     n, k = 140, 1
     q, eta = 3329, 3
     latnum = 10
-    n_guess_coord, n_slicer_coord = 15, 52
+    n_guess_coord, n_slicer_coord = 5, 55
     bkz_beta_range = range(n_slicer_coord,n_slicer_coord+6) #range of values of beta or None if no additional reduction to be performed
     delta_slicer_coord = 5 #integer >=0, n_slicer_coord + delta_slicer_coord will be the slicer dimension
     nthreads = 2

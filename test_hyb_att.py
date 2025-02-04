@@ -12,7 +12,6 @@ from hyb_att_on_kyber import alg_3, alg_2_batched
 from sample import *
 
 from g6k.siever import SaturationError
-from test_alg2 import alg_2_batched_debug
 
 from preprocessing import load_lwe
 
@@ -21,9 +20,10 @@ try:
 except ModuleNotFoundError:
     from multiprocessing import Pool
 
+from global_consts import *
+
 inp_path = "lwe_instances/saved_lattices/"
 out_path = "lwe_instances/reduced_lattices/"
-max_nsampl = 2**10
 
 def kyberGen(n, q = 3329, eta = 3, k=1):
     polys = []
@@ -84,7 +84,6 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
     #TODO: make/(check if is) practical
     nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord ) )
     print(f"nsampl: {nsampl}")
-    nsampl = min(max_nsampl, nsampl)
     target_candidates = []
     vtilde2s = []
 
@@ -93,7 +92,7 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
 
     from hybrid_estimator.batchCVP import batchCVPP_cost
     nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
-    nrand = ceil(5*(1./nrand_)**sieve_dim)
+    nrand = ceil(NRAND_FACTOR*(1./nrand_)**sieve_dim)
     print(f"times: {ceil( len(g6k) / nrand )}")
     for times in range( ceil( len(g6k) / nrand ) ): #Alg 3 steps 4-7 ceil( (nrand * nsampl) / len(g6k) )
         if times!=0 and times%64 == 0:
@@ -117,7 +116,7 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
     We return (if we succeed) (-s,e)[dim-kappa-betamax:dim-kappa] to avoid fp errors.
     """
     #TODO: deduce what is the betamax
-    # def alg_2_batched is in hyb_att_on_kyber.py
+    # def of alg_2_batched is in hyb_att_on_kyber.py
     ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=None )
 
     v1 = np.array( H11.multiply_left( ctilde1 ) )
@@ -144,14 +143,12 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
     gh_sub = gaussian_heuristic(g6k.M.r()[-(g6k.r-g6k.l):])
     dim = B.nrows
     print(f"dim: {dim}")
-    # t_gs = from_canonical_scaled( G,t,offset=sieve_dim )
 
     t1, t2 = target[:-n_guess_coord], target[-n_guess_coord:]
     distrib = centeredBinomial(eta)
     #TODO: make/(check if is) practical
     nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord ) )
     print(f"nsampl: {nsampl}")
-    nsampl = min(max_nsampl, nsampl)
     target_candidates = []
     vtilde2s = []
 
@@ -160,10 +157,10 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
 
     from hybrid_estimator.batchCVP import batchCVPP_cost
     nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
-    nrand = ceil(5*(1./nrand_)**sieve_dim)
+    nrand = ceil(NRAND_FACTOR*(1./nrand_)**sieve_dim)
     print(f"times: {ceil( len(g6k) / nrand )}")
     for times in [0]: #Alg 3 steps 4-7 ceil( (nrand * nsampl) / len(g6k) )
-        if times!=0 and times%64 == 0:
+        if times!=0 and times%1000 == 0:
             print(f"{times} done out of {nsampl}", end=", ")
         if times>0:
             etilde2 = np.array( distrib.sample( n_guess_coord ) ) #= (0 | e2)
@@ -177,7 +174,8 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
         print(f"tmp babai norm: {(tmp@tmp)**0.5}")
 
         t1_ = np.array( list(t1) ) - tmp
-        tracer_alg3["es"] -= tmp
+        if not tracer_alg3 is None:
+            tracer_alg3["es"] -= tmp
         target_candidates.append( t1_ )
     print()
 
@@ -185,7 +183,7 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
     We return (if we succeed) (-s,e)[dim-kappa-betamax:dim-kappa] to avoid fp errors.
     """
     #TODO: deduce what is the betamax
-    # def alg_2_batched is in hyb_att_on_kyber.py
+    # def of alg_2_batched is in hyb_att_on_kyber.py
     ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg3 )
 
     v1 = np.array( H11.multiply_left( ctilde1 ) )
@@ -231,15 +229,6 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
         for j in range(k*n):
             Binit[i][j] = int( A[i-k*n,j] )
 
-    # loading the preprocessed H11 (see alg. 3 in the paper)
-    #TODO: the next number after n_guess_coord does not carry any meaningful info. Consider deleting.
-    # with open(out_path+f"kyb_prehybrid_{n}_{q}_{eta}_{k}_{lat_index}_{n_guess_coord}.pkl", "rb") as file:
-    #     H11 = pickle.load(file)["B"]
-    # H11 = Binit[:len(Binit)-kappa] #the part of basis to be reduced
-    # H11 = IntegerMatrix.from_matrix( [ h11[:len(Binit)-kappa] for h11 in H11  ] )
-
-    # H11r, H11c = H11.nrows, H11.ncols
-
     then = perf_counter()
     #restore precomputed g6k and initialize it
     g6k = Siever.restore_from_file( out_path + filename_g6kdump ) 
@@ -250,44 +239,16 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
     param_sieve['threads'] = nthreads
     param_sieve['otf_lift'] = False
     g6k.params = param_sieve
-
-    # g6k = Siever(g6k.M,param_sieve) #temporary solution
-    # print(g6k.M.d-n_slicer_coord)
-    # g6k.initialize_local(g6k.M.d-n_slicer_coord,g6k.M.d-n_slicer_coord,g6k.M.d)
-    # print("Running bdgl2...")
-    # then = time.perf_counter()
-    # g6k(alg="bdgl2")
-    # print(f"bdgl2 done in {time.perf_counter()-then}")
-    # g6k.M.update_gso()
-
     H11 = g6k.M.B 
 
     G = g6k.M #the GSO obj. for first k*n-kappa vectors.
     # Gaussian heuristic for the last sieve_dim dimensioal projective lattice of G.
-    # ALL {from/to}_canonical_scaled calls must use scale_fact=gh_sub, or things go out of hand.
+    # ALL {from/to}_canonical_scaled calls must use scale_fact=gh_sub, or things will go out of hand.
     gh_sub = gaussian_heuristic(G.r()[-n_slicer_coord:])
-    # print(f"Sieving-1 done in {perf_counter() - then}")
-    b0 = None
-    for tmp in g6k.itervalues():
-        b0 = G.B[-n_slicer_coord:].multiply_left( tmp )
-        break
-    b0 = from_canonical_scaled( G, b0, offset=n_slicer_coord,scale_fact=gh_sub )
-    lambda1 = (b0@b0)**0.5
 
-    gh = gaussian_heuristic( g6k.M.r()[-n_slicer_coord:] )
-    print(f"r / r = {(g6k.M.r()[-n_slicer_coord] / g6k.M.r()[-1])**0.5}")
-    cntr=0
     for (b, s, e) in bse:
-        # if ex_cntr<9:
-        #     ex_cntr+=1
-        #     continue
         ex_cntr+=1
-        print(f"running exp # {ex_cntr}")
-        #TODO: n=160, kappa=16, n_slicer_coord=71 returns large output far from the target when slicer fails.
-        # Investigate, if this is correct. One can use the code below to encounter this issue immediately.
-        # if not ex_cntr==9: 
-        #     print(f"debug, omitting exp {ex_cntr}")
-        #     continue
+        print(f"running exp # {ex_cntr} lat ind: {lat_index}")
         ex_timer = perf_counter()
         assert ( all( (s@A+e)%q == b ) ), f"wrong lwe instance! {(A@s+e)%q , b}"
         print(f"len {len(Binit), len(Binit[0])}")
@@ -305,28 +266,24 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
         dist_sq_bnd = e_@e_
         dist_bnd = dist_sq_bnd**0.5
         dist_threshold = ( G.r()[-n_slicer_coord] / gh_sub )**0.5
-        print(f"lambda1: {lambda1}")
+
         print(f"dist_bnd: {dist_bnd} | dist_threshold: {dist_threshold} | ratio: {dist_bnd/dist_threshold}")
         print(f"dist_sq_bnd: {dist_sq_bnd}")
         print(f"len(e_): {len(e_)} G.M.nrows(): {G.B.nrows}")
 
         B = IntegerMatrix.from_matrix(Binit)
 
-        len_bound = dist_sq_bnd
+        # es = np.concatenate([e,-s])[:-n_guess_coord]
+        # efull = np.concatenate([e,-s])[:-n_guess_coord]
+        # e_full = from_canonical_scaled( G,efull,offset=n_slicer_coord,scale_fact=gh_sub )
+        # tracer = {"e_": e_, "es": es, "efull": efull, "e_full": e_full}
+        tracer = None
+
         # no guessing version of alg_3
         # project the error vector onto the last n_sieve_dim GS-vectors.
-        es = np.concatenate([e,-s])[:-n_guess_coord]
-        efull = np.concatenate([e,-s])[:-n_guess_coord]
-        e_full = from_canonical_scaled( G,efull,offset=n_slicer_coord,scale_fact=gh_sub )
-        tracer = {"e_": e_, "es": es, "efull": efull, "e_full": e_full}
-        v = alg_3_debug(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=len_bound, nthreads=nthreads, tracer_alg3=tracer)
+        v = alg_3_debug(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
         # v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
         print(f"e_: {e_}")
-
-        # print(f"ehhh: {G.from_canonical(np.concatenate([e,-s]))}")
-        # print(f"eh: {G.from_canonical(np.concatenate([e,-s]))[:-n_slicer_coord-n_guess_coord]}")
-        # wth = G.from_canonical(np.concatenate([e,-s]))[:-n_slicer_coord-n_guess_coord]
-        # print( f"any wth moments: {any( np.abs(w)>0.48 for w in wtf )}" )
 
         if v is None:
             v = np.array( len(answer)*[0] )
@@ -334,11 +291,7 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
         print(f"vs: {answer}")
         print(f" - - - - - - ")
 
-        # LR2 = LatticeReduction( B )
-        # cv = LR2.gso.babai( v )
-        # v2 = LR2.basis.multiply_left( cv )
         v2 = v
-        succ_alg_3_debug = all( answer==v2 )
 
         sli_succ = answer==v2
         print(f"slicer:\n {sli_succ}")
@@ -361,10 +314,10 @@ if __name__=="__main__":
     preprocessing.py (preprocess the data) and then run this file. 
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
-    n, k = 170, 1
+    n, k = 140, 1
     q, eta = 3329, 3
     latnum = 10
-    n_guess_coord, n_slicer_coord = 16, 80
+    n_guess_coord, n_slicer_coord = 15, 52
     nthreads = 5
     nworkers = 1
 

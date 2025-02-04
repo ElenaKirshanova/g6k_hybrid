@@ -41,7 +41,7 @@ bestCosts = 0
 print("n\tkappa\t\tBKZ only\t\tHybrid")
 
 for n in range(nMin,nMax+1,nStep):
-    for kappa in range(9):
+    for kappa in range(15):
         A, b, dbdd = initialize_from_LWE_instance(DBDD_predict_diag, n-kappa, q, n, D_e, D_s, verbosity = 0)
         dbdd.integrate_q_vectors(q)
 

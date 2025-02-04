@@ -13,6 +13,8 @@ except ModuleNotFoundError:
     from multiprocessing import Pool
 
 import pickle
+from global_consts import *
+
 inp_path = "lwe_instances/saved_lattices/"
 out_path = "lwe_instances/reduced_lattices/"
 #path = "saved_lattices/"
@@ -36,7 +38,7 @@ def load_lwe(n,q,eta,k,seed=0):
     return A_, q_, eta_, k_, bse_
 
 
-def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthreads,dump_bkz=True):
+def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthreads=N_SIEVE_THREADS,dump_bkz=True):
     report = {
         "params": (n,q,eta,k,seed),
         "beta_bkz": beta_bkz,
@@ -68,15 +70,12 @@ def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthrea
     H11 = IntegerMatrix.from_matrix( [ h11[:len(B)-kappa] for h11 in H11  ] )
     H11r, H11c = H11.nrows, H11.ncols
     assert(H11r==H11c)
-    #for i in range(H11r):
-    #    print(H11[i])
-    #assert(False)
 
     LR = LatticeReduction( H11, threads_bkz=nthreads )
     bkz_start = time.perf_counter()
     for beta in range(5,beta_bkz+1):
         then_round=time.perf_counter()
-        LR.BKZ(beta,tours=5)
+        LR.BKZ(beta)
         round_time = time.perf_counter()-then_round
         print(f"BKZ-{beta} done in {round_time}")
         sys.stdout.flush()
@@ -109,7 +108,7 @@ def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthrea
     #NOTE: this dumps
     assert g6k.r - g6k.l == sieve_dim_max-nsieves+i, f"g6k context: {g6k.r - g6k.l} != {sieve_dim_max-nsieves+i}"
     g6k.dump_on_disk(out_path+f'g6kdump_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}_{g6k.n}.pkl')
-    for i in range(1,nsieves):
+    for i in range(1,nsieves+1):
         g6k.extend_left(1)
         sieve_start = time.perf_counter()
         g6k(alg="bdgl2")
@@ -129,14 +128,17 @@ if __name__=="__main__":
     # (dimension, predicted kappa, predicted beta)
     # params = [(140, 12, 48), (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     #params = [(140, 12, 48)]#, (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
-    params = [(110, 8, 45)]
-    nsieves = 1
-    nworkers, nthreads =  2, 5 #20, 4
+    # params = [(140, 6, 56)]
+    params = [(140, 6, 55)]
+    nworkers, nthreads =  2, N_SIEVE_THREADS #20, 4
+
+    beta_bkz_offset = 1
+    sieve_dim_max_offset = 4
 
     # lats_per_dim = 10
     # inst_per_lat = 10 #how many instances per A, q
-    lats_per_dim = 2
-    inst_per_lat = 100 #how many instances per A, q
+    lats_per_dim = 10
+    inst_per_lat = 10 #how many instances per A, q
     q, eta = 3329, 3
     #def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthreads=1)
     output = []
@@ -152,8 +154,8 @@ if __name__=="__main__":
                         eta, #eta
                         1, #k
                         [latnum,0], #seed, second value is irrelevant
-                        param[2]+3, #beta_bkz
-                        param[2]+5, #sieve_dim_max
+                        param[2]+beta_bkz_offset, #beta_bkz
+                        param[2]+sieve_dim_max_offset, #sieve_dim_max
                         1,  #nsieves
                         kappa, #kappa
                         nthreads #nthreads
