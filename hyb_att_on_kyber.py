@@ -235,6 +235,8 @@ def alg_3(g6k,B,H11,t,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads=1, tracer_al
 
 def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THREADS, tracer_alg2=None ): #this works
     # raise NotImplementedError
+    if not tracer_alg2 is None:
+        tracer_alg2["walltime"] = time.perf_counter()
     sieve_dim = g6k.r-g6k.l #n_slicer_coord
     print(f"in alg2 sieve_dim={sieve_dim}", flush=True)
 
@@ -268,8 +270,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
         shift_babai_c =  list( G.babai( list(t_gs_non_scaled), start=dim-sieve_dim, gso=True) )
         shift_babai = G.B.multiply_left( (dim-sieve_dim)*[0] + list( shift_babai_c ) )
         t_gs_reduced = from_canonical_scaled( G,np.array(target, dtype=DTYPE)-shift_babai,offset=sieve_dim,scale_fact=gh_sub ) #this is the actual reduced target
-
-        print( f"|t_gs|: {(t_gs@t_gs)**0.5}" )
+        # print( f"|t_gs|: {(t_gs@t_gs)**0.5}" )
 
         t_gs_list.append(t_gs)
         shift_babai_c_list.append(shift_babai_c)
@@ -310,10 +311,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
 
     print(f"out_gs_reduced: {out_gs_reduced}")
     print(f"out_gs_reduced norm: {(out_gs_reduced@out_gs_reduced)**0.5} vs {dist_sq_bnd**0.5}")
-    if not (tracer_alg2 is None):
-        e_ = tracer_alg2["e_"]
-        es = tracer_alg2["es"]
-        print(f"e_-out_gs_reduced: {e_-out_gs_reduced}")
+
     index = 0
     #Now we deduce which target candidate the error vector corresponds to.
     #The idea is that if t_gs is an answer then t_gs_reduced - out_gs_reduced is in the projective lat
@@ -332,8 +330,8 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
 
         if diff_nrm_sq < min_norm_err_sq:
             min_norm_err_sq = diff_nrm_sq
-            best_index = index
-            best_solution_candidate = solution_candidate
+            # best_index = index
+            # best_solution_candidate = solution_candidate
             best_bab_01 = bab_01
 
     print(f"min_norm_err_sq: {min_norm_err_sq}")
@@ -341,41 +339,11 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
 
     print(f"alg2 terminates")
     print(f"best_bab_01: {best_bab_01}")
-    if not (tracer_alg2 is None):
-        observed_diff = out_gs_reduced - e_
-        flag = (observed_diff@observed_diff)**0.5 < 0.1 and min_norm_err_sq > 150**2
-        if flag:
-            print(f"Gotcha, bug!")
-            with open(f"broken_lat.pkl","wb") as file:
-                efull = tracer_alg2["efull"]
-                e_full = tracer_alg2["e_full"]
-                D = {
-                    "B": B,
-                    "t": target_candidates[0],
-                    "e_": e_,
-                    "es": es,
-                    "efull": efull,
-                    "e_full": e_full,
-                    "sieve_dim": sieve_dim,
-                    "solution_candidate": solution_candidate,
-                }
-                pickle.dump( D,file )
-        if (observed_diff@observed_diff)**0.5 < 0.1 and min_norm_err_sq < 80**2:
-            print(f"Gotcha, good!")
-            with open(f"ok_lat.pkl","wb") as file:
-                efull = tracer_alg2["efull"]
-                e_full = tracer_alg2["e_full"]
-                D = {
-                    "B": B,
-                    "t": target_candidates[0],
-                    "e_": e_,
-                    "es": es,
-                    "efull": efull,
-                    "e_full": e_full,
-                    "sieve_dim": sieve_dim,
-                    "solution_candidate": solution_candidate,
-                }
-                pickle.dump( D,file )
+
+    if not tracer_alg2 is None:
+        tracer_alg2["walltime"] = tracer_alg2["walltime"]-time.perf_counter()
+        tracer_alg2["len(target_candidates)"] = len(target_candidates)
+        tracer_alg2["nrand"] = nrand
     return best_bab_01
 
 

@@ -277,7 +277,7 @@ if __name__ == "__main__":
             n, k = nk[0], 1
             for latnum in range(lats_per_dim):
                 gen_and_dump_lwe(nk[0], q, eta,k, ntar=inst_per_lat, seed=latnum)
-
+    
     if RECOMPUTE_KYBER or RECOMPUTE_INSTANCE:
         pretasks = []
         for nk in nks:
