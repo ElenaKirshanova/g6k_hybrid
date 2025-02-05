@@ -43,6 +43,10 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
     try:
         g6k = Siever.restore_from_file(filename)
         G = g6k.M
+        param_sieve = SieverParams()
+        param_sieve['threads'] = nthreads
+        param_sieve['otf_lift'] = False
+        g6k.params = param_sieve
         nothing_to_load = False
         print(f"Load succeeded...")
     except Exception as excpt:
@@ -64,29 +68,34 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
         lll = LLL.Reduction(G)
         lll()
 
-        bkz = LatticeReduction(B,threads_bkz=nthreads)
+        bkz = LatticeReduction(B)
         for beta in range(5,betamax+1):
             then_round=time.perf_counter()
             bkz.BKZ(beta,tours=5)
             round_time = time.perf_counter()-then_round
-            print(f"BKZ-{beta} done in {round_time}", flush=True)
+            print(f"BKZ-{beta} done in {round_time}")
             sys.stdout.flush()
 
         int_type = bkz.gso.B.int_type
         G = GSO.Mat( bkz.gso.B, U=IntegerMatrix.identity(n,int_type=int_type), UinvT=IntegerMatrix.identity(n,int_type=int_type), float_type=ft )
         G.update_gso()
+        lll = LLL.Reduction( G )
+        lll()
+
+        g6k = Siever(G)
+        param_sieve = SieverParams()
+        param_sieve['threads'] = nthreads
+        param_sieve['otf_lift'] = False
+        g6k.params = param_sieve
+        g6k.initialize_local(n-sieve_dim,n-sieve_dim,n)
+        print("Running bdgl2...")
+        g6k(alg="bdgl2")
+        g6k.M.update_gso()
+        # filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
+        g6k.dump_on_disk( filename )
     # - - - end Make all fpylll objects - - -
     # make Siver object
-    param_sieve = SieverParams()
-    param_sieve['threads'] = nthreads
-    g6k = Siever(G,param_sieve)
-    g6k.initialize_local(n-sieve_dim,n-sieve_dim,n)
-    print("Running bdgl2...")
-    g6k(alg="bdgl2")
-    g6k.M.update_gso()
-    gh = min( gaussian_heuristic(G.r()), G.r()[0] )
-    if nothing_to_load:
-        g6k.dump_on_disk(filename)
+    gh = gaussian_heuristic(G.r())
     gh_sub = gaussian_heuristic(G.r()[-sieve_dim:])
 
     print("db_dize:", g6k.db_size())

@@ -21,7 +21,7 @@ if __name__ == "__main__":
     nexp = 25
 
     FPLLL.set_precision(200)
-    n, betamax, sieve_dim = 70, 50, 70
+    n, betamax, sieve_dim = 55, 50, 55
     ft = "ld" if n<90 else ( "dd" if config.have_qd else "mpfr")
     # - - - try load a lattice - - -
     filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
@@ -72,9 +72,11 @@ if __name__ == "__main__":
         g6k.params = param_sieve
         g6k.initialize_local(n-sieve_dim,n-sieve_dim,n)
         print("Running bdgl2...")
+        then = time.perf_counter()
         g6k(alg="bdgl2")
+        print(f"siever done in {time.perf_counter()-then}")
         g6k.M.update_gso()
-        filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
+        # filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
         g6k.dump_on_disk( filename )
     # - - - end Make all fpylll objects - - -
     gh = min( [G.r()[0], gaussian_heuristic(G.r())] )

@@ -67,23 +67,17 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705,seed=0):
 
 def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, nrand_params=[1.]):
     g6k = Siever.restore_from_file(f"cvppg6k_n{n}_{cntr}_test.pkl")
+    param_sieve = SieverParams()
+    param_sieve['threads'] = nthreads
+    param_sieve['otf_lift'] = False
+    g6k.params = param_sieve
+
     G = g6k.M
     B = G.B
 
     sieve_dim = n
     gh = gaussian_heuristic(G.r())
     lambda1 = min( [G.get_r(0, 0)**0.5, gh**0.5] )
-    param_sieve = SieverParams()
-    param_sieve['threads'] = nthreads
-    param_sieve['otf_lift'] = False
-    g6k = Siever(G,param_sieve) #temporary solution
-    g6k.initialize_local(n-sieve_dim,n-sieve_dim,n)
-    print("Running bdgl2...")
-    try:
-        g6k(alg="bdgl2")
-    except SaturationError:
-        pass
-    g6k.M.update_gso()
 
     aggregated_data = []
     for nrand_param in nrand_params:
