@@ -185,8 +185,8 @@ if __name__=="__main__":
     nthreads = 1
     nworkers = 5
     max_slicer_interations = 300
-    ntests = 200
-    nlats = 10
+    ntests = 10#200
+    nlats = 2#10
     n = 60
     bits = 11.705
     betamax = 53

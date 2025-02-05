@@ -113,7 +113,7 @@ def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthrea
         sieve_start = time.perf_counter()
         g6k(alg="bdgl2")
         report["bdgl_runtime"][i] = time.perf_counter()-sieve_start
-        print(f"siever-{seed[0]}-{kappa}-{sieve_dim_max-nsieves+i} finished in added time {time.perf_counter()-sieve_start}\n" )
+        print(f"siever-{seed[0]}-{kappa}-{sieve_dim_max-nsieves+i} finished in added time {time.perf_counter()-sieve_start}\n", flush=True )
         sys.stdout.flush()
         #NOTE: this dumps
         assert g6k.r - g6k.l == sieve_dim_max-nsieves+i, f"g6k context: {g6k.r - g6k.l} != {sieve_dim_max-nsieves+i}"
@@ -128,19 +128,19 @@ if __name__=="__main__":
     # (dimension, predicted kappa, predicted beta)
     # params = [(140, 12, 48), (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     #params = [(140, 12, 48)]#, (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
-    params = [(144, 6, 60)]
-    nworkers, nthreads =  2, N_SIEVE_THREADS #20, 4
+    params = [(170, 6, 84)] #for RUB server
+    # params = [(180, 6, 93)]
+    # params = [(190, 7, 99)]
+    # params = [(200, 7, 108)]
+    nworkers, nthreads =  10, N_SIEVE_THREADS #5 (to be changed for kyber 190, 200 !!!)
 
     beta_bkz_offset = 1 #bkz blocksize would surpass the predicted value by this offset
     sieve_dim_max_offset = 4 #the largest slicer will work on dim=prediceted beta + this offset
     kappa_offset = 1 #data for predicted kappa up to predicted kappa + kappa_offset - 1 will be saved
 
-    # lats_per_dim = 10
-    # inst_per_lat = 10 #how many instances per A, q
-    lats_per_dim = 2
-    inst_per_lat = 20 #how many instances per A, q
+    lats_per_dim = 10
+    inst_per_lat = 10 #how many instances per A, q
     q, eta = 3329, 3
-    #def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthreads=1)
     output = []
     pool = Pool(processes = nworkers )
     tasks = []
