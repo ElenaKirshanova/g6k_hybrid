@@ -99,7 +99,7 @@ if __name__ == "__main__":
 
         e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim,scale_fact=gh_sub) ) #,scale_fact=gh_sub
         e_llr = np.array( from_canonical_scaled(G,e,scale_fact=gh_sub) ) #,scale_fact=gh_sub
-        dist_sq_bnd = e_@e_,
+        dist_sq_bnd = e_@e_
         print(f"projected (e_@e_): {(e_@e_)} vs r/gh: {G.get_r(n-sieve_dim, n-sieve_dim)/gh}")
         print("projected target squared length:", (e_@e_))
 

@@ -54,3 +54,7 @@ cdef class RandomizedSlicer(object):
             r = [e.yr[j] for j in range(self._core.n)]
             yield tuple(r)
 
+    @property
+    def min_nrms_cdb_t(self):
+        return self._core.min_nrms_cdb_t
+

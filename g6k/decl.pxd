@@ -314,6 +314,7 @@ cdef extern from "../kernel/slicer.h" nogil:
         size_t db_t_size()
         vector[Entry_t] db_t
         vector[CompressedEntry] cdb_t
+        vector[LFT] min_nrms_cdb_t
         #FT db_lifted[NLIFTED][MAX_SIEVING_DIM]
 
 

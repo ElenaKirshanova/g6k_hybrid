@@ -506,6 +506,7 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
         //std::cout << "slicer_queue finished" << std::endl;
         parallel_sort_cdb();
         //std::cout << "parallel_sort_cdb finished" << std::endl;
+        min_nrms_cdb_t.push_back( cdb_t[0].len );
 
         if(it%100==0 && verbose) {
             std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << " cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;

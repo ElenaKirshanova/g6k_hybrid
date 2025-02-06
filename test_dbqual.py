@@ -14,7 +14,7 @@ from global_consts import *
 def load_or_gen_lat(n,latind,sieve_dim, betamax):
     ft = "ld" if n<90 else ( "dd" if config.have_qd else "mpfr")
     # - - - try load a lattice - - -
-    filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
+    filename = f"bdgl2_n{n}_b{sieve_dim}_{latind}.pkl"
     nothing_to_load = True
     param_sieve = SieverParams()
     param_sieve['threads'] = nthreads
@@ -73,9 +73,11 @@ slicer_interations = 256
 nrand_param = 5
 nthreads = 5
 nexp = 20
-nlats = 2
+nlats = 5
 
 n, betamax, sieve_dim = 65, 50, 65
+print(f"n, betamax, sieve_dim: {n, betamax, sieve_dim}")
+appr_facts = [0.8,0.9]
 stat_dict = {}
 
 for latind in range(nlats):
@@ -97,64 +99,72 @@ for latind in range(nlats):
 
     stat_dict[n,latind] = {
         "dblens": dblens,
-        "succs": [],
-        "niters": [],
-        "nrmt_evolution": [],
+        "appr_factors": [],
     }
 
-    es_ = []
-    for _ in range(nexp):
-        c = [ randrange(-33,34) for j in range(n) ]
-        e = np.array( random_on_sphere(n,0.9*gh**0.5) )
-        e = np.round(e)
-        b = G.B.multiply_left( c )
-        b_ = np.array(b,dtype=np.int64)
-        t = e+b_
+    for appr_fact in appr_facts: 
+        es_ = []
+        for curexp in range(nexp):
+            print(f"running {curexp} out of {nexp} for lat #{latind}")
+            c = [ randrange(-33,34) for j in range(n) ]
+            e = np.array( random_on_sphere(n,appr_fact*gh**0.5) )
+            e = np.round(e)
+            b = G.B.multiply_left( c )
+            b_ = np.array(b,dtype=np.int64)
+            t = e+b_
 
-        e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim,scale_fact=gh_sub) )
-        dist_sq_bnd = e_@e_
+            e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim,scale_fact=gh_sub) )
+            dist_sq_bnd = e_@e_
 
-        t_gs = from_canonical_scaled( G,t,offset=sieve_dim,scale_fact=gh_sub )
-        #retrieve the projective sublattice
-        B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim,scale_fact=gh_sub), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
-        t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
-        t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
+            t_gs = from_canonical_scaled( G,t,offset=sieve_dim,scale_fact=gh_sub )
+            #retrieve the projective sublattice
+            B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim,scale_fact=gh_sub), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
+            t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
+            t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
 
-        slicer = RandomizedSlicer(g6k)
-        slicer.set_nthreads(nthreads)
-        nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
-        nrand = ceil(nrand_param*(1./nrand_)**sieve_dim)
-        slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
+            slicer = RandomizedSlicer(g6k)
+            slicer.set_nthreads(nthreads)
+            nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
+            nrand = ceil(nrand_param*(1./nrand_)**sieve_dim)
+            slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
 
-        blocks = 2 # should be the same as in siever
-        blocks = min(3, max(1, blocks))
-        blocks = min(int(sieve_dim / 28), blocks)
-        sp = SieverParams()
-        N = sp["db_size_factor"] * sp["db_size_base"] ** sieve_dim
-        buckets = sp["bdgl_bucket_size_factor"]* 2.**((blocks-1.)/(blocks+1.)) * sp["bdgl_multi_hash"]**((2.*blocks)/(blocks+1.)) * (N ** (blocks/(1.0+blocks)))
-        buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
-        buckets = max(buckets, 2**(blocks-1))
+            blocks = 2 # should be the same as in siever
+            blocks = min(3, max(1, blocks))
+            blocks = min(int(sieve_dim / 28), blocks)
+            sp = SieverParams()
+            N = sp["db_size_factor"] * sp["db_size_base"] ** sieve_dim
+            buckets = sp["bdgl_bucket_size_factor"]* 2.**((blocks-1.)/(blocks+1.)) * sp["bdgl_multi_hash"]**((2.*blocks)/(blocks+1.)) * (N ** (blocks/(1.0+blocks)))
+            buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
+            buckets = max(buckets, 2**(blocks-1))
 
-        slicer.set_proj_error_bound(EPS2*dist_sq_bnd)
-        slicer.set_max_slicer_interations(slicer_interations)
-        then = time.perf_counter()
-        slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False)
-        endtime = time.perf_counter()-then
-        print(f"slicer w. nthreads: {nthreads} done in {endtime}")
+            slicer.set_proj_error_bound(EPS2*dist_sq_bnd)
+            slicer.set_max_slicer_interations(slicer_interations)
+            then = time.perf_counter()
+            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False)
+            endtime = time.perf_counter()-then
+            print(f"slicer w. nthreads: {nthreads} done in {endtime}")
 
-        iterator = slicer.itervalues_cdb_t()
-        out_gs_reduced = None
-        for tmp in iterator:
-            out_gs_reduced = np.array(tmp)  #cdb[0]
-            break
-        assert not( out_gs_reduced is None ), "itervalues_cdb_t is empty"
-        print(f"|out_gs_reduced|: {out_gs_reduced@out_gs_reduced}")
+            iterator = slicer.itervalues_cdb_t()
+            out_gs_reduced = None
+            for tmp in iterator:
+                out_gs_reduced = np.array(tmp)  #cdb[0]
+                break
+            assert not( out_gs_reduced is None ), "itervalues_cdb_t is empty"
+            print(f"|out_gs_reduced|: {(out_gs_reduced@out_gs_reduced)**0.5}")
 
-        succ = out_gs_reduced@out_gs_reduced <= dist_sq_bnd
-        print(f"Success: {succ}")
+            succ = out_gs_reduced@out_gs_reduced <= EPS2*dist_sq_bnd
+            print(f"Success: {succ}")
 
-        stat_dict[n,latind]["succs"].append({
-            "succ": succ,
-        })
+            stat_dict[n,latind]["appr_factors"].append({
+                    appr_fact: {
+                    "succ": succ,
+                    "niters": len(slicer.min_nrms_cdb_t),
+                    "min_nrms_cdb_t": slicer.min_nrms_cdb_t,
+                }
+            })
 
-print(stat_dict)
+# print(stat_dict)
+filename = f"dbqual_{n}.pkl"
+with open(filename,"wb") as file:
+    pickle.dump(stat_dict, file)
+print(f"dumped to {filename}")

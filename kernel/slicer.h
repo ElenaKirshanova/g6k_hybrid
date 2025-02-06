@@ -104,6 +104,8 @@ public:
 
     template<RecomputeSlicer what_to_recompute>
     inline void recompute_data_for_entry_t(Entry_t &e);
+
+    std::vector<LFT> min_nrms_cdb_t;
 };
 
 #endif //G6K_HYBRID_SLICER_H
