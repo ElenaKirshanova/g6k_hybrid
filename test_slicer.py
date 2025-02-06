@@ -92,7 +92,6 @@ if __name__ == "__main__":
     es_ = []
     for _ in range(nexp):
         c = [ randrange(-33,34) for j in range(n) ]
-        # e = np.array( [ randrange(-8,9) for j in range(n) ],dtype=np.int64 )
         e = np.array( random_on_sphere(n,approx_factor*gh**0.5) )
         e = np.round(e)
 
@@ -173,7 +172,7 @@ if __name__ == "__main__":
 
             #out_gs = g6k.randomized_iterative_slice([float(tt) for tt in t_gs],samples=1000)
             slicer = RandomizedSlicer(g6k)
-            slicer.set_nthreads(2)
+            slicer.set_nthreads(nthreads)
 
             print("target:", [float(tt) for tt in t_gs_reduced])
             print("dbsize", g6k.db_size())
