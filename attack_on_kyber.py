@@ -256,8 +256,8 @@ if __name__ == "__main__":
         except:
             pass    #still in docker if isExists==False, for some reason folder can exist and this will throw an exception.
 
-    nthreads = 5
-    nworkers = 2
+    nthreads = 2
+    nworkers = 5
     lats_per_dim = 2 #10
     inst_per_lat = 2 #10 #how many instances per A, q
     q, eta = 3329, 3
@@ -276,6 +276,7 @@ if __name__ == "__main__":
             n, k = nk[0], 1
             for latnum in range(lats_per_dim):
                 gen_and_dump_lwe(nk[0], q, eta,k, ntar=inst_per_lat, seed=latnum)
+    assert False
     if RECOMPUTE_KYBER or RECOMPUTE_INSTANCE:
         pretasks = []
         for nk in nks:

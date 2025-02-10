@@ -129,7 +129,7 @@ if __name__=="__main__":
     # (dimension, predicted kappa, predicted beta)
     # params = [(140, 12, 48), (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     #params = [(140, 12, 48)]#, (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
-    params = [(130, 4, 49)]
+    params = [(130, 8, 50)]
     nsieves = 5
     nworkers, nthreads =  2, 2 #20, 4
 
