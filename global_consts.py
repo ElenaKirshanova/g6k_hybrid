@@ -6,6 +6,7 @@ global DTYPE
 global N_MAX_SLICER_ITERATIONS
 global NRAND_FACTOR
 global EPS2
+global NPROJ_TESTS
 
 BKZ_MAX_LOOPS = 2
 BKZ_SIEVING_CROSSOVER = 55
@@ -14,3 +15,4 @@ N_MAX_SLICER_ITERATIONS = 400
 NRAND_FACTOR = 5.
 DTYPE = np.float128 #np.longdouble or np.float64
 EPS2 = 1.0001 #(1+epsilon) squared
+NPROJ_TESTS = 2048

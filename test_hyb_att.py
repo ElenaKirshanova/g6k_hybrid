@@ -102,9 +102,6 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
     tracer_alg2_correct, tracer_alg2_wrong = {}, {}
     # - - - BEGIN CORRECT GUESS - - -
     correct_guess_time = time.perf_counter()
-    for times in range(times): #Alg 3 steps 4-7 ceil( (nrand * nsampl) / len(g6k) )
-        if times!=0 and times%1000 == 0:
-    times = ceil( len(g6k) / nrand )
 
     tracer_alg2_correct, tracer_alg2_wrong = {}, {}
     # - - - BEGIN CORRECT GUESS - - -
@@ -243,8 +240,6 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
     nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
     nrand = ceil(NRAND_FACTOR*(1./nrand_)**sieve_dim)
     print(f"times: {ceil( len(g6k) / nrand )}")
-    for times in [0]: #Alg 3 steps 4-7 ceil( (nrand * nsampl) / len(g6k) )
-        if times!=0 and times%1000 == 0:
     sieve_dim = g6k.r-g6k.l
 
     from hybrid_estimator.batchCVP import batchCVPP_cost
@@ -255,9 +250,7 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
         if times!=0 and times%1000 == 0:
             print(f"{times} done out of {nsampl}", end=", ")
         if times>0:
-        if times>0:
             etilde2 = np.array( distrib.sample( n_guess_coord ) ) #= (0 | e2)
-        else:
         else:
             etilde2 = np.array(-s[-n_guess_coord:])
         vtilde2 = np.array(t2)-etilde2
@@ -270,8 +263,6 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
         print(f"tmp babai norm: {(tmp@tmp)**0.5}")
 
         t1_ = np.array( list(t1) ) - tmp
-        if not tracer_alg3 is None:
-            tracer_alg3["es"] -= tmp
         if not tracer_alg3 is None:
             tracer_alg3["es"] -= tmp
         target_candidates.append( t1_ )
@@ -292,8 +283,7 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
     v1 = np.array( H11.multiply_left( ctilde1 ) )
     argminv = None
     minv = 10**12
-    cntr = 0
-    for vtilde2 in vtilde2s:       
+    cntr = 0      
     for vtilde2 in vtilde2s:       
         v2 = np.concatenate( [(dim-n_guess_coord)*[0],vtilde2] )
         babshift = np.concatenate( [ np.array( H12.multiply_left(vtilde2) ), n_guess_coord*[0] ] )
@@ -308,7 +298,6 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
         cntr+=1
     return argminv
 
-def run_experiment(lat_index, params, stats_dict, tracer=None):
 def run_experiment(lat_index, params, stats_dict, tracer=None):
     nthreads = params["nthreads"]
     n, k, q, eta = params["n"], params["k"], params["q"], params["eta"]
@@ -361,10 +350,6 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
     gh_sub = gaussian_heuristic(G.r()[-n_slicer_coord:])
 
     for (b, s, e) in bse:
-        if ex_cntr==5:
-            break
-        if ex_cntr==5:
-            break
         ex_cntr+=1
         print(f"running exp # {ex_cntr} out of {len(bse)} lat ind: {lat_index}")
         print(f"running exp # {ex_cntr} out of {len(bse)} lat ind: {lat_index}")
