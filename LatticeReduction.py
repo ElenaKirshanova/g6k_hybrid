@@ -9,14 +9,15 @@ try:
 except ImportError:
   raise ImportError("g6k not installed")
 
-BKZ_SIEVING_CROSSOVER = 55
+from global_consts import BKZ_SIEVING_CROSSOVER, BKZ_MAX_LOOPS, N_SIEVE_THREADS
+# BKZ_SIEVING_CROSSOVER = 55
 
 class LatticeReduction:
 
   def __init__(
     self,
     basis, #lattice basis to be reduced
-    threads_bkz = 1
+    threads_bkz = N_SIEVE_THREADS #was 1 for primal by default
   ):
 
     B = IntegerMatrix.from_matrix(basis, int_type="long")
@@ -49,9 +50,9 @@ class LatticeReduction:
   def gso(self):
     return self.__g6k.M
 
-  def BKZ(self, beta, tours=2): #tours=8
+  def BKZ(self, beta, tours=BKZ_MAX_LOOPS): #tours=8
 
-    if beta <=  BKZ_SIEVING_CROSSOVER: #65:
+    if beta <=  BKZ_SIEVING_CROSSOVER:
       par = BKZ_FPYLLL.Param(
         beta,
         strategies=BKZ_FPYLLL.DEFAULT_STRATEGY,

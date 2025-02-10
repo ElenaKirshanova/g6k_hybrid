@@ -210,10 +210,10 @@ def alg_3_debug(g6k,H11,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=
     return argminv
 
 if __name__=="__main__":
-    n, k = 176, 1
+    n, k = 140, 1
     eta = 3
-    n_guess_coord, n_slicer_coord = 8, 75
-    betamax = 82
+    n_guess_coord, n_slicer_coord = 11, 52
+    betamax = 52
     sieve_dim_max = n_slicer_coord
     nsieves = 2
     nthreads = 5

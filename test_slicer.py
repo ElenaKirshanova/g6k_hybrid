@@ -7,23 +7,30 @@ from hybrid_estimator.batchCVP import batchCVPP_cost
 from utils import *
 import sys
 
+import numpy as np
+
+import time
+
 if __name__ == "__main__":
 
     slicer_interations = 250
     norm_slack = 1.01      #terminate slicer if norm_slack*||e_projected|| is found
     approx_factor = 0.95
     nrand_param = 5
-    nthreads = 1
-    nexp = 100
+    nthreads = 5
+    nexp = 25
 
     FPLLL.set_precision(200)
-    n, betamax, sieve_dim = 60, 50, 60
+    n, betamax, sieve_dim = 55, 50, 55
     ft = "ld" if n<90 else ( "dd" if config.have_qd else "mpfr")
     # - - - try load a lattice - - -
     filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
     nothing_to_load = True
+    param_sieve = SieverParams()
+    param_sieve['threads'] = nthreads
     try:
         g6k = Siever.restore_from_file(filename)
+        g6k.params = param_sieve
         G = g6k.M
         B = G.B
         nothing_to_load = False
@@ -60,24 +67,27 @@ if __name__ == "__main__":
         G.update_gso()
         lll = LLL.Reduction( G )
         lll()
+
+        g6k = Siever(G)
+        g6k.params = param_sieve
+        g6k.initialize_local(n-sieve_dim,n-sieve_dim,n)
+        print("Running bdgl2...")
+        then = time.perf_counter()
+        g6k(alg="bdgl2")
+        print(f"siever done in {time.perf_counter()-then}")
+        g6k.M.update_gso()
+        # filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
+        g6k.dump_on_disk( filename )
     # - - - end Make all fpylll objects - - -
     gh = min( [G.r()[0], gaussian_heuristic(G.r())] )
     gh_sub = gaussian_heuristic(G.r()[-sieve_dim:]) #min( [G.r()[-sieve_dim], gaussian_heuristic(G.r()[-sieve_dim:])] )
     print(f"gh: {gh**0.5}, gh_sub: {gh_sub**0.5}")
-    param_sieve = SieverParams()
-    param_sieve['threads'] = nthreads
-    g6k = Siever(G,param_sieve)
-    g6k.initialize_local(n-sieve_dim,n-sieve_dim,n)
-    print("Running bdgl2...")
-    g6k(alg="bdgl2")
-    g6k.M.update_gso()
-    filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
-    g6k.dump_on_disk( filename )
+
 
     print(f"dbsize: {len(g6k)}")
 
     nbab_succ, nsli_succ = 0, 0
-
+    runtimes=[]
 
     es_ = []
     for _ in range(nexp):
@@ -188,7 +198,12 @@ if __name__ == "__main__":
             slicer.set_proj_error_bound(norm_slack*(e_@e_))
             # slicer.set_lifted_error_bound(1.01*(e_@e_))
             slicer.set_max_slicer_interations(slicer_interations)
+
+            then = time.perf_counter()
             slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False)
+            endtime = time.perf_counter()-then
+            print(f"slicer w. nthreads: {nthreads} done in {endtime}")
+            runtimes.append( endtime )
 
             iterator = slicer.itervalues_cdb_t()
             out_gs_reduced = None
@@ -224,3 +239,5 @@ if __name__ == "__main__":
             print(f"both succeded: {succ and succbab}", flush=True)
         print(f"nbab_succ, nsli_succ: {nbab_succ,nsli_succ+nbab_succ} out of {nexp}")
         print(f"es_: {sorted(es_)}")
+        print(f"MEAN: {np.mean(runtimes)}")
+        print(runtimes)

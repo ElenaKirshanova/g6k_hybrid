@@ -20,10 +20,12 @@ try:
 except ImportError:
   raise ImportError("g6k not installed")
 
-from LatticeReduction import LatticeReduction, BKZ_SIEVING_CROSSOVER
+from LatticeReduction import LatticeReduction
 
 import pickle
-MAX_LOOPS = 2
+# MAX_LOOPS = 2
+from global_consts import *
+
 inp_path = "lwe_instances/saved_lattices/"
 out_path = "lwe_instances/reduced_lattices/"
 
@@ -182,6 +184,7 @@ def attack_on_kyber(n,q,eta,k,betapre,betamax,ntours=5,seed=[0,0],nthreads=5):
         "time": llltime,
         "projinfo": {}
     }
+    beta = betapre
     if lll.M.get_r(0,0) <= tarnrmsq:
         print(f"LLL recovered secret!")
         report["beta"] = beta
@@ -190,7 +193,6 @@ def attack_on_kyber(n,q,eta,k,betapre,betamax,ntours=5,seed=[0,0],nthreads=5):
     flags = BKZ.AUTO_ABORT|BKZ.MAX_LOOPS|BKZ.GH_BND
     bkz = BKZReduction(G)
 
-    cumtime = 0
     for beta in range(betapre-1,min(betamax+1,BKZ_SIEVING_CROSSOVER)):    #BKZ reduce the basis
         par = BKZ.Param(beta,
                                max_loops=MAX_LOOPS,
@@ -258,18 +260,19 @@ if __name__ == "__main__":
 
     nthreads = 2
     nworkers = 5
+    nthreads = 2
+    nworkers = 2
     lats_per_dim = 2 #10
-    inst_per_lat = 2 #10 #how many instances per A, q
+    inst_per_lat = 20 #10 #how many instances per A, q
     q, eta = 3329, 3
-    nks = [ (130+10*i,3) for i in range(1) ]
-    betapre,betamax = 47, 62
+    nks = [ (132+10*i,3) for i in range(1) ]
+    betapre,betamax = 32, 62
 
     output = []
     pool = Pool( processes = nworkers )
     tasks = []
-
     RECOMPUTE_INSTANCE = False
-    RECOMPUTE_KYBER = True
+    RECOMPUTE_KYBER = False
     if RECOMPUTE_INSTANCE:
         print(f"Generating Kyber...")
         for nk in nks:

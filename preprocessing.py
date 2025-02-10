@@ -13,6 +13,8 @@ except ModuleNotFoundError:
     from multiprocessing import Pool
 
 import pickle
+from global_consts import *
+
 inp_path = "lwe_instances/saved_lattices/"
 out_path = "lwe_instances/reduced_lattices/"
 #path = "saved_lattices/"
@@ -36,15 +38,15 @@ def load_lwe(n,q,eta,k,seed=0):
     return A_, q_, eta_, k_, bse_
 
 
-def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthreads,dump_bkz=True):
+def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthreads=N_SIEVE_THREADS,dump_bkz=True):
     report = {
         "params": (n,q,eta,k,seed),
         "beta_bkz": beta_bkz,
         "sieve_dim_max": sieve_dim_max,
-        "sieve_dim_min": sieve_dim_max-nsieves+1,
+        "sieve_dim_min": sieve_dim_max-nsieves,
         "kappa": kappa,
         "bkz_runtime": 0,
-        "bdgl_runtime": [0]*nsieves,
+        "bdgl_runtime": [0]*(nsieves+1),
     }
     dim = n*k
     A, q, eta, k, bse = load_lwe(n,q,eta,k,seed[0]) #D["A"], D["q"], D["bse"]
@@ -68,29 +70,26 @@ def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthrea
     H11 = IntegerMatrix.from_matrix( [ h11[:len(B)-kappa] for h11 in H11  ] )
     H11r, H11c = H11.nrows, H11.ncols
     assert(H11r==H11c)
-    #for i in range(H11r):
-    #    print(H11[i])
-    #assert(False)
 
     LR = LatticeReduction( H11, threads_bkz=nthreads )
     bkz_start = time.perf_counter()
     for beta in range(5,beta_bkz+1):
         then_round=time.perf_counter()
-        LR.BKZ(beta,tours=5)
+        LR.BKZ(beta)
         round_time = time.perf_counter()-then_round
-        print(f"BKZ-{beta} done in {round_time}\n")
+        print(f"BKZ-{beta} done in {round_time}")
         sys.stdout.flush()
     report["bkz_runtime"] = time.perf_counter() - bkz_start
     H11 = LR.basis
 
-    if dump_bkz:
-        with open(out_path+f"/kyb_prehybrid_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}", "wb") as f:
-            pickle.dump({"B": H11}, f)
+    # if dump_bkz:
+    #     with open(out_path+f"/kyb_prehybrid_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}", "wb") as f:
+    #         pickle.dump({"B": H11}, f)
 
 
     #---------run sieving------------
-    FPLLL.set_precision(250)
     int_type = H11.int_type
+    FPLLL.set_precision(210)
     ft = "dd" if config.have_qd else "mpfr"
     G = GSO.Mat( H11, U=IntegerMatrix.identity(H11r,int_type=int_type), UinvT=IntegerMatrix.identity(H11r,int_type=int_type), float_type=ft )
     G.update_gso()
@@ -101,24 +100,24 @@ def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthrea
     g6k.initialize_local(H11r-sieve_dim_max, H11r-sieve_dim_max+nsieves ,H11r)
 
     sieve_start = time.perf_counter()
-    g6k(alg="bdgl")
+    g6k(alg="bdgl2")
     i = 0
     report["bdgl_runtime"][i] = time.perf_counter()-sieve_start
     print(f"siever-{seed[0]}-{kappa}-{sieve_dim_max-nsieves+i} finished in added time {time.perf_counter()-sieve_start}\n" )
     sys.stdout.flush()
     #NOTE: this dumps
     assert g6k.r - g6k.l == sieve_dim_max-nsieves+i, f"g6k context: {g6k.r - g6k.l} != {sieve_dim_max-nsieves+i}"
-    g6k.dump_on_disk(out_path+f'g6kdump_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}_{sieve_dim_max-nsieves+i}.pkl')
-    for i in range(1,nsieves):
+    g6k.dump_on_disk(out_path+f'g6kdump_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}_{g6k.n}.pkl')
+    for i in range(1,nsieves+1):
         g6k.extend_left(1)
         sieve_start = time.perf_counter()
-        g6k(alg="bdgl")
+        g6k(alg="bdgl2")
         report["bdgl_runtime"][i] = time.perf_counter()-sieve_start
-        print(f"siever-{seed[0]}-{kappa}-{sieve_dim_max-nsieves+i} finished in added time {time.perf_counter()-sieve_start}\n" )
+        print(f"siever-{seed[0]}-{kappa}-{sieve_dim_max-nsieves+i} finished in added time {time.perf_counter()-sieve_start}\n", flush=True )
         sys.stdout.flush()
         #NOTE: this dumps
         assert g6k.r - g6k.l == sieve_dim_max-nsieves+i, f"g6k context: {g6k.r - g6k.l} != {sieve_dim_max-nsieves+i}"
-        g6k.dump_on_disk(out_path+f'g6kdump_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}_{sieve_dim_max-nsieves+i}.pkl')
+        g6k.dump_on_disk(out_path+f'g6kdump_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}_{g6k.n}.pkl')
 
 
     print(report)
@@ -129,22 +128,25 @@ if __name__=="__main__":
     # (dimension, predicted kappa, predicted beta)
     # params = [(140, 12, 48), (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     #params = [(140, 12, 48)]#, (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
-    params = [(130, 8, 50)]
-    nsieves = 5
-    nworkers, nthreads =  2, 2 #20, 4
+    params = [(170, 6, 84)] #for RUB server
+    # params = [(180, 6, 93)]
+    # params = [(190, 7, 99)]
+    # params = [(200, 7, 108)]
+    nworkers, nthreads =  10, N_SIEVE_THREADS #5 (to be changed for kyber 190, 200 !!!)
 
-    # lats_per_dim = 10
-    # inst_per_lat = 10 #how many instances per A, q
-    lats_per_dim = 2
-    inst_per_lat = 2 #how many instances per A, q
+    beta_bkz_offset = 1 #bkz blocksize would surpass the predicted value by this offset
+    sieve_dim_max_offset = 4 #the largest slicer will work on dim=prediceted beta + this offset
+    kappa_offset = 1 #data for predicted kappa up to predicted kappa + kappa_offset - 1 will be saved
+
+    lats_per_dim = 10
+    inst_per_lat = 10 #how many instances per A, q
     q, eta = 3329, 3
-    #def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthreads=1)
     output = []
     pool = Pool(processes = nworkers )
     tasks = []
     for param in params:
         for latnum in range(lats_per_dim):
-            for kappa in range(param[1]-1, param[1]+4,1):
+            for kappa in range(param[1], param[1]+kappa_offset,1):
                 tasks.append( pool.apply_async(
                     run_preprocessing, (
                         param[0], #n
@@ -152,9 +154,9 @@ if __name__=="__main__":
                         eta, #eta
                         1, #k
                         [latnum,0], #seed, second value is irrelevant
-                        param[2]+1, #beta_bkz
-                        param[2]+5, #sieve_dim_max
-                        5,  #nsieves
+                        param[2]+beta_bkz_offset, #beta_bkz
+                        param[2]+sieve_dim_max_offset, #sieve_dim_max
+                        1,  #nsieves
                         kappa, #kappa
                         nthreads #nthreads
                         )

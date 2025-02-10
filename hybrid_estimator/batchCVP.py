@@ -57,7 +57,7 @@ def batchCVPP_cost(d, M, alpha, gamma):
     T = d*log(1./prob_*T,2) + M
     #assert(M<d*(log(alpha,2)+log(1./prob,2))), f"!"
 
-    print("prob:", prob_)  # 0.901387818865997 for a = 4/3
+    #print("prob:", prob_)  # 0.901387818865997 for a = 4/3
     #print("T:", T)        # 1.06066017177982 for a = 4/3
     #print("RT:", 1./prob*T, log(1./prob*T, 2).n()) #1.17669681082910 for a = 4/3
     return prob_, T
