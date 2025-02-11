@@ -15,6 +15,7 @@ static constexpr unsigned int XPC_SLICER_THRESHOLD = 96; // XPC Threshold for it
 #define MAX_SIEVING_DIM 128
 #endif
 
+#include "compat.hpp"
 // #include "statistics_slicer.hpp"
 
 struct Entry_t
@@ -63,6 +64,9 @@ public:
     CACHELINE_VARIABLE(std::vector<CompressedEntry>, cdb_t);  // compressed version, faster access and periodically sorted
     CACHELINE_VARIABLE(std::vector<CompressedEntry>, cdb_t_tmp_copy); // for sorting
     CACHELINE_VARIABLE(rng::threadsafe_rng, rng_t);
+
+    // collects various statistics about the slicer. Details about statistics collection are in statistics_slicer.hpp
+    // CACHELINE_VARIABLE(SlicerStatistics, statistics);
 
     unsigned int n;
     FT proj_error_bound = 0.9; //arbitrary value, expect to be set by the caller

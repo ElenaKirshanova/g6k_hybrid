@@ -1,11 +1,5 @@
 #ifndef G6K_STATISTICS_SLICER_HPP
 #define G6K_STATISTICS_SLICER_HPP
-#endif
-
-
-#ifndef G6K_STATISTICS_HPP
-#define G6K_STATISTICS_HPP
-#endif
 
 #include "compat.hpp"
 #include <atomic>
@@ -17,14 +11,6 @@
 #ifndef G6K_HYBRID_SLICER_H
     #error Do not include siever.inl directly
 #endif
-
-// #if defined ENABLE_EXTENDED_STATS
-//     #define COLLECT_STATISTICS 2
-// #elif defined ENABLE_STATS
-//     #define COLLECT_STATISTICS 1
-// #else
-//     #define COLLECT_STATISTICS 0
-// #endif
 
 /**
     Define macros COLLECT_STATISTICS_*:
@@ -559,12 +545,73 @@ public:
     //     slice = 2
     // };
 
-    // void print_statistics(int alg, std::ostream &os = std::cout)
+    // void print_statistics(std::ostream &os = std::cout)
     // {
-    //     return print_statistics(static_cast<StatisticsOutputForAlg>(alg), os);
+    //     return print_statistics(os);
     // }
 
-    // void print_statistics(StatisticsOutputForAlg alg, std::ostream &os = std::cout)
-    // {}
+    void print_statistics(std::ostream &os = std::cout)
+    {
+                if(collect_statistics_xorpopcnt)
+                {
+                    os << "XORpopcnt calls: " << get_stats_xorpopcnt_total();
+                    // STATS_PRINT_IF(xorpopcnt_r, ", while randomizing: ")
+                    // STATS_PRINT_IF(xorpopcnt_s, ", while slicing: ")
+                    os << "while randomizing: " << get_stats_xorpopcnt_r;
+                    os << "\n";
+                }
+                if(collect_statistics_xorpopcnt_pass)
+                {
+                    os << "XORpopcnt passes: " << get_stats_xorpopcnt_pass_total();
+                    // STATS_PRINT_IF(xorpopcnt_pass_r, ", while randomizing: ")
+                    // STATS_PRINT_IF(xorpopcnt_pass_s, ", while slicing: ")
+                    os << "\n";
+                }
+                if(collect_statistics_fullscprods)
+                {
+                    os << "Total scalar prods: " << get_stats_fullscprods_total();
+                    // STATS_PRINT_IF(fullscprods_r, ", while randomizing: ")
+                    // STATS_PRINT_IF(fullscprods_s, ", while slicing: ")
+                    os << "\n";
+                }
+                if(collect_statistics_redsucc)
+                {
+                    os << "Succ. reductions: " << get_stats_redsucc_total();
+                    // STATS_PRINT_IF(redsucc_r, ", while randomizing: ")
+                    // STATS_PRINT_IF(redsucc_s, ", while slicing: ")
+                    os << "\n";
+                }
+                if(collect_statistics_replacements)
+                {
+                    os << "dbt replacements: " << get_stats_replacements();
+                    os << "\n";
+                }
+                if(collect_statistics_collisions)
+                {
+                    os << "dbt collisions: " << get_stats_collisions();
+                    os << "\n";
+                }
+                if(collect_statistics_sorts)
+                {
+                    os << "dbt sorts: " << get_stats_sorts();
+                    os << "\n";
+                }
+                if(collect_statistics_bucknum)
+                {
+                    os << "dbt bucknum: " << get_stats_bucknum();
+                    os << "\n";
+                }
+                if(collect_statistics_buck_over_max)
+                {
+                    os << "dbt buck_over_max: " << get_stats_buck_over_max();
+                    os << "\n";
+                }
+                if(collect_statistics_buck_over_num)
+                {
+                    os << "dbt buck_over_num: " << get_stats_buck_over_num();
+                    os << "\n";
+                }
+    }
 
 };
+#endif
