@@ -4,6 +4,7 @@
 
 #ifndef G6K_HYBRID_SLICER_H
 #define G6K_HYBRID_SLICER_H
+#endif
 
 static constexpr unsigned int XPC_SLICER_SAMPLING_THRESHOLD = 75; // XPC Threshold for iterative slicer sampling //105
 static constexpr unsigned int XPC_SLICER_THRESHOLD = 96; // XPC Threshold for iterative slicer sampling
@@ -13,6 +14,8 @@ static constexpr unsigned int XPC_SLICER_THRESHOLD = 96; // XPC Threshold for it
 #ifndef MAX_SIEVING_DIM
 #define MAX_SIEVING_DIM 128
 #endif
+
+// #include "statistics_slicer.hpp"
 
 struct Entry_t
 {
@@ -106,4 +109,3 @@ public:
     inline void recompute_data_for_entry_t(Entry_t &e);
 };
 
-#endif //G6K_HYBRID_SLICER_H
