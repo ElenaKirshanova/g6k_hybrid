@@ -16,7 +16,7 @@ static constexpr unsigned int XPC_SLICER_THRESHOLD = 96; // XPC Threshold for it
 #endif
 
 #include "compat.hpp"
-// #include "statistics_slicer.hpp"
+#include "statistics_slicer.hpp"
 
 struct Entry_t
 {
@@ -66,7 +66,7 @@ public:
     CACHELINE_VARIABLE(rng::threadsafe_rng, rng_t);
 
     // collects various statistics about the slicer. Details about statistics collection are in statistics_slicer.hpp
-    // CACHELINE_VARIABLE(SlicerStatistics, statistics);
+    CACHELINE_VARIABLE(SlicerStatistics, statistics);
 
     unsigned int n;
     FT proj_error_bound = 0.9; //arbitrary value, expect to be set by the caller

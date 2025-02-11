@@ -287,7 +287,7 @@ private:
     static constexpr unsigned long stats_xorpopcnt_r = 0;
 #endif
 
-#if #ifndef COLLECT_STATISTICS_XORPOPCNT_PASS_SLICER
+#if COLLECT_STATISTICS_XORPOPCNT_PASS_SLICER
     // std::atomic_ulong   stats_xorpopcnt_pass;
     std::atomic_ulong   stats_xorpopcnt_pass_r;
     std::atomic_ulong   stats_xorpopcnt_pass_s;

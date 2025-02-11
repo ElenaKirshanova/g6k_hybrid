@@ -433,16 +433,12 @@ if __name__=="__main__":
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
     n, k = 170, 1
-    n, k = 170, 1
     q, eta = 3329, 3
     latnum = 10
     n_guess_coord, n_slicer_coord = 6, 88
     nthreads = 5
     nworkers = 5
     latnum = 10
-    n_guess_coord, n_slicer_coord = 6, 88
-    nthreads = 5
-    nworkers = 5
 
     params={}
     params["nthreads"] = nthreads
