@@ -392,12 +392,8 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
             "dist_bnd": dist_bnd, 
             "succ": all(sli_succ),
             "key_num": 0, #number of guessed keys
-            "wrong_guess_time_alg3": tracer["wrong_guess_time_alg3"],
-            "correct_guess_time_alg3": tracer["correct_guess_time_alg3"],
-            "wrong_guess_time_alg2": tracer["wrong_guess_time_alg2"],
-            "correct_guess_time_alg2": tracer["correct_guess_time_alg2"],
-            "walltime_observed": perf_counter() - ex_timer, 
-            "key_num": 0, #number of guessed keys
+            "key_num": tracer["key_num"], #number of guessed keys
+            "g6k_len": len(g6k),
             "wrong_guess_time_alg3": tracer["wrong_guess_time_alg3"],
             "correct_guess_time_alg3": tracer["correct_guess_time_alg3"],
             "wrong_guess_time_alg2": tracer["wrong_guess_time_alg2"],

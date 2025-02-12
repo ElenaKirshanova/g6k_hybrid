@@ -182,9 +182,6 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
         print(f"vs: {answer}")
         print(f" - - - - - - ")
 
-        # LR2 = LatticeReduction( B )
-        # cv = LR2.gso.babai( v )
-        # v2 = LR2.basis.multiply_left( cv )
         v2 = v
         succ_alg_3_debug = all( answer==v2 )
 
@@ -197,6 +194,7 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
             "dist_bnd": dist_bnd, 
             "succ": all(sli_succ),
             "key_num": tracer["key_num"], #number of guessed keys
+            "g6k_len": len(g6k),
             "wrong_guess_time_alg3": tracer["wrong_guess_time_alg3"],
             "correct_guess_time_alg3": tracer["correct_guess_time_alg3"],
             "wrong_guess_time_alg2": tracer["wrong_guess_time_alg2"],
