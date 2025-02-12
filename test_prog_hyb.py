@@ -8,11 +8,9 @@ import sys
 from time import perf_counter
 from experiments.lwe_gen import *
 
-from hyb_att_on_kyber import alg_3, alg_2_batched
 from sample import *
 
 from g6k.siever import SaturationError
-from test_alg2 import alg_2_batched_debug
 
 from preprocessing import load_lwe
 
@@ -56,34 +54,15 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
         for j in range(k*n):
             Binit[i][j] = int( A[i-k*n,j] )
 
-    # loading the preprocessed H11 (see alg. 3 in the paper)
-    #TODO: the next number after n_guess_coord does not carry any meaningful info. Consider deleting.
-    # with open(out_path+f"kyb_prehybrid_{n}_{q}_{eta}_{k}_{lat_index}_{n_guess_coord}.pkl", "rb") as file:
-    #     H11 = pickle.load(file)["B"]
-    # H11 = Binit[:len(Binit)-kappa] #the part of basis to be reduced
-    # H11 = IntegerMatrix.from_matrix( [ h11[:len(Binit)-kappa] for h11 in H11  ] )
-
-    # H11r, H11c = H11.nrows, H11.ncols
-
     then = perf_counter()
     #restore precomputed g6k and initialize it
     g6k = Siever.restore_from_file( out_path + filename_g6kdump ) 
-    # g6k.initialize_local(g6k.M.d-n_slicer_coord, g6k.M.d-n_slicer_coord, g6k.M.d)
     # Needed to ensure that all locals are correct.
     # Ideally, already done.
     param_sieve = SieverParams()
     param_sieve['threads'] = nthreads
     param_sieve['otf_lift'] = False
     g6k.params = param_sieve
-
-    # g6k = Siever(g6k.M,param_sieve) #temporary solution
-    # print(g6k.M.d-n_slicer_coord)
-    # g6k.initialize_local(g6k.M.d-n_slicer_coord,g6k.M.d-n_slicer_coord,g6k.M.d)
-    # print("Running bdgl2...")
-    # then = time.perf_counter()
-    # g6k(alg="bdgl2")
-    # print(f"bdgl2 done in {time.perf_counter()-then}")
-    # g6k.M.update_gso()
 
     #if we need to reduce the basis further, we do so and throw the precomputed database away
     #since it will be altered by the reduction. 
@@ -142,11 +121,6 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
     for (b, s, e) in bse:
         ex_cntr+=1
         print(f"running exp # {ex_cntr}")
-        #TODO: n=160, kappa=16, n_slicer_coord=71 returns large output far from the target when slicer fails.
-        # Investigate, if this is correct. One can use the code below to encounter this issue immediately.
-        # if not ex_cntr==9: 
-        #     print(f"debug, omitting exp {ex_cntr}")
-        #     continue
         ex_timer = perf_counter()
         assert ( all( (s@A+e)%q == b ) ), f"wrong lwe instance! {(A@s+e)%q , b}"
         print(f"len {len(Binit), len(Binit[0])}")

@@ -86,8 +86,6 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
     nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord ) )
     print(f"nsampl: {nsampl}")
     tracer_alg3["key_num"] = nsampl
-    target_candidates = []
-    vtilde2s = []
 
     H12 = IntegerMatrix.from_matrix( [list(b)[:dim-n_guess_coord] for b in B[dim-n_guess_coord:]] )
     sieve_dim = g6k.r-g6k.l
@@ -100,6 +98,8 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
 
     tracer_alg2_correct, tracer_alg2_wrong = {}, {}
     # - - - BEGIN CORRECT GUESS - - -
+    target_candidates = []
+    vtilde2s = []
     correct_guess_time = time.perf_counter()
     for times in range(times): #Alg 3 steps 4-7 ceil( (nrand * nsampl) / len(g6k) )
         if times!=0 and times%1000 == 0:
@@ -143,6 +143,8 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
     correct_guess_time = time.perf_counter() - correct_guess_time
     # - - - END CORRECT GUESS - - -
     # - - - BEGIN INCORRECT GUESS - - -
+    target_candidates = []
+    vtilde2s = []
     wrong_guess_time = time.perf_counter()
     for times in range(times): #Alg 3 steps 4-7 ceil( (nrand * nsampl) / len(g6k) )
         if times!=0 and times%1000 == 0:
