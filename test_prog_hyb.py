@@ -189,15 +189,15 @@ if __name__=="__main__":
     preprocessing.py (preprocess the data) and then run this file. 
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
-    n, k = 140, 1
+    n, k = 144, 1
     q, eta = 3329, 3
     latnum = 10
-    n_guess_coord, n_slicer_coord = 4, 65
+    n_guess_coord, n_slicer_coord = 6, 65
     # bkz_beta_range = range(n_slicer_coord-1,n_slicer_coord+4) #range of values of beta or None if no additional reduction to be performed
     bkz_beta_range = None #range(60,62,1)
     delta_slicer_coord = 0 #integer >=0, n_slicer_coord + delta_slicer_coord will be the slicer dimension
     nthreads = 5
-    nworkers = 5
+    nworkers = 3
 
     params={}
     params["nthreads"] = nthreads

@@ -17,6 +17,8 @@ from math import sqrt, ceil, floor, log, exp
 from copy import deepcopy
 from random import shuffle, randrange
 
+from global_consts import *
+
 import pickle
 # try:
 #     from multiprocess import Pool  # you might need pip install multiprocess
@@ -65,7 +67,7 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705,seed=0):
     print(f"dbsize: {len(g6k)}")
     g6k.dump_on_disk(f"cvppg6k_n{n}_{seed}_test.pkl")
 
-def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, nrand_params=[1.]):
+def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, nrand_params=[1.], poison_dbt=False):
     g6k = Siever.restore_from_file(f"cvppg6k_n{n}_{cntr}_test.pkl")
     param_sieve = SieverParams()
     param_sieve['threads'] = nthreads
@@ -85,6 +87,7 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
         Ds = []
         for approx_fact in approx_facts:
             nsucc_slic, nsucc_bab = 0, 0
+            nsucc_slic_apprcvp = 0
             for tstnum in range(ntests):
                 print(f" - - - {approx_fact} #{tstnum} out of {ntests} - - - nrand: {nrand_param}", flush=True)
                 c = [ randrange(-2,3) for j in range(n) ]
@@ -107,6 +110,7 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
                     print(f"SUCCSESS after babai!")
                     nsucc_bab += 1
                     nsucc_slic += 1
+                    nsucc_slic_apprcvp += 1
 
                 """
                 Testing Slicer.
@@ -132,10 +136,23 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
                         slicer = RandomizedSlicer(g6k)
                         slicer.set_nthreads(nthreads);
 
-                        # nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
-                        # nrand = ceil(nrand_param*(1./nrand_)**sieve_dim)
-                        nrand = ceil( nrand_param*len(g6k) )
+                        nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
+                        nrand = ceil(nrand_param*(1./nrand_)**sieve_dim)
+                        # nrand = ceil( nrand_param*len(g6k) )
                         slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
+
+                        if poison_dbt:
+                            num_points = max( ceil( len(g6k) / nrand - 1 ) , 1 )
+                            print(f"Poisoning dbt with {num_points} wrong targets")
+
+                            poison = uniform_in_ball(num_points, len(t_gs_reduced), radius=1.44)
+                            for vpoison in poison:
+                                vpoison = np.array( vpoison )
+                                t_gs_poisoned = t_gs + vpoison
+                                t_gs_reduced_poisoned = reduce_to_fund_par_proj(B_gs,(t_gs_poisoned),sieve_dim) #reduce the target w.r.t. B_gs
+                                # t_gs_shift_poisoned = t_gs_poisoned-t_gs_reduced_poisoned #find the shift to be applied after the slicer
+
+                                slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced_poisoned], n_per_target=nrand)
 
                         blocks = 2 # should be the same as in siever
                         blocks = min(3, max(1, blocks))
@@ -157,6 +174,11 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
                         out_gs = out_gs_reduced + t_gs_shift
 
                         # - - - Check - - - -
+                        e_ = np.array(e_)
+                        out_gs_reduced = np.array( out_gs_reduced )
+                        recovered_nrm = (out_gs_reduced@out_gs_reduced)**0.5
+                        sought_nrm = (e_@e_)**0.5
+                        print(f"|out_gs_reduced|: {recovered_nrm} vs {sought_nrm}")
                         out = to_canonical_scaled( G,out_gs,offset=sieve_dim,scale_fact=gh )
 
                         projerr = G.to_canonical( G.from_canonical(e,start=n-sieve_dim), start=n-sieve_dim)
@@ -169,30 +191,38 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
                             print(f"FAIL after slicer: {(err@err)}")
                         else:
                             nsucc_slic += 1
+
+                        if recovered_nrm <= EPS2*sought_nrm:
+                            if not succ:
+                                print(f"Found you!")  
+                            nsucc_slic_apprcvp += 1
+
                         # del slicer
                     except Exception as excpt: #if slicer fails for some reason,
                         #then prey, this is not a devastating segfault
                         print(excpt)
                         raise excpt
 
-            D[(n,approx_fact)] = (0, 1.0*nsucc_slic / ntests, 1.0*nsucc_bab / ntests)
+            D[(n,approx_fact)] = (0, 1.0*nsucc_slic / ntests, 1.0*nsucc_bab / ntests, 1.0*nsucc_slic_apprcvp / ntests)
             Ds.append(D)
             print( f"Experiments for nrand_param={nrand_param} done..." )
         aggregated_data.append([nrand_param, Ds]) 
     return aggregated_data
 
 if __name__=="__main__":
-    nthreads = 1
-    nworkers = 5
+    nthreads = 5
+    nworkers = 2
     max_slicer_interations = 300
-    ntests = 10#200
-    nlats = 2#10
-    n = 60
+    ntests = 200 #200
+    nlats = 10 #10
+    n = 80
     bits = 11.705
     betamax = 53
-    approx_facts = [ 0.4 + 0.05*i for i in range(15) ] #
+    # approx_facts = [ 0.4 + 0.05*i for i in range(15) ] #
+    approx_facts = [ 0.9 + 0.02*i for i in range(6) ]
     nrand_params = [ 1.0,3.0,5.0 ]
     print(approx_facts)
+    poison_dbt = True
 
     to_be_computed = []
     g6ks = []
@@ -230,7 +260,7 @@ if __name__=="__main__":
     pool = Pool( processes = nworkers )
     for cntr in range(nlats):
         tasks.append( pool.apply_async(
-            run_exp, (n,cntr,ntests,approx_facts,max_slicer_interations, nthreads, nrand_params)
+            run_exp, (n,cntr,ntests,approx_facts,max_slicer_interations, nthreads, nrand_params, poison_dbt)
             ) )
         print(cntr)
 
@@ -242,6 +272,9 @@ if __name__=="__main__":
     for tmp in aggregated_data:
         print(f"nrand_parameter: {aggregated_data[0]}")
         print(aggregated_data[1])
+        print(f"poisoned: {poison_dbt}")
 
-    with open(f"slicsucc_{n}.pkl","wb") as file:
+    filename = f"slicsucc_{n}" + ( "_poisoned" if poison_dbt else "" ) + ".pkl"
+    with open(filename,"wb") as file:
         pickle.dump(aggregated_data, file)
+    print( f"saved in {filename}" )

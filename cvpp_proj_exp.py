@@ -212,10 +212,11 @@ if __name__=="__main__":
 
     n = 80
     n_slicer_coord = 60
-    betamax = 42
+    betamax = 53
 
     bits = 11.705
-    approx_facts = [ 0.4 + 0.05*i for i in range(15) ] #
+    # approx_facts = [ 0.4 + 0.05*i for i in range(15) ]
+    approx_facts = [ 0.75 + 0.05*i for i in range(5) ]
     print(approx_facts)
 
     to_be_computed = []
