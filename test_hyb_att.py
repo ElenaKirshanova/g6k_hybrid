@@ -95,13 +95,8 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
     from hybrid_estimator.batchCVP import batchCVPP_cost
     nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
     nrand = ceil(NRAND_FACTOR*(1./nrand_)**sieve_dim)
-    nrand = ceil(NRAND_FACTOR*(1./nrand_)**sieve_dim)
     print(f"times: {ceil( len(g6k) / nrand )}")
     times = ceil( len(g6k) / nrand )
-
-    tracer_alg2_correct, tracer_alg2_wrong = {}, {}
-    # - - - BEGIN CORRECT GUESS - - -
-    correct_guess_time = time.perf_counter()
 
     tracer_alg2_correct, tracer_alg2_wrong = {}, {}
     # - - - BEGIN CORRECT GUESS - - -
@@ -115,10 +110,7 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
             etilde2 = np.array(-s[-n_guess_coord:])
         vtilde2 = np.array(t2)-etilde2
         vtilde2s.append( vtilde2  )
-        #compute H12*H22^-1 * vtilde2 = H12*vtilde2 since H22 is identity
         tmp = np.array( H12.multiply_left(vtilde2) )
-        # print(f"vtilde2 babai norm: {(vtilde2@vtilde2)**0.5}")
-        # print(f"tmp babai norm: {(tmp@tmp)**0.5}")
 
         t1_ = np.array( list(t1) ) - tmp
         target_candidates.append( t1_ )
@@ -161,10 +153,7 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
             etilde2 = np.array( distrib.sample( n_guess_coord ) )
         vtilde2 = np.array(t2)-etilde2
         vtilde2s.append( vtilde2  )
-        #compute H12*H22^-1 * vtilde2 = H12*vtilde2 since H22 is identity
         tmp = np.array( H12.multiply_left(vtilde2) )
-        # print(f"vtilde2 babai norm: {(vtilde2@vtilde2)**0.5}")
-        # print(f"tmp babai norm: {(tmp@tmp)**0.5}")
 
         t1_ = np.array( list(t1) ) - tmp
         target_candidates.append( t1_ )
@@ -209,13 +198,11 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
     # - - - prepare targets - - -
     then_start = perf_counter()
     gh_sub = gaussian_heuristic(g6k.M.r()[-(g6k.r-g6k.l):])
-    gh_sub = gaussian_heuristic(g6k.M.r()[-(g6k.r-g6k.l):])
     dim = B.nrows
     print(f"dim: {dim}")
 
     t1, t2 = target[:-n_guess_coord], target[-n_guess_coord:]
     distrib = centeredBinomial(eta)
-    #TODO: make/(check if is) practical
     #TODO: make/(check if is) practical
     nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord ) )
     print(f"nsampl: {nsampl}")
@@ -231,9 +218,6 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
     print(f"times: {ceil( len(g6k) / nrand )}")
     sieve_dim = g6k.r-g6k.l
 
-    from hybrid_estimator.batchCVP import batchCVPP_cost
-    nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
-    nrand = ceil(NRAND_FACTOR*(1./nrand_)**sieve_dim)
     print(f"times: {ceil( len(g6k) / nrand )}")
     for times in [0]: #Alg 3 steps 4-7 ceil( (nrand * nsampl) / len(g6k) )
         if times!=0 and times%1000 == 0:
@@ -258,9 +242,6 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
     """
     We return (if we succeed) (-s,e)[dim-kappa-betamax:dim-kappa] to avoid fp errors.
     """
-    """
-    We return (if we succeed) (-s,e)[dim-kappa-betamax:dim-kappa] to avoid fp errors.
-    """
     #TODO: deduce what is the betamax
     # def of alg_2_batched is in hyb_att_on_kyber.py
     ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg3 )
@@ -274,7 +255,6 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
         babshift = np.concatenate( [ np.array( H12.multiply_left(vtilde2) ), n_guess_coord*[0] ] )
         v = np.concatenate([v1,n_guess_coord*[0]]) + v2 + babshift
 
-        v_t = v-np.array( target )
         v_t = v-np.array( target )
         vv = v_t@v_t
         if vv < minv:
@@ -312,25 +292,16 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
     then = perf_counter()
     #restore precomputed g6k and initialize it
     g6k = Siever.restore_from_file( out_path + filename_g6kdump ) 
-    # g6k.initialize_local(g6k.M.d-n_slicer_coord, g6k.M.d-n_slicer_coord, g6k.M.d)
-    # g6k.initialize_local(g6k.M.d-n_slicer_coord, g6k.M.d-n_slicer_coord, g6k.M.d)
     # Needed to ensure that all locals are correct.
     # Ideally, already done.
     param_sieve = SieverParams()
     param_sieve['threads'] = nthreads
     param_sieve['otf_lift'] = False
     g6k.params = param_sieve
-    H11 = g6k.M.B 
-
-    param_sieve = SieverParams()
-    param_sieve['threads'] = nthreads
-    param_sieve['otf_lift'] = False
-    g6k.params = param_sieve
-    H11 = g6k.M.B 
+    H11 = g6k.M.B  
 
     G = g6k.M #the GSO obj. for first k*n-kappa vectors.
     # Gaussian heuristic for the last sieve_dim dimensioal projective lattice of G.
-    # ALL {from/to}_canonical_scaled calls must use scale_fact=gh_sub, or things will go out of hand.
     # ALL {from/to}_canonical_scaled calls must use scale_fact=gh_sub, or things will go out of hand.
     gh_sub = gaussian_heuristic(G.r()[-n_slicer_coord:])
 
@@ -364,14 +335,8 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
 
         # no guessing version of alg_3
         # project the error vector onto the last n_sieve_dim GS-vectors.
-        tracer = {}
         # v = alg_3_debug(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
-        v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
-        print(f"e_: {e_}")
-
-        # project the error vector onto the last n_sieve_dim GS-vectors.
         tracer = {}
-        # v = alg_3_debug(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
         v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
         print(f"e_: {e_}")
 
@@ -391,7 +356,6 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
             "walltime": tracer["wrong_guess_time_alg3"] + tracer["wrong_guess_time_alg2"],
             "dist_bnd": dist_bnd, 
             "succ": all(sli_succ),
-            "key_num": 0, #number of guessed keys
             "key_num": tracer["key_num"], #number of guessed keys
             "g6k_len": len(g6k),
             "wrong_guess_time_alg3": tracer["wrong_guess_time_alg3"],
@@ -440,7 +404,6 @@ if __name__=="__main__":
     for t in tasks:
             stats_dict_agr.update(t.get())
 
-    # print(ex_cntr, succ_cntr)
     print(stats_dict_agr)
 
     with open(f"tha_{n}_{n_guess_coord}_{n_slicer_coord}.pkl", "wb") as file:
