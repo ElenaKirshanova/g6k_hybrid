@@ -289,7 +289,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
 
     slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], (EPS2*(dist_sq_bnd)))
 
-    print(f"t_gs_reduced: {t_gs_reduced}")
+    # print(f"t_gs_reduced: {t_gs_reduced}")
     print(f"t_gs_reduced norm: {t_gs_reduced@t_gs_reduced}")
     iterator = slicer.itervalues_cdb_t()
     for tmp in iterator:
@@ -309,7 +309,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
     print(f"{len(setnrms)} out of {len(nrms)} targets are unique", flush=True)
     """
 
-    print(f"out_gs_reduced: {out_gs_reduced}")
+    # print(f"out_gs_reduced: {out_gs_reduced}")
     print(f"out_gs_reduced norm: {(out_gs_reduced@out_gs_reduced)**0.5} vs {dist_sq_bnd**0.5}")
 
     index = 0
@@ -338,7 +338,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
 
 
     print(f"alg2 terminates")
-    print(f"best_bab_01: {best_bab_01}")
+    # print(f"best_bab_01: {best_bab_01}")
 
     if not tracer_alg2 is None:
         tracer_alg2["walltime"] = tracer_alg2["walltime"]-time.perf_counter()

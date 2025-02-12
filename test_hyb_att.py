@@ -129,6 +129,7 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
     """
     #TODO: deduce what is the betamax
     # def of alg_2_batched is in hyb_att_on_kyber.py
+    print(f"- - - alg 2 on correct guess - - -")
     ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg2_correct )
 
     v1 = np.array( H11.multiply_left( ctilde1 ) )
@@ -174,8 +175,7 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
     """
     #TODO: deduce what is the betamax
     # def of alg_2_batched is in hyb_att_on_kyber.py
-    ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg2_wrong )
-    # def of alg_2_batched is in hyb_att_on_kyber.py
+    print(f"- - - alg 2 on incorrect guess - - -")
     ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg2_wrong )
 
     v1 = np.array( H11.multiply_left( ctilde1 ) )
@@ -203,17 +203,6 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
 
     return argminv_correct
 
-def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
-    # Emulates batch CVPP with guessing.
-    wrong_guess_time = time.perf_counter() - wrong_guess_time
-    # - - - END INCORRECT GUESS - - -
-    if not tracer_alg3 is None:
-        tracer_alg3["wrong_guess_time_alg3"] = wrong_guess_time
-        tracer_alg3["correct_guess_time_alg3"] = correct_guess_time
-        tracer_alg3["wrong_guess_time_alg2"] = tracer_alg2_wrong["walltime"]
-        tracer_alg3["correct_guess_time_alg2"] = tracer_alg2_correct["walltime"]
-
-    return argminv_correct
 
 def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
     # Emulates batch CVPP with guessing.
@@ -259,8 +248,6 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
         tmp = np.array( H12.multiply_left(vtilde2) )
         print(f"vtilde2 babai norm: {(vtilde2@vtilde2)**0.5}")
         print(f"tmp babai norm: {(tmp@tmp)**0.5}")
-        print(f"vtilde2 babai norm: {(vtilde2@vtilde2)**0.5}")
-        print(f"tmp babai norm: {(tmp@tmp)**0.5}")
 
         t1_ = np.array( list(t1) ) - tmp
         if not tracer_alg3 is None:
@@ -275,8 +262,6 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
     We return (if we succeed) (-s,e)[dim-kappa-betamax:dim-kappa] to avoid fp errors.
     """
     #TODO: deduce what is the betamax
-    # def of alg_2_batched is in hyb_att_on_kyber.py
-    ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg3 )
     # def of alg_2_batched is in hyb_att_on_kyber.py
     ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg3 )
 
@@ -352,7 +337,6 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
     for (b, s, e) in bse:
         ex_cntr+=1
         print(f"running exp # {ex_cntr} out of {len(bse)} lat ind: {lat_index}")
-        print(f"running exp # {ex_cntr} out of {len(bse)} lat ind: {lat_index}")
         ex_timer = perf_counter()
         assert ( all( (s@A+e)%q == b ) ), f"wrong lwe instance! {(A@s+e)%q , b}"
         print(f"len {len(Binit), len(Binit[0])}")
@@ -404,7 +388,6 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
         if all(sli_succ):
             succ_cntr+=1
         stats_dict[(n,lat_index, n_slicer_coord, n_guess_coord, ex_cntr)] = {
-            "walltime": tracer["wrong_guess_time_alg3"] + tracer["wrong_guess_time_alg2"],
             "walltime": tracer["wrong_guess_time_alg3"] + tracer["wrong_guess_time_alg2"],
             "dist_bnd": dist_bnd, 
             "succ": all(sli_succ),
