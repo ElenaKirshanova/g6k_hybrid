@@ -82,6 +82,8 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
     lambda1 = min( [G.get_r(0, 0)**0.5, gh**0.5] )
 
     aggregated_data = []
+    #retrieve the projective sublattice
+    B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim,scale_fact=gh), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
     for nrand_param in nrand_params:
         D = {}
         Ds = []
@@ -128,8 +130,6 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
                         print("projected target squared length:", (e_@e_))
 
                         t_gs = from_canonical_scaled( G,t,offset=sieve_dim,scale_fact=gh )
-                        #retrieve the projective sublattice
-                        B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim,scale_fact=gh), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
                         t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
                         t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
 
@@ -143,7 +143,7 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
 
                         if poison_dbt:
                             num_points = max( ceil( len(g6k) / nrand - 1 ) , 1 )
-                            print(f"Poisoning dbt with {num_points} wrong targets")
+                            print(f"Poisoning dbt with {num_points} wrong targets (nrand = {nrand})")
 
                             poison = uniform_in_ball(num_points, len(t_gs_reduced), radius=1.44)
                             for vpoison in poison:
@@ -192,7 +192,7 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
                         else:
                             nsucc_slic += 1
 
-                        if EPS2 * recovered_nrm <= sought_nrm:
+                        if  recovered_nrm <= 1.00001 * sought_nrm:
                             if not succ:
                                 print(f"Found you!")  
                             nsucc_slic_apprcvp += 1

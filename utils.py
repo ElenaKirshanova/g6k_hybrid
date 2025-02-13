@@ -203,6 +203,10 @@ def test_vect_proj( G, n_slicer_coord, n_tests, eta=3 ):
         lens.append(lv_)
     return(lens)
 
-# def proj_percentile_is_leq(G, n_slicer_coord, n_tests, perc=50, threshold=0.95, eta=3):
-#     l = test_vect_proj( G, n_slicer_coord, n_tests, eta )
-#     return np.percentile( l,perc ) <= threshold
+def dist_babai(G, t):
+    #Given GSO object G, returns distance between t and G.babai(t).
+    cv = G.babai( t )
+    v = np.array( G.B.multiply_left( cv ) )
+    dist = (t-v)
+    dist = (dist@dist)**0.5
+    return dist
