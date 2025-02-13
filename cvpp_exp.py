@@ -192,7 +192,7 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
                         else:
                             nsucc_slic += 1
 
-                        if recovered_nrm <= EPS2*sought_nrm:
+                        if EPS2 * recovered_nrm <= sought_nrm:
                             if not succ:
                                 print(f"Found you!")  
                             nsucc_slic_apprcvp += 1
@@ -213,7 +213,7 @@ if __name__=="__main__":
     nthreads = 5
     nworkers = 2
     max_slicer_interations = 300
-    ntests = 200 #200
+    ntests = 20 #200
     nlats = 10 #10
     n = 80
     bits = 11.705
@@ -222,7 +222,7 @@ if __name__=="__main__":
     approx_facts = [ 0.9 + 0.02*i for i in range(6) ]
     nrand_params = [ 1.0,3.0,5.0 ]
     print(approx_facts)
-    poison_dbt = True
+    poison_dbt = False
 
     to_be_computed = []
     g6ks = []
