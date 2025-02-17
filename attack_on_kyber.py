@@ -76,7 +76,7 @@ def generateLWEInstances(n, q = 3329, eta = 3, k=1, ntar=5):
 def gen_and_dump_lwe(n, q, eta, k, ntar, seed=0):
     print(f"- - - n,k,seed={n,k,seed} - - - gen")
     A,q,bse= generateLWEInstances(n, q, eta, k, ntar)
-
+    print("Duming to " + inp_path + f"lwe_instance_{n}_{q}_{eta}_{k}_{seed}")
     with open(inp_path + f"lwe_instance_{n}_{q}_{eta}_{k}_{seed}", "wb") as fl:
         pickle.dump({"A": A, "q": q, "eta": eta, "k": k, "bse": bse}, fl)
 
@@ -262,16 +262,16 @@ if __name__ == "__main__":
     nworkers = 5
     nthreads = 2
     nworkers = 2
-    lats_per_dim = 2 #10
+    lats_per_dim = 10 #10
     inst_per_lat = 20 #10 #how many instances per A, q
     q, eta = 3329, 3
-    nks = [ (132+10*i,3) for i in range(1) ]
-    betapre,betamax = 32, 62
+    nks = [ (125+10*i,3) for i in range(1) ]
+    betapre,betamax = 51, 62
 
     output = []
     pool = Pool( processes = nworkers )
     tasks = []
-    RECOMPUTE_INSTANCE = False
+    RECOMPUTE_INSTANCE = True
     RECOMPUTE_KYBER = False
     if RECOMPUTE_INSTANCE:
         print(f"Generating Kyber...")

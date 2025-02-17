@@ -128,7 +128,7 @@ def run_exp(n,cntr,ntargets,max_slicer_interations=N_MAX_SLICER_ITERATIONS, nran
 
 if __name__=="__main__":
     nthreads = 3
-    nworkers = 2
+    nworkers = 5
     max_slicer_interations = N_MAX_SLICER_ITERATIONS
     nrand_param = NRAND_FACTOR
     n = 65
@@ -166,6 +166,7 @@ if __name__=="__main__":
     # - - - end loading
     
     pool = Pool( processes = nworkers )
+    tasks = []
     for cntr in range(nlats):
         tasks.append( pool.apply_async(
             run_exp, (n,cntr,ntargets,max_slicer_interations, nrand_param, nthreads)

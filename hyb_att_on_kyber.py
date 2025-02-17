@@ -310,7 +310,9 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
     """
 
     # print(f"out_gs_reduced: {out_gs_reduced}")
-    print(f"out_gs_reduced norm: {(out_gs_reduced@out_gs_reduced)**0.5} vs {dist_sq_bnd**0.5}")
+    nrm0 = out_gs_reduced@out_gs_reduced
+    print(f"out_gs_reduced norm: {(nrm0)**0.5} vs {dist_sq_bnd**0.5}")
+    overshoot_fact = (nrm0/dist_sq_bnd)**0.5
 
     index = 0
     #Now we deduce which target candidate the error vector corresponds to.
@@ -330,8 +332,6 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
 
         if diff_nrm_sq < min_norm_err_sq:
             min_norm_err_sq = diff_nrm_sq
-            # best_index = index
-            # best_solution_candidate = solution_candidate
             best_bab_01 = bab_01
 
     print(f"min_norm_err_sq: {min_norm_err_sq}")
@@ -342,8 +342,9 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
 
     if not tracer_alg2 is None:
         tracer_alg2["walltime"] = tracer_alg2["walltime"]-time.perf_counter()
-        tracer_alg2["len(target_candidates)"] = len(target_candidates)
+        tracer_alg2["len_target_candidates"] = len(target_candidates)
         tracer_alg2["nrand"] = nrand
+        tracer_alg2["overshoot_fact"] = overshoot_fact
     return best_bab_01
 
 

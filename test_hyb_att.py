@@ -191,6 +191,7 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
         tracer_alg3["correct_guess_time_alg3"] = correct_guess_time
         tracer_alg3["wrong_guess_time_alg2"] = tracer_alg2_wrong["walltime"]
         tracer_alg3["correct_guess_time_alg2"] = tracer_alg2_correct["walltime"]
+        tracer_alg3["overshoot_fact"] = tracer_alg2_correct["overshoot_fact"]
 
     return argminv_correct
 
@@ -354,10 +355,16 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
         print(f"slicer:\n {sli_succ}")
         if all(sli_succ):
             succ_cntr+=1
+        succ = all(sli_succ)
+        fail_reason = None
+        if not succ:
+            fail_reason = "parasites" if tracer["overshoot_fact"] < 0.9999 else "other"
+
         stats_dict[(n,lat_index, n_slicer_coord, n_guess_coord, ex_cntr)] = {
             "walltime": tracer["wrong_guess_time_alg3"] + tracer["wrong_guess_time_alg2"],
             "dist_bnd": dist_bnd, 
-            "succ": all(sli_succ),
+            "succ": succ,
+            "fail_reason": fail_reason,
             "key_num": tracer["key_num"], #number of guessed keys
             "g6k_len": len(g6k),
             "wrong_guess_time_alg3": tracer["wrong_guess_time_alg3"],
@@ -377,13 +384,12 @@ if __name__=="__main__":
     preprocessing.py (preprocess the data) and then run this file. 
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
-    n, k = 144, 1
+    n, k = 125, 1
     q, eta = 3329, 3
-    latnum = 10
-    n_guess_coord, n_slicer_coord = 6, 65
-    nthreads = 5
+    n_guess_coord, n_slicer_coord = 5, 52
+    nthreads = 3
     nworkers = 5
-    latnum = 10
+    latnum = 2
 
     params={}
     params["nthreads"] = nthreads
@@ -407,7 +413,8 @@ if __name__=="__main__":
             stats_dict_agr.update(t.get())
 
     print(stats_dict_agr)
-
-    with open(f"tha_{n}_{n_guess_coord}_{n_slicer_coord}.pkl", "wb") as file:
+    filename = f"tha_{n}_{n_guess_coord}_{n_slicer_coord}.pkl"
+    print(f"dumping to {filename}")
+    with open(filename, "wb") as file:
         pickle.dump( stats_dict_agr, file )
     pool.close()
