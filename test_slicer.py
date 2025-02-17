@@ -15,13 +15,13 @@ if __name__ == "__main__":
 
     slicer_interations = 250
     norm_slack = 1.01      #terminate slicer if norm_slack*||e_projected|| is found
-    approx_factor = 0.95
+    approx_factor = 0.83
     nrand_param = 5
     nthreads = 5
-    nexp = 25
+    nexp = 2
 
     FPLLL.set_precision(200)
-    n, betamax, sieve_dim = 55, 50, 55
+    n, betamax, sieve_dim = 80, 53, 72
     ft = "ld" if n<90 else ( "dd" if config.have_qd else "mpfr")
     # - - - try load a lattice - - -
     filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
@@ -182,7 +182,7 @@ if __name__ == "__main__":
             nrand = ceil(nrand_param*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
             # nrand = 6000
             print(f"nrand:{nrand}")
-            slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=1100)
+            slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
 
             blocks = 2 # should be the same as in siever
             blocks = min(3, max(1, blocks))
@@ -200,7 +200,7 @@ if __name__ == "__main__":
             slicer.set_max_slicer_interations(slicer_interations)
 
             then = time.perf_counter()
-            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False)
+            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], True)
             endtime = time.perf_counter()-then
             print(f"slicer w. nthreads: {nthreads} done in {endtime}")
             runtimes.append( endtime )

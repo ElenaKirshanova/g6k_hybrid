@@ -6,8 +6,8 @@
 #define G6K_HYBRID_SLICER_H
 #endif
 
-static constexpr unsigned int XPC_SLICER_SAMPLING_THRESHOLD = 75; // XPC Threshold for iterative slicer sampling //105
-static constexpr unsigned int XPC_SLICER_THRESHOLD = 96; // XPC Threshold for iterative slicer sampling
+static constexpr unsigned int XPC_SLICER_SAMPLING_THRESHOLD = 85; // XPC Threshold for iterative slicer sampling //75
+static constexpr unsigned int XPC_SLICER_THRESHOLD = 100; // XPC Threshold for iterative slicer sampling //96
 
 #define REDUCE_DIST_MARGIN 1.008
 
@@ -40,6 +40,7 @@ public:
         this->n = this->sieve.n;
         sim_hashes_t.reset_compress_pos(this->sieve);
         uid_hash_table_t.reset_hash_function(this->sieve);
+        this->statistics.clear_statistics();
     }
 
     friend SimHashes;
