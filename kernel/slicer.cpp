@@ -192,7 +192,7 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
 
 inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1, const size_t i2,  std::vector<Entry_t>& transaction_db, int64_t& write_index, LFT new_l, int8_t sign)
 {
-    if (new_l < REDUCE_DIST_MARGIN*db_t[i1].len)
+    if (REDUCE_DIST_MARGIN * new_l < db_t[i1].len)
     {
 
         std::array<LFT,MAX_SIEVING_DIM> new_yr = db_t[i1].yr;
