@@ -203,7 +203,6 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
 {
     if (REDUCE_DIST_MARGIN * new_l < db_t[i1].len)
     {
-
         std::array<LFT,MAX_SIEVING_DIM> new_yr = db_t[i1].yr;
         this->sieve.addsub_vec(new_yr,  this->sieve.db[i2].yr, static_cast<ZT>(sign));
         UidType new_uid = uid_hash_table_t.compute_uid_t(new_yr);

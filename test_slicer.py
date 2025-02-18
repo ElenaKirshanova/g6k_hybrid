@@ -21,7 +21,7 @@ if __name__ == "__main__":
     nexp = 2
 
     FPLLL.set_precision(200)
-    n, betamax, sieve_dim = 80, 53, 72
+    n, betamax, sieve_dim = 75, 55, 65
     ft = "ld" if n<90 else ( "dd" if config.have_qd else "mpfr")
     # - - - try load a lattice - - -
     filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
@@ -75,6 +75,9 @@ if __name__ == "__main__":
         then = time.perf_counter()
         g6k(alg="bdgl2")
         print(f"siever done in {time.perf_counter()-then}")
+        print(" - - - SIEVER STATS - - -")
+        sievestats = g6k.stats
+        print(sievestats)
         g6k.M.update_gso()
         # filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
         g6k.dump_on_disk( filename )

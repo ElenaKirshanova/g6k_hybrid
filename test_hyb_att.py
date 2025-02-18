@@ -217,13 +217,11 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
     # - - - prepare targets - - -
     then_start = perf_counter()
     gh_sub = gaussian_heuristic(g6k.M.r()[-(g6k.r-g6k.l):])
-    gh_sub = gaussian_heuristic(g6k.M.r()[-(g6k.r-g6k.l):])
     dim = B.nrows
     print(f"dim: {dim}")
 
     t1, t2 = target[:-n_guess_coord], target[-n_guess_coord:]
     distrib = centeredBinomial(eta)
-    #TODO: make/(check if is) practical
     #TODO: make/(check if is) practical
     nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord ) )
     print(f"nsampl: {nsampl}")
@@ -231,12 +229,6 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
     vtilde2s = []
 
     H12 = IntegerMatrix.from_matrix( [list(b)[:dim-n_guess_coord] for b in B[dim-n_guess_coord:]] )
-    sieve_dim = g6k.r-g6k.l
-
-    from hybrid_estimator.batchCVP import batchCVPP_cost
-    nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
-    nrand = ceil(NRAND_FACTOR*(1./nrand_)**sieve_dim)
-    print(f"times: {ceil( len(g6k) / nrand )}")
     sieve_dim = g6k.r-g6k.l
 
     from hybrid_estimator.batchCVP import batchCVPP_cost
@@ -256,9 +248,6 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
         tmp = np.array( H12.multiply_left(vtilde2) )
         print(f"vtilde2 babai norm: {(vtilde2@vtilde2)**0.5}")
         print(f"tmp babai norm: {(tmp@tmp)**0.5}")
-        print(f"vtilde2 babai norm: {(vtilde2@vtilde2)**0.5}")
-        print(f"tmp babai norm: {(tmp@tmp)**0.5}")
-
         t1_ = np.array( list(t1) ) - tmp
         if not tracer_alg3 is None:
             tracer_alg3["es"] -= tmp
@@ -268,12 +257,6 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
     """
     We return (if we succeed) (-s,e)[dim-kappa-betamax:dim-kappa] to avoid fp errors.
     """
-    """
-    We return (if we succeed) (-s,e)[dim-kappa-betamax:dim-kappa] to avoid fp errors.
-    """
-    #TODO: deduce what is the betamax
-    # def of alg_2_batched is in hyb_att_on_kyber.py
-    ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg3 )
     # def of alg_2_batched is in hyb_att_on_kyber.py
     ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg3 )
 
@@ -349,7 +332,6 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
     for (b, s, e) in bse:
         ex_cntr+=1
         print(f"running exp # {ex_cntr} out of {len(bse)} lat ind: {lat_index}")
-        print(f"running exp # {ex_cntr} out of {len(bse)} lat ind: {lat_index}")
         ex_timer = perf_counter()
         assert ( all( (s@A+e)%q == b ) ), f"wrong lwe instance! {(A@s+e)%q , b}"
         print(f"len {len(Binit), len(Binit[0])}")
@@ -375,12 +357,6 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
 
         B = IntegerMatrix.from_matrix(Binit)
 
-        # no guessing version of alg_3
-        # project the error vector onto the last n_sieve_dim GS-vectors.
-        tracer = {}
-        # v = alg_3_debug(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
-        v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
-        print(f"e_: {e_}")
 
         # project the error vector onto the last n_sieve_dim GS-vectors.
         tracer = {}
@@ -433,8 +409,8 @@ if __name__=="__main__":
     q, eta = 3329, 3
     latnum = 10
     n_guess_coord, n_slicer_coord = 6, 65
-    nthreads = 5
-    nworkers = 5
+    nthreads = 3
+    nworkers = 8
     latnum = 2
 
     params={}
