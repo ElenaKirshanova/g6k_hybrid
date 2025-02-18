@@ -333,9 +333,13 @@ private:
 #endif
 
 #if COLLECT_STATISTICS_COLLISIONS_SLICER
-    std::atomic_ulong   stats_collisions;
+    // std::atomic_ulong   stats_fullscprods;
+    std::atomic_ulong   stats_collisions_r;
+    std::atomic_ulong   stats_collisions_s;
 #else 
-    static constexpr unsigned long stats_collisions = 0;
+    // static constexpr unsigned long stats_fullscprods = 0;
+    static constexpr unsigned long stats_collisions_r = 0;
+    static constexpr unsigned long stats_collisions_s = 0;
 #endif
 
 #if COLLECT_STATISTICS_REDS_DURING_RANDOMIZATION
@@ -487,7 +491,9 @@ public:
     MAKE_GETTER_AND_INCREMENTER(replacements, COLLECT_STATISTICS_REPLACEMENTS_SLICER)
 
     static constexpr bool collect_statistics_collisions  = (COLLECT_STATISTICS_COLLISIONS_SLICER >= 1);
-    MAKE_GETTER_AND_INCREMENTER(collisions, COLLECT_STATISTICS_COLLISIONS_SLICER)
+    MAKE_GETTER_AND_INCREMENTER(collisions_r, COLLECT_STATISTICS_COLLISIONS_SLICER)
+    MAKE_GETTER_AND_INCREMENTER(collisions_s, COLLECT_STATISTICS_COLLISIONS_SLICER)
+    unsigned long get_stats_collisions_total() const { return get_stats_collisions_s() + get_stats_collisions_r(); }
 
     static constexpr bool collect_statistics_reds_during_randomization  = (COLLECT_STATISTICS_REDS_DURING_RANDOMIZATION >= 1);
     MAKE_GETTER_AND_INCREMENTER(reds_during_randomization, COLLECT_STATISTICS_REDS_DURING_RANDOMIZATION)
@@ -531,7 +537,8 @@ public:
     #endif
 
     #if COLLECT_STATISTICS_COLLISIONS_SLICER
-        stats_collisions = 0;
+        stats_collisions_r = 0;
+        stats_collisions_s = 0;
     #endif
 
     #if COLLECT_STATISTICS_REDS_DURING_RANDOMIZATION
@@ -612,11 +619,16 @@ public:
                     os << "dbt replacements: " << get_stats_replacements();
                     os << "\n";
                 }
+
                 if(collect_statistics_collisions)
                 {
-                    os << "dbt collisions: " << get_stats_collisions();
+                    os << "dbt collisions: " << get_stats_collisions_total() << std::endl;
+                    os << "while randomizing: " << get_stats_collisions_r();
+                    os << "\n";
+                    os << "while slicing: " << get_stats_collisions_s();
                     os << "\n";
                 }
+
                 if(collect_statistics_reds_during_randomization)
                 {
                     os << "dbt reds_during_randomization: " << get_stats_reds_during_randomization();

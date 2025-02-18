@@ -164,6 +164,51 @@ cdef extern from "../kernel/siever.h" nogil:
         bool collect_statistics_memory_snapshots
         unsigned long get_stats_memory_snapshots() const
 
+    cdef cppclass SlicerStatistics:
+        void clear_statistics()
+        void print_statistics()
+
+        bool collect_statistics_xorpopcnt
+        unsigned long get_stats_xorpopcnt_total() const
+        unsigned long get_stats_xorpopcnt_r() const
+        unsigned long get_stats_xorpopcnt_s() const
+
+        bool collect_statistics_xorpopcnt_pass
+        unsigned long get_stats_xorpopcnt_pass_total() const
+        unsigned long get_stats_xorpopcnt_pass_r() const
+        unsigned long get_stats_xorpopcnt_pass_s() const
+
+        bool collect_statistics_fullscprods
+        unsigned long get_stats_fullscprods_total() const
+        unsigned long get_stats_fullscprods_r() const
+        unsigned long get_stats_fullscprods_s() const
+
+        bool collect_statistics_redsucc
+        unsigned long get_stats_redsucc_total() const
+        unsigned long get_stats_redsucc_r() const
+        unsigned long get_stats_redsucc_s() const
+
+        bool collect_statistics_replacements
+        unsigned long get_stats_replacements() const
+
+        bool collect_statistics_collisions
+        unsigned long get_stats_collisions() const
+
+        bool collect_statistics_reds_during_randomization
+        unsigned long get_stats_reds_during_randomization() const
+
+        bool collect_statistics_bucknum
+        unsigned long get_stats_bucknum() const
+
+        bool collect_statistics_buck_over_max
+        unsigned long get_stats_buck_over_max() const
+
+        bool collect_statistics_buck_over_num
+        unsigned long get_stats_buck_over_num() const
+
+        bool collect_statistics_last_itercount
+        unsigned long get_stats_last_itercount() const
+
     cdef void show_cpu_stats()
 
     # Note: x and yr are std::arrays, not std::vectors...

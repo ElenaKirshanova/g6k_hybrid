@@ -109,7 +109,6 @@ void RandomizedSlicer::randomize_target_small_task(Entry_t &t)
 
             this->sieve.addsub_vec(new_yr, this->sieve.db[this->sieve.cdb[j].i].yr, static_cast<ZT>(sign));
 
-            //TODO: change to XPC (if makes sense)
             statistics.inc_stats_fullscprods_r();
             LFT const inner = std::inner_product(t.yr.begin(), t.yr.begin() + n, new_yr.begin(), static_cast<LFT>(0.));
             sign = inner < 0 ? 1 : -1;
@@ -142,7 +141,7 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
 
     if(!uid_hash_table_t.insert_uid(input_t.uid)){
         std::cerr << "The original target is already in db" << std::endl;
-        statistics.inc_stats_collisions();
+        statistics.inc_stats_collisions_r();
         // exit(0);
         return;
     }
@@ -171,7 +170,7 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
             randomize_target_small_task(tmp);
 
             if(!uid_hash_table_t.insert_uid(tmp.uid)) {
-                statistics.inc_stats_collisions();
+                statistics.inc_stats_collisions_r();
                 continue;
             }
             db_t[i] = tmp;
@@ -202,7 +201,7 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
 
 inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1, const size_t i2,  std::vector<Entry_t>& transaction_db, int64_t& write_index, LFT new_l, int8_t sign)
 {
-    if (new_l < REDUCE_DIST_MARGIN*db_t[i1].len)
+    if (REDUCE_DIST_MARGIN * new_l < db_t[i1].len)
     {
 
         std::array<LFT,MAX_SIEVING_DIM> new_yr = db_t[i1].yr;
@@ -227,7 +226,7 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
         else
         {
             #if COLLECT_STATISTICS_COLLISIONS_SLICER
-                if(!uid_hash_table_t.insert_uid(new_uid)) statistics.inc_stats_collisions(); 
+                if(!uid_hash_table_t.insert_uid(new_uid)) statistics.inc_stats_collisions_s(); 
             #endif
             return 0;
         }

@@ -84,7 +84,7 @@
         - Optionally: Add it to the tracer, if special treatment is neccessary.
 
 */
-
+#define ENABLE_STATS
 #ifndef COLLECT_STATISTICS
     #if defined ENABLE_EXTENDED_STATS
         #define COLLECT_STATISTICS 2

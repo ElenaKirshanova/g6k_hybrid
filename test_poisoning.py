@@ -141,7 +141,8 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
                         slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
 
                         if poison_dbt:
-                            num_points = max( ceil( len(g6k) / nrand - 1 ) , 1 )
+                            num_points = 4 #max( ceil( len(g6k) / nrand - 1 ) , 1 )
+                            print(f"expected: {max( ceil( len(g6k) / nrand - 1 ) , 1 )} vs. given: {num_points}")
                             print(f"Poisoning dbt with {num_points} wrong targets (nrand = {nrand})")
 
                             poison = uniform_in_ball(num_points, len(t_gs_reduced), radius=1.44)
@@ -227,7 +228,7 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
     return aggregated_data
 
 if __name__=="__main__":
-    nthreads = 3
+    nthreads = 5
     nworkers = 2
     max_slicer_interations = 300
     ntests = 10 #200
@@ -236,7 +237,7 @@ if __name__=="__main__":
     bits = 11.705
     betamax = 55
     # approx_facts = [ 0.4 + 0.05*i for i in range(15) ] #
-    approx_facts = [ 0.85 + 0.05*i for i in range(4) ]
+    approx_facts = [ 0.75 + 0.05*i for i in range(6) ]
     nrand_params = [ 1.0,3.0,5.0 ]
     print(approx_facts)
     poison_dbt = True
