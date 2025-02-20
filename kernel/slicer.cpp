@@ -244,7 +244,7 @@ bool RandomizedSlicer::slicer_replace_in_db(size_t cdb_index, Entry_t &e)
 {
     CompressedEntry &ce = cdb_t[cdb_index];
 
-    if (REDUCE_DIST_MARGIN * e.len >= ce.len)
+    if (REDUCE_DIST_MARGIN_HALF * e.len >= ce.len)
     {
         uid_hash_table_t.erase_uid(e.uid);
         return false;
