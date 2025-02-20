@@ -342,7 +342,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
     # print(f"best_bab_01: {best_bab_01}")
 
     if not tracer_alg2 is None:
-        tracer_alg2["walltime"] = tracer_alg2["walltime"]-time.perf_counter()
+        tracer_alg2["walltime"] = time.perf_counter() - tracer_alg2["walltime"]
         tracer_alg2["len_target_candidates"] = len(target_candidates)
         tracer_alg2["nrand"] = nrand
         tracer_alg2["overshoot_fact"] = overshoot_fact
