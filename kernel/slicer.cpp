@@ -124,6 +124,7 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
     Entry_t input_t;
 
     for(int i = 0; i < MAX_SIEVING_DIM; i++){
+        input_t.yr_o[i] = t_yr[i];
         input_t.yr[i] = t_yr[i];
     }
 
@@ -146,6 +147,8 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
     db_t.resize(N);
     cdb_t.resize(N);
 
+
+    //adding non-randimized target to db_t, cdb_t
     db_t[start] = input_t;
     CompressedEntry ce;
     ce.len = input_t.len;
@@ -153,6 +156,8 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
     ce.i = start;
     cdb_t[start] = ce;
 
+
+    //randomizing target
     for( size_t i = start+1; i < N; i++)
     {
         int col = 0;
@@ -481,15 +486,14 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
     std::vector<atomic_size_t_wrapper> buckets_i;
     std::vector<std::vector<QEntry>> t_queues(threads);
 
-    //TODO: assert that all input parameters are equal to those from bdgl_sieve
+    size_t saturation_index = Nt*saturation_scalar;
 
     size_t it = 0;
     while( it < MAX_SLICER_ITERS ) {
 
-        if(cdb_t[0].len<proj_error_bound){
+        if(cdb_t[saturation_index].len<proj_error_bound){
             if(verbose) {
-                std::cout << "proj_error_bound: " << proj_error_bound << std::endl;
-                std::cout << it << "-th it: solution found of norm:" << cdb_t[0].len << std::endl;
+                std::cout << "Saturated on:" << it  << "-th iteration"  << std::endl;
             }
             return true;
         }
@@ -512,6 +516,6 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
         }
         it++;
     }
-    if(verbose) std::cerr << "Couldn't find a close vector after " << MAX_SLICER_ITERS << " iterations" << std::endl;
+    if(verbose) std::cerr << "Couldn't saturate " << MAX_SLICER_ITERS << " iterations" << std::endl;
     return false;
 }

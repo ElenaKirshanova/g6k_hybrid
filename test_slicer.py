@@ -18,7 +18,7 @@ if __name__ == "__main__":
     approx_factor = 0.95
     nrand_param = 5
     nthreads = 5
-    nexp = 25
+    nexp = 5
 
     FPLLL.set_precision(200)
     n, betamax, sieve_dim = 55, 50, 55
@@ -196,8 +196,9 @@ if __name__ == "__main__":
             #print("blocks: ", blocks, " buckets: ", buckets )
 
             slicer.set_proj_error_bound(norm_slack*(e_@e_))
-            # slicer.set_lifted_error_bound(1.01*(e_@e_))
             slicer.set_max_slicer_interations(slicer_interations)
+            slicer.set_Nt(1)
+            slicer.set_saturation_scalar(1.12)
 
             then = time.perf_counter()
             slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False)

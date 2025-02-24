@@ -15,9 +15,11 @@ static constexpr unsigned int XPC_SLICER_THRESHOLD = 96; // XPC Threshold for it
 #define MAX_SIEVING_DIM 128
 #endif
 
+
 struct Entry_t
 {
     std::array<LFT,MAX_SIEVING_DIM> yr;     // Vector coordinates in gso basis renormalized by the rr[i] (for faster inner product)
+    std::array<LFT,MAX_SIEVING_DIM> yr_o;   // Vector coos in gso basis for the input (non-randomized) target; needed for applications of the slicer (hybrid)
     CompressedVector c;                     // Compressed vector (i.e. a simhash)
     UidType uid;                            // Unique identifier for collision detection (essentially a hash)
     FT len = 0.;                            // (squared) length of the vector, renormalized by the local gaussian heuristic
@@ -63,6 +65,9 @@ public:
     CACHELINE_VARIABLE(rng::threadsafe_rng, rng_t);
 
     unsigned int n;
+
+    unsigned int Nt = 1;  //number of unique targets
+    FT saturation_scalar = 1.1; // Nt*saturation_scalar = number of vectors of length < proj_error_bound required to terminate
     FT proj_error_bound = 0.9; //arbitrary value, expect to be set by the caller
 
     size_t MAX_SLICER_ITERS = 1000;
@@ -102,6 +107,8 @@ public:
     void set_nthreads(size_t nt){ this->threads = nt;}
     void set_proj_error_bound(FT len) {this->proj_error_bound = len;}
     void set_max_slicer_interations(size_t maxiter){this->MAX_SLICER_ITERS = maxiter;}
+    void set_Nt(unsigned int nt) {this->Nt = nt;}
+    void set_saturation_scalar(FT sat_scalar) {this->saturation_scalar = sat_scalar;}
 
     template<RecomputeSlicer what_to_recompute>
     inline void recompute_data_for_entry_t(Entry_t &e);
