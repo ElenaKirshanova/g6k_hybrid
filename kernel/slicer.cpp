@@ -488,7 +488,6 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
     std::vector<std::vector<QEntry>> t_queues(threads);
 
     size_t saturation_index = Nt*saturation_scalar;
-
     size_t it = 0;
     while( it < MAX_SLICER_ITERS ) {
 

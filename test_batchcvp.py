@@ -21,7 +21,7 @@ def find_vect_in_list(v,l,tolerance=1.0e-6):
         # print(f"tmp: {tmp}")
         mindiff = min( mindiff, max(tmp) )
         if (mindiff<tolerance):
-            print(f"mindiff: {mindiff}")
+            # print(f"mindiff: {mindiff}")
             return i
     print(f"FAIL mindiff: {mindiff}")
     return None
@@ -32,6 +32,7 @@ def test_batch(params):
     approx_factor = params[ "approx_factor" ]
     n_targets = params[ "n_targets" ]
     nrand_param = params[ "nrand_param" ]
+    saturation_scalar = params["saturation_scalar"]
     nthreads = params[ "nthreads" ]
     nexp = params[ "nexp" ]
     n, betamax, sieve_dim = params["n"], params["betamax"], params["sieve_dim"] 
@@ -113,7 +114,7 @@ def test_batch(params):
         unique_t_gs_reduced = []
         succbab_list = []
         succsli_list = []
-        min_proj_dist_sq = float("inf")
+        max_proj_dist_sq = 0.
         for cntr in range(n_targets):
             c =np.array( [ randrange(-33,34) for j in range(n) ] )
             unique_answers.append( c )
@@ -125,8 +126,8 @@ def test_batch(params):
             e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim,scale_fact=gh_sub) ) #,scale_fact=gh_sub
             # e_llr = np.array( from_canonical_scaled(G,e,scale_fact=gh_sub) ) #,scale_fact=gh_sub
             dist_sq_bnd = e_@e_
-            min_proj_dist_sq = min(min_proj_dist_sq,dist_sq_bnd)
-            print(f"projected (e_@e_): {(dist_sq_bnd)} | min: {min_proj_dist_sq} @ #{cntr} out of {n_targets}")
+            max_proj_dist_sq = max(max_proj_dist_sq,dist_sq_bnd)
+            print(f"projected (e_@e_): {(dist_sq_bnd)} | max: {max_proj_dist_sq} @ #{cntr} out of {n_targets}")
             es_.append((e_@e_)**0.5)
 
             b = G.B.multiply_left( c )
@@ -195,13 +196,13 @@ def test_batch(params):
 
             #print("blocks: ", blocks, " buckets: ", buckets )
 
-            slicer.set_proj_error_bound(norm_slack*min_proj_dist_sq)
+            slicer.set_proj_error_bound(norm_slack*max_proj_dist_sq)
             slicer.set_max_slicer_interations(slicer_interations)
             slicer.set_Nt(len(unique_targets))
-            slicer.set_saturation_scalar(1.12)
+            slicer.set_saturation_scalar(saturation_scalar)
 
             then = time.perf_counter()
-            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False)
+            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], True)
             endtime = time.perf_counter()-then
             print(f"slicer w. nthreads: {nthreads} done in {endtime}")
             runtimes.append( endtime )
@@ -218,7 +219,6 @@ def test_batch(params):
                 target_index = find_vect_in_list(corr_t_gs,unique_t_gs_reduced)
 
                 if not target_index in target_index_list:
-                    target_index_list.append(target_index)
                     t = unique_targets[target_index]
                     c = unique_answers[target_index]
 
@@ -235,8 +235,9 @@ def test_batch(params):
                     print(f"{c==bab_01}")
                     print(f"Success: {(succ)}")
                     if succ:
+                        target_index_list.append(target_index) #if we succseed, this target is dealt with
                         nsli_succ+=1
-                if len(target_index_list) >= len(unique_targets):
+                if len(target_index_list) >= len(unique_targets) or (out_gs_reduced@out_gs_reduced)>norm_slack*max_proj_dist_sq:
                     break
             print(f"nbab_succ, nsli_succ: {nbab_succ,nsli_succ+nbab_succ} out of {(1+expnum)*n_targets}")
             print(f"es_: {sorted(es_)}")
@@ -248,20 +249,22 @@ if __name__ == "__main__":
 
     slicer_interations = 250
     norm_slack = 1.01      #terminate slicer if norm_slack*||e_projected|| is found
-    approx_factor = 0.8
-    n_targets = 5
-    nrand_param = 5
+    approx_factor = 0.41
+    n_targets = 20
+    saturation_scalar = 1.01
+    nrand_param = 5 #5
     nthreads = 5
     nexp = 5
 
     FPLLL.set_precision(200)
-    n, betamax, sieve_dim = 72, 53, 72
+    n, betamax, sieve_dim = 128, 53, 70
 
     params = {
         "slicer_interations" : slicer_interations,
         "norm_slack" : norm_slack,
         "approx_factor" : approx_factor,
         "n_targets" : n_targets,
+        "saturation_scalar": saturation_scalar,
         "nrand_param" : nrand_param,
         "nthreads" : nthreads,
         "nexp" : nexp,
