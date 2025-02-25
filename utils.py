@@ -210,3 +210,18 @@ def dist_babai(G, t):
     dist = (t-v)
     dist = (dist@dist)**0.5
     return dist
+
+def find_vect_in_list(v,l,tolerance=1.0e-6):
+    assert len(v) == len(l[0]), f"Shapes do not allign! {len(v)} vs. {len(l[0])}"
+    mindiff = float("inf")
+    # print(f"debug v: {v}")
+    for i in range(len(l)):
+        # print(f"debug ti: {l[i]}")
+        tmp = np.abs( np.array(v)-np.array(l[i]) )
+        # print(f"tmp: {tmp}")
+        mindiff = min( mindiff, max(tmp) )
+        if (mindiff<tolerance):
+            # print(f"mindiff: {mindiff}")
+            return i
+    print(f"FAIL mindiff: {mindiff}")
+    return None

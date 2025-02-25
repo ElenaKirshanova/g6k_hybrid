@@ -146,8 +146,6 @@ def attacker(input_dict, n_guess_coord, sieve_dim_max, nsieves, nthreads=N_SIEVE
     dim = 2*k*n
     ft = "ld" if n<145 else ( "dd" if config.have_qd else "mpfr")
 
-    int_type = B.int_type
-
     for sieveid in range(nsieves):
         vec_index = 0
         filename_siever = out_path+f'g6kdump_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}_{sieve_dim_max-nsieves+sieveid}.pkl'
@@ -252,6 +250,8 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
     slicer.set_nthreads(nthreads)
     slicer.set_max_slicer_interations(N_MAX_SLICER_ITERATIONS)
     slicer.set_proj_error_bound( (EPS2*(dist_sq_bnd)) )
+    slicer.set_Nt(1)
+    slicer.set_saturation_scalar(SATURATION_SCALAR)
     # - - - END prepare Slicer for batch cvp - - -
     #WARNING: we do not store t_gs_reduced_list since t_gs_list =  t_gs - gs(shift_babai_c*B)
     #this is a time-memory tradeoff. Since Slicer returns only an error vector, we don\'t
@@ -293,39 +293,30 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
     # print(f"t_gs_reduced: {t_gs_reduced}")
     print(f"t_gs_reduced norm: {t_gs_reduced@t_gs_reduced}")
     iterator = slicer.itervalues_cdb_t()
-    for tmp in iterator:
+    best_bab_01 = np.array( g6k.M.d*[0] )
+    attemptcntr = 0
+    for tmp, tmp_0 in iterator:
         out_gs_reduced = np.array(tmp, dtype=DTYPE)  #db_t[0] is expected to contain the error vector
-        break
+        if (out_gs_reduced@out_gs_reduced) > 1.01*dist_sq_bnd and not(attemptcntr<1):
+            break
+        attemptcntr += 1
+        # print(f"out_gs_reduced: {out_gs_reduced}")
+        print(f"out_gs_reduced norm: {(out_gs_reduced@out_gs_reduced)**0.5} vs {dist_sq_bnd**0.5}")
 
-    """
-    iterator = slicer.itervalues_cdb_t()
-    nrms = []
-    for tmp in iterator:
-        tmp = np.array(tmp, dtype=DTYPE)  #db_t[0] is expected to contain the error vector
-        tmp_nrm_sq = ( tmp@tmp )**0.5
-        nrms.append( tmp_nrm_sq )
-    # print(f"Targets nrms post: {[float(tt) for tt in nrms]}")
-    setnrms = set(nrms)
-    # print(setnrms)
-    print(f"{len(setnrms)} out of {len(nrms)} targets are unique", flush=True)
-    """
+        index = 0
+        #Now we deduce which target candidate the error vector corresponds to.
+        #The idea is that if t_gs is an answer then t_gs_reduced - out_gs_reduced is in the projective lat
+        #and is (close to) zero.
+        min_norm_err_sq = float("inf")
+        out_reduced = np.array( to_canonical_scaled( G, out_gs_reduced, offset=sieve_dim, scale_fact=gh_sub ), dtype=DTYPE )
+        # the line below projects the error away from first basis vectors
+        out_reduced = G.to_canonical( (G.d-sieve_dim)*[0] + list( G.from_canonical( out_reduced,start=G.d-sieve_dim ) ), start=0 )
 
-    # print(f"out_gs_reduced: {out_gs_reduced}")
-    print(f"out_gs_reduced norm: {(out_gs_reduced@out_gs_reduced)**0.5} vs {dist_sq_bnd**0.5}")
-
-    index = 0
-    #Now we deduce which target candidate the error vector corresponds to.
-    #The idea is that if t_gs is an answer then t_gs_reduced - out_gs_reduced is in the projective lat
-    #and is (close to) zero.
-    min_norm_err_sq = float("inf")
-    out_reduced = np.array( to_canonical_scaled( G, out_gs_reduced, offset=sieve_dim, scale_fact=gh_sub ), dtype=DTYPE )
-    # the line below projects the error away from first basis vectors
-    out_reduced = G.to_canonical( (G.d-sieve_dim)*[0] + list( G.from_canonical( out_reduced,start=G.d-sieve_dim ) ), start=0 )
-    for index in range(len(shift_babai_c_list)):
+        index = find_vect_in_list( tmp_0,t_gs_reduced_list  )
+        assert not (index is None), f"Impossible!"
         t = np.array( target_candidates[index], dtype=DTYPE )
         bab_01 = np.array( G.babai(t-out_reduced) )
         solution_candidate = np.array( G.B.multiply_left( bab_01 ), dtype=DTYPE )
-
         diff = t - solution_candidate
         diff_nrm_sq = diff@diff
 
@@ -334,11 +325,28 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
             # best_index = index
             # best_solution_candidate = solution_candidate
             best_bab_01 = bab_01
+            yield best_bab_01
+            
+        """
+        for index in range(len(shift_babai_c_list)):
+            t = np.array( target_candidates[index], dtype=DTYPE )
+            bab_01 = np.array( G.babai(t-out_reduced) )
+            solution_candidate = np.array( G.B.multiply_left( bab_01 ), dtype=DTYPE )
 
-    print(f"min_norm_err_sq: {min_norm_err_sq}")
+            diff = t - solution_candidate
+            diff_nrm_sq = diff@diff
+
+            if diff_nrm_sq < min_norm_err_sq:
+                min_norm_err_sq = diff_nrm_sq
+                # best_index = index
+                # best_solution_candidate = solution_candidate
+                best_bab_01 = bab_01
+        """
+
+        print(f"min_norm_err_sq: {min_norm_err_sq}")
 
 
-    print(f"alg2 terminates")
+    print(f"alg2 terminates after {attemptcntr} searches")
     # print(f"best_bab_01: {best_bab_01}")
 
     if not tracer_alg2 is None:
