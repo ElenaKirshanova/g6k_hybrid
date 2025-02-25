@@ -163,11 +163,6 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
         int col = 0;
 
         Entry_t e = input_t;
-        // std::cout << "e.yr_o: ";
-        // for(int c00=0; c00<10; ++c00){
-        //     std::cout <<  e.yr_o[c00] << " ";
-        // }
-        // std::cout << std::endl;
 
         for ( col = 0; col < 10; ++col)
         {
