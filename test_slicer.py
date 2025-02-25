@@ -15,13 +15,13 @@ if __name__ == "__main__":
 
     slicer_interations = 250
     norm_slack = 1.01      #terminate slicer if norm_slack*||e_projected|| is found
-    approx_factor = 0.95
+    approx_factor = 0.44
     nrand_param = 5
     nthreads = 5
     nexp = 5
 
     FPLLL.set_precision(200)
-    n, betamax, sieve_dim = 55, 50, 55
+    n, betamax, sieve_dim = 128, 53, 70
     ft = "ld" if n<90 else ( "dd" if config.have_qd else "mpfr")
     # - - - try load a lattice - - -
     filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
@@ -208,7 +208,7 @@ if __name__ == "__main__":
 
             iterator = slicer.itervalues_cdb_t()
             out_gs_reduced = None
-            for tmp in iterator:
+            for tmp, _ in iterator:
                 out_gs_reduced = np.array(tmp)  #cdb[0]
                 break
             assert not( out_gs_reduced is None ), "itervalues_cdb_t is empty"

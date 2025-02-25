@@ -163,6 +163,11 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
         int col = 0;
 
         Entry_t e = input_t;
+        // std::cout << "e.yr_o: ";
+        // for(int c00=0; c00<10; ++c00){
+        //     std::cout <<  e.yr_o[c00] << " ";
+        // }
+        // std::cout << std::endl;
 
         for ( col = 0; col < 10; ++col)
         {
@@ -210,6 +215,7 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
             if( index >= 0 ) {
                 Entry_t& new_entry = transaction_db[index];
                 new_entry.yr = new_yr;
+                new_entry.yr_o = db_t[i1].yr_o;
                 recompute_data_for_entry_t<RandomizedSlicer::RecomputeSlicer::recompute_all>(new_entry);
 
                 return 1;
