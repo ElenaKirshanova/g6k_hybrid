@@ -68,6 +68,7 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705,seed=0):
     g6k.dump_on_disk(f"cvppg6k_n{n}_{seed}_test.pkl")
 
 def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, nrand_params=[1.], poison_dbt=False):
+    saturation_scalar = 3.
     g6k = Siever.restore_from_file(f"cvppg6k_n{n}_{cntr}_test.pkl")
     param_sieve = SieverParams()
     param_sieve['threads'] = nthreads
@@ -134,7 +135,7 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
                         t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
 
                         slicer = RandomizedSlicer(g6k)
-                        slicer.set_nthreads(nthreads);
+                        slicer.set_nthreads(nthreads)
 
                         nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
                         nrand = ceil(nrand_param*(1./nrand_)**sieve_dim)
@@ -145,7 +146,7 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
                             num_points = max( ceil( len(g6k) / nrand - 1 ) , 1 )
                             print(f"Poisoning dbt with {num_points} wrong targets (nrand = {nrand})")
 
-                            poison = uniform_in_ball(num_points, len(t_gs_reduced), radius=1.44)
+                            poison = uniform_in_ball(num_points, len(t_gs_reduced), radius=32.)
                             for vpoison in poison:
                                 vpoison = np.array( vpoison )
                                 t_gs_poisoned = t_gs + vpoison
@@ -165,39 +166,40 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
 
                         slicer.set_proj_error_bound(1.01*(e_@e_))
                         slicer.set_max_slicer_interations(max_slicer_interations)
-                        slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False)
+                        slicer.set_Nt(1)
+                        slicer.set_saturation_scalar(saturation_scalar)
+                        slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], True)
 
                         iterator = slicer.itervalues_cdb_t()
-                        for tmp in iterator:
-                            out_gs_reduced = tmp  #cdb[0]
-                            break
-                        out_gs = out_gs_reduced + t_gs_shift
+                        succ = False
+                        attemptcntr = 0
+                        for tmp, _ in iterator:
+                            attemptcntr += 1
+                            out_gs_reduced = np.array( tmp )  #cdb[0]
+                            if (out_gs_reduced@out_gs_reduced)>1.01*(e_@e_):
+                                break
+                            out_gs = out_gs_reduced + t_gs_shift
 
-                        # - - - Check - - - -
-                        e_ = np.array(e_)
-                        out_gs_reduced = np.array( out_gs_reduced )
-                        recovered_nrm = (out_gs_reduced@out_gs_reduced)**0.5
-                        sought_nrm = (e_@e_)**0.5
-                        print(f"|out_gs_reduced|: {recovered_nrm} vs {sought_nrm}")
-                        out = to_canonical_scaled( G,out_gs,offset=sieve_dim,scale_fact=gh )
+                            # - - - Check - - - -
+                            e_ = np.array(e_)
+                            out_gs_reduced = np.array( out_gs_reduced )
+                            recovered_nrm = (out_gs_reduced@out_gs_reduced)**0.5
+                            sought_nrm = (e_@e_)**0.5
+                            print(f"|out_gs_reduced|: {recovered_nrm} vs {sought_nrm}")
+                            out = to_canonical_scaled( G,out_gs,offset=sieve_dim,scale_fact=gh )
 
-                        projerr = G.to_canonical( G.from_canonical(e,start=n-sieve_dim), start=n-sieve_dim)
-                        out = to_canonical_scaled( G,np.concatenate( [(G.d-sieve_dim)*[0], out_gs_reduced] ), scale_fact=gh_sub )
-                        bab_01 = np.array( G.babai( np.array(t)-out ) )
+                            projerr = G.to_canonical( G.from_canonical(e,start=n-sieve_dim), start=n-sieve_dim)
+                            out = to_canonical_scaled( G,np.concatenate( [(G.d-sieve_dim)*[0], out_gs_reduced] ), scale_fact=gh_sub )
+                            bab_01 = np.array( G.babai( np.array(t)-out ) )
 
-                        succ = all(c==bab_01)
-                        print(f"Slic Succsess: {succ}")
+                            succ = all(c==bab_01)
+                            if succ:
+                                break
+                        print(f"Slic Succsess: {succ} after {attemptcntr} attempts")
                         if not ( succ ):
                             print(f"FAIL after slicer: {(err@err)}")
                         else:
                             nsucc_slic += 1
-
-                        if  recovered_nrm <= 1.00001 * sought_nrm:
-                            if not succ:
-                                print(f"Found you!")  
-                            nsucc_slic_apprcvp += 1
-
-                        # del slicer
                     except Exception as excpt: #if slicer fails for some reason,
                         #then prey, this is not a devastating segfault
                         print(excpt)
@@ -215,7 +217,7 @@ if __name__=="__main__":
     max_slicer_interations = 300
     ntests = 20 #200
     nlats = 10 #10
-    n = 80
+    n = 65
     bits = 11.705
     betamax = 53
     # approx_facts = [ 0.4 + 0.05*i for i in range(15) ] #
