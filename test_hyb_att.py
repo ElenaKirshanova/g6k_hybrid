@@ -364,7 +364,7 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
                 succ_cntr+=1
                 print(f"Success in experiment! @{guess_cntr} guess")
                 break
-        fail_reason = "other" if guess_cntr<2 else "parasites"
+        fail_reason = "other" if guess_cntr<1 else "parasites"
         stats_dict[(n,lat_index, n_slicer_coord, n_guess_coord, ex_cntr)] = {
             "walltime": tracer["wrong_guess_time_alg3"] + tracer["wrong_guess_time_alg2"],
             "dist_bnd": dist_bnd, 

@@ -224,7 +224,7 @@ if __name__=="__main__":
     nthreads = 5
     nworkers = 2
     max_slicer_interations = 300
-    ntests = 3 #200
+    ntests = 30 #200
     nlats = 2 #10
     n = 45
     bits = 11.705
