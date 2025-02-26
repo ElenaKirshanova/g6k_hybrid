@@ -325,6 +325,10 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
             # best_index = index
             # best_solution_candidate = solution_candidate
             best_bab_01 = bab_01
+            if not tracer_alg2 is None:
+                tracer_alg2["walltime"] = tracer_alg2["walltime"]-time.perf_counter()
+                tracer_alg2["len(target_candidates)"] = len(target_candidates)
+                tracer_alg2["nrand"] = nrand
             yield best_bab_01
             
         """
@@ -349,10 +353,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
     print(f"alg2 terminates after {attemptcntr} searches")
     # print(f"best_bab_01: {best_bab_01}")
 
-    if not tracer_alg2 is None:
-        tracer_alg2["walltime"] = tracer_alg2["walltime"]-time.perf_counter()
-        tracer_alg2["len(target_candidates)"] = len(target_candidates)
-        tracer_alg2["nrand"] = nrand
+    
     return best_bab_01
 
 

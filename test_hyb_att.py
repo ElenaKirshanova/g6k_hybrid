@@ -352,14 +352,14 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
             if v is None:
                 v = np.array( len(answer)*[0] )
             guess_cntr+=1
-            print(f"v: {v}")
-            print(f"vs: {answer}")
+            # print(f"v: {v}")
+            # print(f"vs: {answer}")
             print(f" - - - - - - ")
 
             v2 = v
 
             sli_succ = answer==v2
-            print(f"slicer:\n {sli_succ}")
+            # print(f"slicer:\n {sli_succ}")
             if all(sli_succ):
                 succ_cntr+=1
                 print(f"Success in experiment! @{guess_cntr} guess")
@@ -377,7 +377,7 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
             "walltime_observed": perf_counter() - ex_timer, 
         }
 
-        print(f" - - - {all(answer==v2)} after{guess_cntr} guesses - - - ")
+        print(f" - - - {all(answer==v2)} after {guess_cntr} guesses - - - ")
     return stats_dict
 
 if __name__=="__main__":
@@ -389,10 +389,10 @@ if __name__=="__main__":
     """
     n, k = 144, 1
     q, eta = 3329, 3
-    latnum = 10
+    latnum = 2 #10
     n_guess_coord, n_slicer_coord = 5, 70
     nthreads = 5
-    nworkers = 5
+    nworkers = 2
     latnum = 10
 
     params={}
@@ -417,7 +417,8 @@ if __name__=="__main__":
             stats_dict_agr.update(t.get())
 
     print(stats_dict_agr)
-
-    with open(f"tha_{n}_{n_guess_coord}_{n_slicer_coord}.pkl", "wb") as file:
+    filename = f"tha_{n}_{n_guess_coord}_{n_slicer_coord}.pkl"
+    print(f"Saving to {filename}")
+    with open(filename, "wb") as file:
         pickle.dump( stats_dict_agr, file )
     pool.close()
