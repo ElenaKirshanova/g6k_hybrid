@@ -68,7 +68,7 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705,seed=0):
     g6k.dump_on_disk(f"cvppg6k_n{n}_{seed}_test.pkl")
 
 def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, nrand_params=[1.], poison_dbt=False):
-    saturation_scalar = 3.
+    saturation_scalar = SATURATION_SCALAR
     g6k = Siever.restore_from_file(f"cvppg6k_n{n}_{cntr}_test.pkl")
     param_sieve = SieverParams()
     param_sieve['threads'] = nthreads
@@ -268,7 +268,6 @@ if __name__=="__main__":
 
     for t in tasks:
         aggregated_data += [ t.get() ]
-        # aggregated_data += [ run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=max_slicer_interations, nthreads=nthreads, nrand_params=nrand_params) ]
     pool.close()
 
     for tmp in aggregated_data:

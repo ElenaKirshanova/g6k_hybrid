@@ -211,8 +211,6 @@ def test_batch(params):
             out_gs_reduced = None
             target_index_list=[]
             for tmp, tmp_0 in iterator:
-                # print(tmp)
-                # print(f"tmp0: {tmp_0}")
                 out_gs_reduced = np.array(tmp)  #cdb[0]
                 corr_t_gs = np.array(list(tmp_0)) 
                 assert not( out_gs_reduced is None ), "itervalues_cdb_t is empty"
@@ -224,12 +222,6 @@ def test_batch(params):
 
                     out = to_canonical_scaled( G,np.concatenate( [(G.d-sieve_dim)*[0], out_gs_reduced] ), scale_fact=gh_sub )
                     bab_01 = np.array( G.babai( np.array(t)-out ) )
-
-                    # - - - Check - - - -
-                    # print(f"e_: {e_}")
-                    # print(f"e_llr: {e_llr}")
-                    # print(f"out_gs_reduced-e_llr[-sieve_dim:]: {np.concatenate( [out_gs_reduced] ) - e_llr[-sieve_dim:]}")
-                    # print(f"|e_|: {(e_@e_)**0.5} vs. {G.get_r(n-sieve_dim, n-sieve_dim)**0.5/gh_sub}")
 
                     succ = all(c==bab_01)
                     print(f"{c==bab_01}")
@@ -251,7 +243,7 @@ if __name__ == "__main__":
     norm_slack = 1.01      #terminate slicer if norm_slack*||e_projected|| is found
     approx_factor = 0.41
     n_targets = 20
-    saturation_scalar = 1.01
+    saturation_scalar = 1.05
     nrand_param = 5 #5
     nthreads = 5
     nexp = 5
