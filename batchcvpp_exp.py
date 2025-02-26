@@ -175,14 +175,16 @@ def run_exp(cntr,params):
                     succ = False
                     attemptcntr = 0
                     succcntr = 0
+                    print(f"indexes: ",end="")
                     for tmp, tmp_0 in iterator:
                         out_gs_reduced = np.array( tmp )  #cdb[0]
-                        if (out_gs_reduced@out_gs_reduced)>1.01*(e_@e_):
+                        if (out_gs_reduced@out_gs_reduced)>EPS2*dist_sq_bnd_max:
                             break
                         attemptcntr += 1
                         
                         index = find_vect_in_list(tmp_0,t_gs_reduced_list)
-                        t = cebt_list_filtered[index][3]
+                        print(index, end = ", ")
+                        c, e, b, t = cebt_list_filtered[index]
                         out = to_canonical_scaled( G,np.concatenate( [(G.d-sieve_dim)*[0], out_gs_reduced] ), scale_fact=gh_sub )
                         bab_01 = np.array( G.babai( np.array(t)-out ) )
 
@@ -224,9 +226,9 @@ if __name__=="__main__":
     max_slicer_interations = 300
     ntests = 3 #200
     nlats = 2 #10
-    n = 65
+    n = 45
     bits = 11.705
-    betamax = 53
+    betamax = 43
     # approx_facts = [ 0.4 + 0.05*i for i in range(15) ] #
     approx_facts = [ 0.9 + 0.02*i for i in range(6) ]
     nrand_params = [ 1.0,3.0,5.0 ]
