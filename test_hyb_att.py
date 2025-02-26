@@ -369,7 +369,7 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
             "walltime": tracer["wrong_guess_time_alg3"] + tracer["wrong_guess_time_alg2"],
             "dist_bnd": dist_bnd, 
             "succ": all(sli_succ),
-            "fail_reason": None if succ else fail_reason,
+            "fail_reason": None if all(sli_succ) else fail_reason,
             "key_num": tracer["key_num"], #number of guessed keys
             "g6k_len": len(g6k),
             "wrong_guess_time_alg3": tracer["wrong_guess_time_alg3"],
@@ -391,7 +391,6 @@ if __name__=="__main__":
     """
     n, k = 144, 1
     q, eta = 3329, 3
-    latnum = 2 #10
     n_guess_coord, n_slicer_coord = 5, 70
     nthreads = 5
     nworkers = 2
