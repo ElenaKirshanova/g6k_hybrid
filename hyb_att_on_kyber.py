@@ -250,7 +250,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
     slicer.set_nthreads(nthreads)
     slicer.set_max_slicer_interations(N_MAX_SLICER_ITERATIONS)
     slicer.set_proj_error_bound( (EPS2*(dist_sq_bnd)) )
-    slicer.set_Nt(1)
+    slicer.set_Nt(len(target_candidates))
     slicer.set_saturation_scalar(SATURATION_SCALAR)
     # - - - END prepare Slicer for batch cvp - - -
     #WARNING: we do not store t_gs_reduced_list since t_gs_list =  t_gs - gs(shift_babai_c*B)
