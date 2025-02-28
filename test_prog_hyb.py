@@ -78,7 +78,7 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
             lens = test_vect_proj(G, n_slicer_coord, n_tests=NPROJ_TESTS, eta=eta)
             est_norm = np.percentile(lens,50)
             print(f"#{lat_index} est_proj_norm is: {est_norm}")
-            if est_norm <= 0.95:
+            if est_norm <= HYB_PROJ_THRESHOLD:
                 break
             
             then_round=time.perf_counter()
@@ -153,6 +153,7 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
         iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
         guess_cntr = 0
         sli_succ = False
+        v2 = None
         for v in iter_v:
             if v is None:
                 v = np.array( len(answer)*[0] )
