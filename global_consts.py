@@ -6,7 +6,7 @@ global DTYPE
 global N_MAX_SLICER_ITERATIONS
 global NRAND_FACTOR
 global EPS2
-global NPROJ_TESTS
+global NPROJ_TESTS, HYB_PROJ_THRESHOLD
 global SATURATION_SCALAR
 
 BKZ_MAX_LOOPS = 2
@@ -17,4 +17,5 @@ NRAND_FACTOR = 5.
 DTYPE = np.float64 #np.longdouble or np.float64
 EPS2 = 1.0001 #(1+epsilon) squared
 NPROJ_TESTS = 2048
+HYB_PROJ_THRESHOLD = 0.98
 SATURATION_SCALAR = 1.05

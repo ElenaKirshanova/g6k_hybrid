@@ -75,7 +75,6 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
     if not bkz_beta_range is None:
         LR = LatticeReduction( G.B, threads_bkz=nthreads )
         for beta in bkz_beta_range:
-            bkz_performed = True
             lens = test_vect_proj(G, n_slicer_coord, n_tests=NPROJ_TESTS, eta=eta)
             est_norm = np.percentile(lens,50)
             print(f"#{lat_index} est_proj_norm is: {est_norm}")
@@ -85,6 +84,7 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
             then_round=time.perf_counter()
             LR.BKZ(beta,tours=5)
             round_time = time.perf_counter()-then_round
+            bkz_performed = True
             print(f"#{lat_index} Additional BKZ-{beta} done in {round_time}")
             sys.stdout.flush()
             G = LR.gso
