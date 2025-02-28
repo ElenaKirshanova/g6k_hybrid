@@ -297,7 +297,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
     attemptcntr = 0
     for tmp, tmp_0 in iterator:
         out_gs_reduced = np.array(tmp, dtype=DTYPE)  #db_t[0] is expected to contain the error vector
-        if (out_gs_reduced@out_gs_reduced) > 1.00001*dist_sq_bnd and not(attemptcntr<1):
+        if (out_gs_reduced@out_gs_reduced) > 1.00001*dist_sq_bnd:
             break
         attemptcntr += 1
         # print(f"out_gs_reduced: {out_gs_reduced}")

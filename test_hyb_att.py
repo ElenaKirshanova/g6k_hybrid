@@ -125,9 +125,10 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
     print(f"- - - alg 2 on incorrect guess - - -")
     # ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg2_wrong )
     it = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg2_wrong )
+    ctilde1 = np.zeros( dim-n_guess_coord )
     for ctilde1 in it: #what's returned is not quite relevant. The guess is wrong by design.
         break
-    
+
     v1 = np.array( H11.multiply_left( ctilde1 ) )
     argminv = None
     minv = 10**12
@@ -146,10 +147,13 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
     wrong_guess_time = time.perf_counter() - wrong_guess_time
     wrong_guess_time_alg3 = time.perf_counter() - wrong_guess_time_alg3
     # - - - END INCORRECT GUESS - - -
+    if not tracer_alg3 is None: #this belongs here since this point is always reached 
+                    tracer_alg3["wrong_guess_time_alg3"] = wrong_guess_time
+                    tracer_alg3["wrong_guess_time_alg2"] = tracer_alg2_wrong["walltime"]
     # - - - BEGIN CORRECT GUESS - - -
     target_candidates = []
     vtilde2s = []
-    correct_guess_time = time.perf_counter()
+    correct_guess_time_start = time.perf_counter()
     for times in range(times): #Alg 3 steps 4-7 ceil( (nrand * nsampl) / len(g6k) )
         if times!=0 and times%1000 == 0:
             print(f"{times} done out of {nsampl}", end=", ")
@@ -172,6 +176,9 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
     # def of alg_2_batched is in hyb_att_on_kyber.py
     print(f"- - - alg 2 on correct guess - - -")
     it = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg2_correct )
+    if not tracer_alg3 is None: #this belongs here since we may never start the loop
+                    tracer_alg3["correct_guess_time_alg3"] = 0
+                    tracer_alg3["correct_guess_time_alg2"] = 0
     for ctilde1 in it: #we do not quite care what it
         v1 = np.array( H11.multiply_left( ctilde1 ) )
         argminv_correct = None
@@ -187,19 +194,15 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
             if vv < minv:
                 minv = vv
                 argminv_correct = v
-                correct_guess_time = time.perf_counter() - correct_guess_time
+                correct_guess_time = time.perf_counter() - correct_guess_time_start
                 if not tracer_alg3 is None: #this belongs here since we may never reach the end of yield
-                    tracer_alg3["wrong_guess_time_alg3"] = wrong_guess_time
                     tracer_alg3["correct_guess_time_alg3"] = correct_guess_time
-                    tracer_alg3["wrong_guess_time_alg2"] = tracer_alg2_wrong["walltime"]
                     tracer_alg3["correct_guess_time_alg2"] = tracer_alg2_correct["walltime"]
                 yield argminv_correct
             cntr+=1
 
-    correct_guess_time = time.perf_counter() - correct_guess_time
+    # correct_guess_time = time.perf_counter() - correct_guess_time
     # - - - END CORRECT GUESS - - -
-
-    return argminv_correct
 
 
 def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):

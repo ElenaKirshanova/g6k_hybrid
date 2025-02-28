@@ -95,7 +95,7 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
     if (delta_slicer_coord>0) or (not bkz_beta_range is None): #if context grows, or we did bkz, we need to reinstantiate g6k
         assert n_slicer_coord <= G.d, f"Too many slicer coords: {n_slicer_coord}>{G.d}"
 
-        g6k = Siever(G,param_sieve) #temporary solution
+        g6k = Siever(G,param_sieve)
         print(g6k.M.d-n_slicer_coord)
         g6k.initialize_local(g6k.M.d-n_slicer_coord,g6k.M.d-n_slicer_coord,g6k.M.d)
         print("Running bdgl2...")
@@ -148,25 +148,32 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
         len_bound = dist_sq_bnd
         tracer = {}
         # v = alg_3_debug(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
-        v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
-        print(f"e_: {e_}")
-        if v is None:
-            v = np.array( len(answer)*[0] )
-        print(f"v: {v}")
-        print(f"vs: {answer}")
-        print(f" - - - - - - ")
+        iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
+        guess_cntr = 0
+        sli_succ = False
+        for v in iter_v:
+            if v is None:
+                v = np.array( len(answer)*[0] )
+            guess_cntr+=1
+            # print(f"v: {v}")
+            # print(f"vs: {answer}")
+            print(f" - - - - - - ")
 
-        v2 = v
-        succ_alg_3_debug = all( answer==v2 )
+            v2 = v
 
-        sli_succ = answer==v2
-        print(f"slicer:\n {sli_succ}")
-        if all(sli_succ):
-            succ_cntr+=1
+            sli_succ = all(answer==v2)
+            # print(f"slicer:\n {sli_succ}")
+            if sli_succ:
+                succ_cntr+=1
+                print(f"Success in experiment! @{guess_cntr} guess")
+                break
+        print(f"Succ: {sli_succ}")
+        fail_reason = "other" if guess_cntr<1 else "parasites"
         stats_dict[(n,lat_index, n_slicer_coord, n_guess_coord, ex_cntr)] = {
             "walltime": tracer["wrong_guess_time_alg3"] + tracer["wrong_guess_time_alg2"],
             "dist_bnd": dist_bnd, 
-            "succ": all(sli_succ),
+            "succ": sli_succ,
+            "fail_reason": None if sli_succ else fail_reason,
             "key_num": tracer["key_num"], #number of guessed keys
             "g6k_len": len(g6k),
             "wrong_guess_time_alg3": tracer["wrong_guess_time_alg3"],
@@ -189,15 +196,15 @@ if __name__=="__main__":
     preprocessing.py (preprocess the data) and then run this file. 
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
-    n, k = 144, 1
+    n, k = 140, 1
     q, eta = 3329, 3
     latnum = 10
-    n_guess_coord, n_slicer_coord = 6, 65
+    n_guess_coord, n_slicer_coord = 4, 61
     # bkz_beta_range = range(n_slicer_coord-1,n_slicer_coord+4) #range of values of beta or None if no additional reduction to be performed
     bkz_beta_range = None #range(60,62,1)
     delta_slicer_coord = 0 #integer >=0, n_slicer_coord + delta_slicer_coord will be the slicer dimension
     nthreads = 5
-    nworkers = 3
+    nworkers = 4
 
     params={}
     params["nthreads"] = nthreads
