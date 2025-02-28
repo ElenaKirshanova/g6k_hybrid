@@ -71,9 +71,11 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
     overhead_tbkz = time.perf_counter()
     beta = 0
     G = g6k.M #the GSO obj. for first k*n-kappa vectors.
+    bkz_performed = False
     if not bkz_beta_range is None:
         LR = LatticeReduction( G.B, threads_bkz=nthreads )
         for beta in bkz_beta_range:
+            bkz_performed = True
             lens = test_vect_proj(G, n_slicer_coord, n_tests=NPROJ_TESTS, eta=eta)
             est_norm = np.percentile(lens,50)
             print(f"#{lat_index} est_proj_norm is: {est_norm}")
@@ -92,7 +94,7 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
     print(f"#{lat_index} final est_proj_norm is: {est_norm}")
     
     overhead_tsieve = time.perf_counter()
-    if (delta_slicer_coord>0) or (not bkz_beta_range is None): #if context grows, or we did bkz, we need to reinstantiate g6k
+    if (delta_slicer_coord>0) or bkz_performed: #if context grows, or we did bkz, we need to reinstantiate g6k
         assert n_slicer_coord <= G.d, f"Too many slicer coords: {n_slicer_coord}>{G.d}"
 
         g6k = Siever(G,param_sieve)
