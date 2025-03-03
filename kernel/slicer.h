@@ -19,11 +19,16 @@ static constexpr unsigned int XPC_SLICER_THRESHOLD = 96; // XPC Threshold for it
 struct Entry_t
 {
     std::array<LFT,MAX_SIEVING_DIM> yr;     // Vector coordinates in gso basis renormalized by the rr[i] (for faster inner product)
-    std::array<LFT,MAX_SIEVING_DIM> yr_o;   // Vector coos in gso basis for the input (non-randomized) target; needed for applications of the slicer (hybrid)
     CompressedVector c;                     // Compressed vector (i.e. a simhash)
     UidType uid;                            // Unique identifier for collision detection (essentially a hash)
     FT len = 0.;                            // (squared) length of the vector, renormalized by the local gaussian heuristic
+    IT i;                                   // Index in Unique_entry_t
     //std::array<LFT,OTF_LIFT_HELPER_DIM> otf_helper; // auxiliary information to accelerate otf lifting of pairs, commented out for slicer
+};
+
+struct Unique_entry_t
+{
+    std::array<LFT,MAX_SIEVING_DIM> yr_o;   // Vector coos in gso basis for the input (non-randomized) target; needed for applications of the slicer (hybrid)
 };
 
 
@@ -62,6 +67,7 @@ public:
     CACHELINE_VARIABLE(std::vector<Entry_t>, db_t);             // database of targets
     CACHELINE_VARIABLE(std::vector<CompressedEntry>, cdb_t);  // compressed version, faster access and periodically sorted
     CACHELINE_VARIABLE(std::vector<CompressedEntry>, cdb_t_tmp_copy); // for sorting
+    CACHELINE_VARIABLE(std::vector<Unique_entry_t>, unique_db);  //to store unique targets
     CACHELINE_VARIABLE(rng::threadsafe_rng, rng_t);
 
     unsigned int n;

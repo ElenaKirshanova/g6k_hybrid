@@ -56,6 +56,6 @@ cdef class RandomizedSlicer(object):
         for i in range(self._core.cdb_t.size()):
             e = &self._core.db_t[self._core.cdb_t[i].i]
             r = [e.yr[j] for j in range(self._core.n)]
-            r_0 = [e.yr_o[j] for j in range(self._core.n)]
-            yield ( tuple(r), tuple(r_0) )
+            #r_0 = [e.yr_o[j] for j in range(self._core.n)] #TODO: remove
+            yield ( tuple(r) )
 

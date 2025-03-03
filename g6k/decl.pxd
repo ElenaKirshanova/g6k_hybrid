@@ -297,9 +297,11 @@ cdef extern from "../kernel/slicer.h" nogil:
 
     cdef struct Entry_t:
         vector[LFT] yr
-        vector[LFT] yr_o #Vector coos in gso basis for the input (non-randomized) target; needed for applications of the slicer (hybrid)
+        IT i # index in Unique_entry_t
         FT len
 
+    cdef struct Unique_entry_t:
+        vector[LFT] yr_o   # Vector coos in gso basis for the input (non-randomized) target; needed for applications of the slicer (hybrid)
 
     cdef cppclass RandomizedSlicer:
 
