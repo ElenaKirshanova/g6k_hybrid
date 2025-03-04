@@ -133,7 +133,7 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
     argminv = None
     minv = 10**12
     cntr = 0
-    for vtilde2 in vtilde2s:       
+    for vtilde2 in vtilde2s:
         v2 = np.concatenate( [(dim-n_guess_coord)*[0],vtilde2] )
         babshift = np.concatenate( [ np.array( H12.multiply_left(vtilde2) ), n_guess_coord*[0] ] )
         v = np.concatenate([v1,n_guess_coord*[0]]) + v2 + babshift
@@ -147,7 +147,7 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
     wrong_guess_time = time.perf_counter() - wrong_guess_time
     wrong_guess_time_alg3 = time.perf_counter() - wrong_guess_time_alg3
     # - - - END INCORRECT GUESS - - -
-    if not tracer_alg3 is None: #this belongs here since this point is always reached 
+    if not tracer_alg3 is None: #this belongs here since this point is always reached
                     tracer_alg3["wrong_guess_time_alg3"] = wrong_guess_time
                     tracer_alg3["wrong_guess_time_alg2"] = tracer_alg2_wrong["walltime"]
     # - - - BEGIN CORRECT GUESS - - -
@@ -184,7 +184,7 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
         argminv_correct = None
         minv = 10**12
         cntr = 0
-        for vtilde2 in vtilde2s:       
+        for vtilde2 in vtilde2s:
             v2 = np.concatenate( [(dim-n_guess_coord)*[0],vtilde2] )
             babshift = np.concatenate( [ np.array( H12.multiply_left(vtilde2) ), n_guess_coord*[0] ] )
             v = np.concatenate([v1,n_guess_coord*[0]]) + v2 + babshift
@@ -261,8 +261,8 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
     v1 = np.array( H11.multiply_left( ctilde1 ) )
     argminv = None
     minv = 10**12
-    cntr = 0      
-    for vtilde2 in vtilde2s:       
+    cntr = 0
+    for vtilde2 in vtilde2s:
         v2 = np.concatenate( [(dim-n_guess_coord)*[0],vtilde2] )
         babshift = np.concatenate( [ np.array( H12.multiply_left(vtilde2) ), n_guess_coord*[0] ] )
         v = np.concatenate([v1,n_guess_coord*[0]]) + v2 + babshift
@@ -292,7 +292,7 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
     A, _, _, _, bse = load_lwe(n,q,eta,k,lat_index)
 
     # we don't store the whole lattice basis Binit since it is fairly large for github
-    Binit = [ [int(0) for i in range(2*k*n)] for j in range(2*k*n) ] 
+    Binit = [ [int(0) for i in range(2*k*n)] for j in range(2*k*n) ]
     for i in range( k*n ):
         Binit[i][i] = int( q )
     for i in range(k*n, 2*k*n):
@@ -303,14 +303,14 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
 
     then = perf_counter()
     #restore precomputed g6k and initialize it
-    g6k = Siever.restore_from_file( out_path + filename_g6kdump ) 
+    g6k = Siever.restore_from_file( out_path + filename_g6kdump )
     # Needed to ensure that all locals are correct.
     # Ideally, already done.
     param_sieve = SieverParams()
     param_sieve['threads'] = nthreads
     param_sieve['otf_lift'] = False
     g6k.params = param_sieve
-    H11 = g6k.M.B  
+    H11 = g6k.M.B
 
     G = g6k.M #the GSO obj. for first k*n-kappa vectors.
     # Gaussian heuristic for the last sieve_dim dimensioal projective lattice of G.
@@ -373,7 +373,7 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
         walltime, walltime_observed = tracer["wrong_guess_time_alg3"] + tracer["wrong_guess_time_alg2"], perf_counter() - ex_timer
         stats_dict[(n,lat_index, n_slicer_coord, n_guess_coord, ex_cntr)] = {
             "walltime": walltime,
-            "dist_bnd": dist_bnd, 
+            "dist_bnd": dist_bnd,
             "succ": all(sli_succ),
             "fail_reason": None if all(sli_succ) else fail_reason,
             "key_num": tracer["key_num"], #number of guessed keys
@@ -382,7 +382,7 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
             "correct_guess_time_alg3": tracer["correct_guess_time_alg3"],
             "wrong_guess_time_alg2": tracer["wrong_guess_time_alg2"],
             "correct_guess_time_alg2": tracer["correct_guess_time_alg2"],
-            "walltime_observed": walltime_observed, 
+            "walltime_observed": walltime_observed,
         }
         print(f"walltime: {walltime} | walltime_observed: {walltime_observed}")
 
@@ -393,7 +393,7 @@ if __name__=="__main__":
     """
     This file implements the hybrid attack on preprocessed Kyber instances.
     To generate ones, one needs to run attack_on_kyber.py (generating instances), run
-    preprocessing.py (preprocess the data) and then run this file. 
+    preprocessing.py (preprocess the data) and then run this file.
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
     n, k = 144, 1
@@ -419,7 +419,7 @@ if __name__=="__main__":
         tasks.append( pool.apply_async(
             run_experiment, (lat_index, params, output[lat_index])
             ) )
-        
+
     stats_dict_agr = {}
     for t in tasks:
             stats_dict_agr.update(t.get())

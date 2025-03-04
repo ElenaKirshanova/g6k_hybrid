@@ -45,7 +45,7 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
     A, _, _, _, bse = load_lwe(n,q,eta,k,lat_index)
 
     # we don't store the whole lattice basis Binit since it is fairly large for github
-    Binit = [ [int(0) for i in range(2*k*n)] for j in range(2*k*n) ] 
+    Binit = [ [int(0) for i in range(2*k*n)] for j in range(2*k*n) ]
     for i in range( k*n ):
         Binit[i][i] = int( q )
     for i in range(k*n, 2*k*n):
@@ -56,7 +56,7 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
 
     then = perf_counter()
     #restore precomputed g6k and initialize it
-    g6k = Siever.restore_from_file( out_path + filename_g6kdump ) 
+    g6k = Siever.restore_from_file( out_path + filename_g6kdump )
     # Needed to ensure that all locals are correct.
     # Ideally, already done.
     param_sieve = SieverParams()
@@ -65,7 +65,7 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
     g6k.params = param_sieve
 
     #if we need to reduce the basis further, we do so and throw the precomputed database away
-    #since it will be altered by the reduction. 
+    #since it will be altered by the reduction.
     # TODO: we can try inserting a vector from siever into the basis, since it was already computed.
     # n_slicer_coord += delta_slicer_coord
     overhead_tbkz = time.perf_counter()
@@ -80,7 +80,7 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
         print(f"#{lat_index} est_proj_norm is: {est_norm}")
         # if est_norm <= HYB_PROJ_THRESHOLD:
         #     break
-        
+
         then_round=time.perf_counter()
         LR.BKZ(beta,tours=5)
         round_time = time.perf_counter()-then_round
@@ -107,8 +107,8 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
             g6k(alg="bdgl2")
             print(f"bdgl2 done in {time.perf_counter()-then}")
 
-            overhead_tsieve = time.perf_counter() - overhead_tsieve  
-            H11 = g6k.M.B 
+            overhead_tsieve = time.perf_counter() - overhead_tsieve
+            H11 = g6k.M.B
 
             # Gaussian heuristic for the last sieve_dim dimensioal projective lattice of G.
             # ALL {from/to}_canonical_scaled calls must use scale_fact=gh_sub, or things go out of hand.
@@ -173,7 +173,7 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
                 walltime, walltime_observed = tracer["wrong_guess_time_alg3"] + tracer["wrong_guess_time_alg2"], perf_counter() - ex_timer
                 stats_dict[(n, lat_index, beta, n_slicer_coord, n_guess_coord, ex_cntr)] = {
                     "walltime": walltime,
-                    "dist_bnd": dist_bnd, 
+                    "dist_bnd": dist_bnd,
                     "succ": sli_succ,
                     "fail_reason": None if sli_succ else fail_reason,
                     "key_num": tracer["key_num"], #number of guessed keys
@@ -183,11 +183,11 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
                     "correct_guess_time_alg3": tracer["correct_guess_time_alg3"],
                     "wrong_guess_time_alg2": tracer["wrong_guess_time_alg2"],
                     "correct_guess_time_alg2": tracer["correct_guess_time_alg2"],
-                    "walltime_observed": walltime_observed, 
+                    "walltime_observed": walltime_observed,
                     "overhead_tbkz": overhead_tbkz,
                     "overhead_tsieve": overhead_tsieve,
                 }
-                
+
                 print(f"walltime: {walltime} | walltime_observed: {walltime_observed}")
                 print(f" - - - {all(answer==v2)} - - - ")
     return stats_dict
@@ -196,7 +196,7 @@ if __name__=="__main__":
     """
     This file implements the hybrid attack on preprocessed Kyber instances.
     To generate ones, one needs to run attack_on_kyber.py (generating instances), run
-    preprocessing.py (preprocess the data) and then run this file. 
+    preprocessing.py (preprocess the data) and then run this file.
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
     n, k = 130, 1
@@ -225,7 +225,7 @@ if __name__=="__main__":
         tasks.append( pool.apply_async(
             run_experiment, (lat_index, params, output[lat_index],bkz_beta_range,delta_slicer_coord)
             ) )
-        
+
     stats_dict_agr = {}
     for t in tasks:
             stats_dict_agr.update(t.get())
