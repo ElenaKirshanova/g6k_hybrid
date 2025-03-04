@@ -292,10 +292,10 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
 
     # print(f"t_gs_reduced: {t_gs_reduced}")
     print(f"t_gs_reduced norm: {t_gs_reduced@t_gs_reduced}")
-    iterator = slicer.itervalues_cdb_t()
+    iterator = slicer.itervalues_cdb_t(return_with_index=True)
     best_bab_01 = np.array( g6k.M.d*[0] )
     attemptcntr = 0
-    for tmp, tmp_0 in iterator:
+    for tmp, index in iterator:
         out_gs_reduced = np.array(tmp, dtype=DTYPE)  #db_t[0] is expected to contain the error vector
         if (out_gs_reduced@out_gs_reduced) > 1.00001*dist_sq_bnd:
             break
@@ -303,7 +303,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
         # print(f"out_gs_reduced: {out_gs_reduced}")
         print(f"out_gs_reduced norm: {(out_gs_reduced@out_gs_reduced)**0.5} vs {dist_sq_bnd**0.5}")
 
-        index = 0
+        # index = 0
         #Now we deduce which target candidate the error vector corresponds to.
         #The idea is that if t_gs is an answer then t_gs_reduced - out_gs_reduced is in the projective lat
         #and is (close to) zero.
@@ -312,7 +312,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
         # the line below projects the error away from first basis vectors
         out_reduced = G.to_canonical( (G.d-sieve_dim)*[0] + list( G.from_canonical( out_reduced,start=G.d-sieve_dim ) ), start=0 )
 
-        index = find_vect_in_list( tmp_0,t_gs_reduced_list  )
+        # index = find_vect_in_list( tmp_0,t_gs_reduced_list  )
         assert not (index is None), f"Impossible!"
         t = np.array( target_candidates[index], dtype=DTYPE )
         bab_01 = np.array( G.babai(t-out_reduced) )
@@ -322,8 +322,6 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
 
         if diff_nrm_sq < min_norm_err_sq:
             min_norm_err_sq = diff_nrm_sq
-            # best_index = index
-            # best_solution_candidate = solution_candidate
             best_bab_01 = bab_01
             if not tracer_alg2 is None:
                 tracer_alg2["walltime"] = time.perf_counter() - tracer_alg2["walltime"]
@@ -351,7 +349,6 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
 
 
     print(f"alg2 terminates after {attemptcntr} searches")
-    # print(f"best_bab_01: {best_bab_01}")
 
     
     return best_bab_01

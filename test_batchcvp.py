@@ -207,14 +207,14 @@ def test_batch(params):
             print(f"slicer w. nthreads: {nthreads} done in {endtime}")
             runtimes.append( endtime )
 
-            iterator = slicer.itervalues_cdb_t()
+            iterator = slicer.itervalues_cdb_t(return_with_index=True)
             out_gs_reduced = None
             target_index_list=[]
-            for tmp, tmp_0 in iterator:
+            for tmp, target_index in iterator:
                 out_gs_reduced = np.array(tmp)  #cdb[0]
-                corr_t_gs = np.array(list(tmp_0)) 
-                assert not( out_gs_reduced is None ), "itervalues_cdb_t is empty"
-                target_index = find_vect_in_list(corr_t_gs,unique_t_gs_reduced)
+                # corr_t_gs = np.array(list(tmp_0)) 
+                # assert not( out_gs_reduced is None ), "itervalues_cdb_t is empty"
+                # target_index = find_vect_in_list(corr_t_gs,unique_t_gs_reduced)
 
                 if not target_index in target_index_list:
                     t = unique_targets[target_index]

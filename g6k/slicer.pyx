@@ -46,7 +46,7 @@ cdef class RandomizedSlicer(object):
         self._core.bdgl_like_sieve(nr_buckets, blocks, multi_hash, verbose)
         sig_off()
 
-    def itervalues_cdb_t(self):
+    def itervalues_cdb_t(self,return_with_index=True):
         """
         Iterate over all entries in the target database (in the order determined by the compressed database cdb_t)
 
@@ -56,6 +56,10 @@ cdef class RandomizedSlicer(object):
         for i in range(self._core.cdb_t.size()):
             e = &self._core.db_t[self._core.cdb_t[i].i]
             r = [e.yr[j] for j in range(self._core.n)]
+            index = e.i
             #r_0 = [e.yr_o[j] for j in range(self._core.n)] #TODO: remove
-            yield ( tuple(r) )
+            if return_with_index:
+                yield ( tuple(r), index )
+            else:
+                raise NotImplementedError
 

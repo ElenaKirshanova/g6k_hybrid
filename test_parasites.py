@@ -118,7 +118,7 @@ def run_exp(n,cntr,ntargets,max_slicer_interations=N_MAX_SLICER_ITERATIONS, nran
         print( f"Slicer done in {perf_counter()-then}" )
 
         iterator = slicer.itervalues_cdb_t()
-        for tmp in iterator:
+        for tmp, _ in iterator:
             out_gs_reduced = np.array( tmp )  #cdb[0]
             curnrm = (out_gs_reduced@out_gs_reduced)**0.5
             if curnrm > EPS2:

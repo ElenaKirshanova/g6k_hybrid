@@ -193,7 +193,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
                     out_gs_reduced = [0]
                     iterator = slicer.itervalues_cdb_t()
-                    for tmp in iterator:
+                    for tmp, _ in iterator:
                         out_gs_reduced = np.array( tmp )  #cdb[0]
                         break
 
@@ -251,7 +251,7 @@ if __name__ == '__main__':
 
     FPLLL.set_precision(200)
 
-    n, betamax, sieve_dim = 100, 65, 100
+    n, betamax, sieve_dim = 50, 45, 50
 
     nthreads = 2
     nworkers = 10 # number of workers
