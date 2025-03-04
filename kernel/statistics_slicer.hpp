@@ -33,10 +33,8 @@
     REPLACEMENTS_SLICER ( dbt replacements - slicing phase only )
     REPLACEMENTFAILURE_SLICER ( failures for various reasons - slicing phase only )
     COLLISIONS_SLICER ( hash collisions )
-    COLLISIONS_SLICER_R TODO: decide if we implement this one and the one below. This approach might break the incapsulation of the hash computation.
-    COLLISIONS_SLICER_S
-    SORTING_SLICER (re-sortings inside the slicer)
-    BUCKETS_SLICER (number of buckets considered)
+    REDS_DURING_RANDOMIZATION (how many times targerts were reduced in the randomization phase) SORTING_SLICER
+    BUCKETS_SLICER (number of buckets considered) REMOVE!
     BUCKETS_OVERFLOW_MAX_SLICER (max number of vectors attempted to be inserted into a bucket)
     BUCKETS_OVERFLOW_COUNT_SLICER (cumulative number of bucket overflows)
     LAST_ITERCOUNT_SLICER (number of iterations during the last call of bdgl_like_sieve)
@@ -103,8 +101,8 @@
 #define COLLECT_STATISTICS_COLLISIONS_SLICER COLLECT_STATISTICS
 #endif
 
-#ifndef COLLECT_STATISTICS_SORTING_SLICER
-#define COLLECT_STATISTICS_SORTING_SLICER COLLECT_STATISTICS
+#ifndef COLLECT_STATISTICS_REDS_DURING_RANDOMIZATION
+#define COLLECT_STATISTICS_REDS_DURING_RANDOMIZATION COLLECT_STATISTICS
 #endif
 
 #ifndef COLLECT_STATISTICS_BUCKETS_SLICER
@@ -114,6 +112,11 @@
 #ifndef COLLECT_STATISTICS_BUCKETS_OVERFLOW_MAX_SLICER
 #define COLLECT_STATISTICS_BUCKETS_OVERFLOW_MAX_SLICER COLLECT_STATISTICS
 #endif
+
+#ifndef COLLECT_STATISTICS_LAST_ITERCOUNT_SLICER
+#define COLLECT_STATISTICS_LAST_ITERCOUNT_SLICER COLLECT_STATISTICS
+#endif
+
 
 #ifndef COLLECT_STATISTICS_RANDOMIZE_TRIALNUM_SLICER
 #define COLLECT_STATISTICS_RANDOMIZE_TRIALNUM_SLICER COLLECT_STATISTICS
@@ -224,10 +227,10 @@
     #define ENABLE_IF_STATS_COLLISIONS_SLICER(s)
 #endif
 
-#if COLLECT_STATISTICS_SORTING_SLICER
-    #define ENABLE_IF_STATS_SORTING_SLICER(s) s
+#if COLLECT_STATISTICS_REDS_DURING_RANDOMIZATION
+    #define ENABLE_IF_STATS_REDS_DURING_RANDOMIZATION(s) s
 #else
-    #define ENABLE_IF_STATS_SORTING_SLICER(s)
+    #define ENABLE_IF_STATS_REDS_DURING_RANDOMIZATION(s)
 #endif
 
 #if COLLECT_STATISTICS_BUCKETS_SLICER
@@ -330,15 +333,19 @@ private:
 #endif
 
 #if COLLECT_STATISTICS_COLLISIONS_SLICER
-    std::atomic_ulong   stats_collisions;
+    // std::atomic_ulong   stats_fullscprods;
+    std::atomic_ulong   stats_collisions_r;
+    std::atomic_ulong   stats_collisions_s;
 #else 
-    static constexpr unsigned long stats_collisions = 0;
+    // static constexpr unsigned long stats_fullscprods = 0;
+    static constexpr unsigned long stats_collisions_r = 0;
+    static constexpr unsigned long stats_collisions_s = 0;
 #endif
 
-#if COLLECT_STATISTICS_SORTING_SLICER
-    std::atomic_ulong   stats_sorts;
+#if COLLECT_STATISTICS_REDS_DURING_RANDOMIZATION
+    std::atomic_ulong   stats_reds_during_randomization; //stats_sorts
 #else 
-    static constexpr unsigned long stats_sorts = 0;
+    static constexpr unsigned long stats_reds_during_randomization = 0;
 #endif
 
 #if COLLECT_STATISTICS_BUCKETS_SLICER
@@ -353,11 +360,18 @@ private:
     static constexpr unsigned long stats_buck_over_max = 0;
 #endif
 
+#if COLLECT_STATISTICS_LAST_ITERCOUNT_SLICER
+    std::atomic_ulong   stats_last_itercount_slicer;
+#else 
+    static constexpr unsigned long stats_last_itercount_slicer = 0;
+#endif
+
 #if COLLECT_STATISTICS_RANDOMIZE_TRIALNUM_SLICER
     std::atomic_ulong   stats_buck_over_num;
 #else 
     static constexpr unsigned long stats_buck_over_num = 0;
 #endif
+
 
 /**
     To avoid at least some boilerplate, we use macros to create incrementers / getters:
@@ -477,10 +491,12 @@ public:
     MAKE_GETTER_AND_INCREMENTER(replacements, COLLECT_STATISTICS_REPLACEMENTS_SLICER)
 
     static constexpr bool collect_statistics_collisions  = (COLLECT_STATISTICS_COLLISIONS_SLICER >= 1);
-    MAKE_GETTER_AND_INCREMENTER(collisions, COLLECT_STATISTICS_COLLISIONS_SLICER)
+    MAKE_GETTER_AND_INCREMENTER(collisions_r, COLLECT_STATISTICS_COLLISIONS_SLICER)
+    MAKE_GETTER_AND_INCREMENTER(collisions_s, COLLECT_STATISTICS_COLLISIONS_SLICER)
+    unsigned long get_stats_collisions_total() const { return get_stats_collisions_s() + get_stats_collisions_r(); }
 
-    static constexpr bool collect_statistics_sorts  = (COLLECT_STATISTICS_SORTING_SLICER >= 1);
-    MAKE_GETTER_AND_INCREMENTER(sorts, COLLECT_STATISTICS_SORTING_SLICER)
+    static constexpr bool collect_statistics_reds_during_randomization  = (COLLECT_STATISTICS_REDS_DURING_RANDOMIZATION >= 1);
+    MAKE_GETTER_AND_INCREMENTER(reds_during_randomization, COLLECT_STATISTICS_REDS_DURING_RANDOMIZATION)
 
     static constexpr bool collect_statistics_bucknum  = (COLLECT_STATISTICS_BUCKETS_SLICER >= 1);
     MAKE_GETTER_AND_INCREMENTER(bucknum, COLLECT_STATISTICS_BUCKETS_SLICER)
@@ -491,50 +507,58 @@ public:
     static constexpr bool collect_statistics_buck_over_num  = (COLLECT_STATISTICS_RANDOMIZE_TRIALNUM_SLICER >= 1);
     MAKE_GETTER_AND_INCREMENTER(buck_over_num, COLLECT_STATISTICS_RANDOMIZE_TRIALNUM_SLICER)
 
+    static constexpr bool collect_statistics_last_itercount = (COLLECT_STATISTICS_LAST_ITERCOUNT_SLICER >= 1);
+    MAKE_GETTER_SETTER_AND_INCREMENTER(last_itercount_slicer, COLLECT_STATISTICS_LAST_ITERCOUNT_SLICER)
+
     inline void clear_statistics() noexcept
     {
     #if COLLECT_STATISTICS_XORPOPCNT_SLICER
-        xorpopcnt_r = 0;
-        xorpopcnt_s = 0;
+        stats_xorpopcnt_r = 0;
+        stats_xorpopcnt_s = 0;
     #endif
 
     #if COLLECT_STATISTICS_XORPOPCNT_PASS_SLICER
-        xorpopcnt_pass_r = 0;
-        xorpopcnt_pass_s = 0;
+        stats_xorpopcnt_pass_r = 0;
+        stats_xorpopcnt_pass_s = 0;
     #endif
 
     #if COLLECT_STATISTICS_FULLSCPRODS_SLICER
-        fullscprods_r = 0;
-        fullscprods_s = 0;
+        stats_fullscprods_r = 0;
+        stats_fullscprods_s = 0;
     #endif
 
     #if COLLECT_STATISTICS_REDSUCCESS_SLICER
-        redsucc_r = 0;
-        redsucc_s = 0;
+        stats_redsucc_r = 0;
+        stats_redsucc_s = 0;
     #endif
 
     #if COLLECT_STATISTICS_REPLACEMENTS_SLICER
-        replacements = 0;
+        stats_replacements = 0;
     #endif
 
     #if COLLECT_STATISTICS_COLLISIONS_SLICER
-        collisions = 0;
+        stats_collisions_r = 0;
+        stats_collisions_s = 0;
     #endif
 
-    #if COLLECT_STATISTICS_SORTING_SLICER
-        sorts = 0;
+    #if COLLECT_STATISTICS_REDS_DURING_RANDOMIZATION
+        stats_reds_during_randomization = 0;
     #endif
 
     #if COLLECT_STATISTICS_BUCKETS_SLICER
-        bucknum = 0;
+        stats_bucknum = 0;
     #endif
 
     #if COLLECT_STATISTICS_BUCKETS_OVERFLOW_MAX_SLICER
-        buck_over_max = 0;
+        stats_buck_over_max = 0;
+    #endif
+
+    #if COLLECT_STATISTICS_LAST_ITERCOUNT_SLICER
+        stats_last_itercount_slicer = 0;
     #endif
 
     #if COLLECT_STATISTICS_RANDOMIZE_TRIALNUM_SLICER
-        buck_over_num = 0;
+        stats_buck_over_num = 0;
     #endif
     }
 
@@ -551,20 +575,29 @@ public:
     // }
 
     void print_statistics(std::ostream &os = std::cout)
-    {
+    {   
+                #ifdef COLLECT_STATISTICS
+                std::cout << " - - - <STATISTIC> - - -" << std::endl;
+                #endif
+
                 if(collect_statistics_xorpopcnt)
                 {
-                    os << "XORpopcnt calls: " << get_stats_xorpopcnt_total();
+                    os << "XORpopcnt calls: " << get_stats_xorpopcnt_total() << std::endl;
                     // STATS_PRINT_IF(xorpopcnt_r, ", while randomizing: ")
                     // STATS_PRINT_IF(xorpopcnt_s, ", while slicing: ")
-                    os << "while randomizing: " << get_stats_xorpopcnt_r;
+                    os << "while randomizing: " << get_stats_xorpopcnt_r();
+                    os << "\n";
+                    os << "while slicing: " << get_stats_xorpopcnt_s();
                     os << "\n";
                 }
                 if(collect_statistics_xorpopcnt_pass)
                 {
-                    os << "XORpopcnt passes: " << get_stats_xorpopcnt_pass_total();
+                    os << "XORpopcnt passes: " << get_stats_xorpopcnt_pass_total() << std::endl;
                     // STATS_PRINT_IF(xorpopcnt_pass_r, ", while randomizing: ")
                     // STATS_PRINT_IF(xorpopcnt_pass_s, ", while slicing: ")
+                    os << "while randomizing: " << get_stats_xorpopcnt_pass_r();
+                    os << "\n";
+                    os << "while slicing: " << get_stats_xorpopcnt_pass_s();
                     os << "\n";
                 }
                 if(collect_statistics_fullscprods)
@@ -586,14 +619,19 @@ public:
                     os << "dbt replacements: " << get_stats_replacements();
                     os << "\n";
                 }
+
                 if(collect_statistics_collisions)
                 {
-                    os << "dbt collisions: " << get_stats_collisions();
+                    os << "dbt collisions: " << get_stats_collisions_total() << std::endl;
+                    os << "while randomizing: " << get_stats_collisions_r();
+                    os << "\n";
+                    os << "while slicing: " << get_stats_collisions_s();
                     os << "\n";
                 }
-                if(collect_statistics_sorts)
+
+                if(collect_statistics_reds_during_randomization)
                 {
-                    os << "dbt sorts: " << get_stats_sorts();
+                    os << "dbt reds_during_randomization: " << get_stats_reds_during_randomization();
                     os << "\n";
                 }
                 if(collect_statistics_bucknum)
@@ -611,6 +649,13 @@ public:
                     os << "dbt buck_over_num: " << get_stats_buck_over_num();
                     os << "\n";
                 }
+                if(collect_statistics_last_itercount){
+                    os << "iterations: " << get_stats_last_itercount_slicer();
+                    os << "\n";
+                }
+                #ifdef COLLECT_STATISTICS
+                std::cout << " - - - <END STATISTIC> - - -" << std::endl;
+                #endif
     }
 
 };
