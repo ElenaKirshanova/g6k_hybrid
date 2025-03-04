@@ -313,6 +313,8 @@ cdef extern from "../kernel/slicer.h" nogil:
         void set_max_slicer_interations(size_t maxiter);
         void set_Nt(unsigned int nt);
         void set_saturation_scalar(FT sat_scalar);
+        void set_filename_cdbt(char* filename);
+
 
         unsigned int n
         unsigned int r

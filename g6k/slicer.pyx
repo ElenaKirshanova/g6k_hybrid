@@ -41,6 +41,10 @@ cdef class RandomizedSlicer(object):
     def set_saturation_scalar(self, sat_scalar):
         self._core.set_saturation_scalar(sat_scalar)
 
+    def set_filename_cdbt(self, char* filename):
+       self._core.set_filename_cdbt(filename)
+
+
     def bdgl_like_sieve(self, size_t nr_buckets, size_t blocks, size_t multi_hash, verbose):
         sig_on()
         self._core.bdgl_like_sieve(nr_buckets, blocks, multi_hash, verbose)
@@ -57,7 +61,6 @@ cdef class RandomizedSlicer(object):
             e = &self._core.db_t[self._core.cdb_t[i].i]
             r = [e.yr[j] for j in range(self._core.n)]
             index = e.i
-            #r_0 = [e.yr_o[j] for j in range(self._core.n)] #TODO: remove
             if return_with_index:
                 yield ( tuple(r), index )
             else:
