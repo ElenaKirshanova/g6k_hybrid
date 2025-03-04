@@ -184,7 +184,7 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
                     "overhead_tbkz": overhead_tbkz,
                     "overhead_tsieve": overhead_tsieve,
                 }
-
+                print(f"walltime: {tracer["walltime"]} | walltime_observed: {tracer["walltime_observed"]}")
                 print(f" - - - {all(answer==v2)} - - - ")
     return stats_dict
 

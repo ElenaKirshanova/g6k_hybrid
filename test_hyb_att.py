@@ -381,6 +381,7 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
             "correct_guess_time_alg2": tracer["correct_guess_time_alg2"],
             "walltime_observed": perf_counter() - ex_timer, 
         }
+        print(f"walltime: {tracer["walltime"]} | walltime_observed: {tracer["walltime_observed"]}")
 
         print(f" - - - {all(answer==v2)} after {guess_cntr} guesses - - - ")
     return stats_dict
