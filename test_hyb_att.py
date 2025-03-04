@@ -368,8 +368,11 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
                 print(f"Success in experiment! @{guess_cntr} guess")
                 break
         fail_reason = "other" if guess_cntr<1 else "parasites"
+        a0, a1 = tracer["wrong_guess_time_alg3"] , tracer["wrong_guess_time_alg2"]
+        print(f"a0, a1: {a0,a1}")
+        walltime, walltime_observed = tracer["wrong_guess_time_alg3"] + tracer["wrong_guess_time_alg2"], perf_counter() - ex_timer
         stats_dict[(n,lat_index, n_slicer_coord, n_guess_coord, ex_cntr)] = {
-            "walltime": tracer["wrong_guess_time_alg3"] + tracer["wrong_guess_time_alg2"],
+            "walltime": walltime,
             "dist_bnd": dist_bnd, 
             "succ": all(sli_succ),
             "fail_reason": None if all(sli_succ) else fail_reason,
@@ -379,8 +382,9 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
             "correct_guess_time_alg3": tracer["correct_guess_time_alg3"],
             "wrong_guess_time_alg2": tracer["wrong_guess_time_alg2"],
             "correct_guess_time_alg2": tracer["correct_guess_time_alg2"],
-            "walltime_observed": perf_counter() - ex_timer, 
+            "walltime_observed": walltime_observed, 
         }
+        print(f"walltime: {walltime} | walltime_observed: {walltime_observed}")
 
         print(f" - - - {all(answer==v2)} after {guess_cntr} guesses - - - ")
     return stats_dict

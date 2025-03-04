@@ -168,8 +168,11 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
                         print(f"Success in experiment! @{guess_cntr} guess")
                         break
                 fail_reason = "other" if guess_cntr<1 else "parasites"
+                a0, a1 = tracer["wrong_guess_time_alg3"] , tracer["wrong_guess_time_alg2"]
+                print(f"a0, a1: {a0,a1}")
+                walltime, walltime_observed = tracer["wrong_guess_time_alg3"] + tracer["wrong_guess_time_alg2"], perf_counter() - ex_timer
                 stats_dict[(n, lat_index, beta, n_slicer_coord, n_guess_coord, ex_cntr)] = {
-                    "walltime": tracer["wrong_guess_time_alg3"] + tracer["wrong_guess_time_alg2"],
+                    "walltime": walltime,
                     "dist_bnd": dist_bnd, 
                     "succ": sli_succ,
                     "fail_reason": None if sli_succ else fail_reason,
@@ -180,11 +183,12 @@ def run_experiment(lat_index, params, stats_dict, bkz_beta_range=None, delta_sli
                     "correct_guess_time_alg3": tracer["correct_guess_time_alg3"],
                     "wrong_guess_time_alg2": tracer["wrong_guess_time_alg2"],
                     "correct_guess_time_alg2": tracer["correct_guess_time_alg2"],
-                    "walltime_observed": perf_counter() - ex_timer, 
+                    "walltime_observed": walltime_observed, 
                     "overhead_tbkz": overhead_tbkz,
                     "overhead_tsieve": overhead_tsieve,
                 }
-
+                
+                print(f"walltime: {walltime} | walltime_observed: {walltime_observed}")
                 print(f" - - - {all(answer==v2)} - - - ")
     return stats_dict
 
@@ -200,8 +204,8 @@ if __name__=="__main__":
     latnum = 2
     n_guess_coord, n_slicer_coord = 4, 53
     # bkz_beta_range = range(n_slicer_coord-1,n_slicer_coord+4) #range of values of beta or None if no additional reduction to be performed
-    bkz_beta_range = range(52,54) #range(60,62,1)
-    delta_slicer_coord = 2 #integer >=0, n_slicer_coord + delta_slicer_coord will be the slicer dimension
+    bkz_beta_range = range(45,46) #range(60,62,1) range(52,54)
+    delta_slicer_coord = 8 #integer >=0, n_slicer_coord + delta_slicer_coord will be the slicer dimension
     nthreads = 5
     nworkers = 3
 

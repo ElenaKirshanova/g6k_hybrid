@@ -234,7 +234,7 @@ def alg_3(g6k,B,H11,t,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads=1, tracer_al
 def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THREADS, tracer_alg2=None ): #this works
     # raise NotImplementedError
     if not tracer_alg2 is None:
-        tracer_alg2["walltime"] = time.perf_counter()
+        startt = time.perf_counter()
     sieve_dim = g6k.r-g6k.l #n_slicer_coord
     print(f"in alg2 sieve_dim={sieve_dim}", flush=True)
 
@@ -324,7 +324,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
             min_norm_err_sq = diff_nrm_sq
             best_bab_01 = bab_01
             if not tracer_alg2 is None:
-                tracer_alg2["walltime"] = time.perf_counter() - tracer_alg2["walltime"]
+                tracer_alg2["walltime"] = time.perf_counter() - startt
                 tracer_alg2["len(target_candidates)"] = len(target_candidates)
                 tracer_alg2["nrand"] = nrand
             yield best_bab_01
