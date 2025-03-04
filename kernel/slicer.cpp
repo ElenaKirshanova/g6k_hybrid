@@ -525,6 +525,6 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
         }
         it++;
     }
-    if(verbose) std::cerr << "Couldn't saturate " << MAX_SLICER_ITERS << " iterations" << std::endl;
+    if(verbose) std::cerr << "Couldn't saturate after" << MAX_SLICER_ITERS << " iterations" << std::endl;
     return false;
 }

@@ -16,15 +16,15 @@ if __name__ == "__main__":
     slicer_interations = 250
     norm_slack = 1.01      #terminate slicer if norm_slack*||e_projected|| is found
     approx_factor = 0.9
-    nrand_param = 5
+    nrand_param = 20
     nthreads = 1
     nexp = 10
     verbose = False
-    slicer_verbosity = True
+    slicer_verbosity = False
 
 
     FPLLL.set_precision(200)
-    n, betamax, sieve_dim = 128, 53, 70
+    n, betamax, sieve_dim = 66, 53, 66
     ft = "ld" if n<90 else ( "dd" if config.have_qd else "mpfr")
     # - - - try load a lattice - - -
     filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
@@ -37,7 +37,7 @@ if __name__ == "__main__":
         G = g6k.M
         B = G.B
         nothing_to_load = False
-        if verbose: print(f"Load seems to succseed...")
+        if verbose: print(f"Load seems to succeed...")
     except Exception as excpt:
         print(excpt)
         pass
@@ -201,7 +201,7 @@ if __name__ == "__main__":
             slicer.set_proj_error_bound(norm_slack*(e_@e_))
             slicer.set_max_slicer_interations(slicer_interations)
             slicer.set_Nt(1)
-            slicer.set_saturation_scalar(1.12)  #TODO: should be taken from global_constants
+            slicer.set_saturation_scalar(1.05)
 
             then = time.perf_counter()
             slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], slicer_verbosity)
@@ -240,7 +240,7 @@ if __name__ == "__main__":
             if verbose: print(f"Success: {(succ)}")
             if succ:
                 nsli_succ+=1
-            if verbose: print(f"both succeded: {succ and succbab}", flush=True)
+            if verbose: print(f"both succeeded: {succ and succbab}", flush=True)
         print(f"nbab_succ, nsli_succ: {nbab_succ,nsli_succ+nbab_succ} out of {nexp}")
         if verbose: print(f"es_: {sorted(es_)}")
         if verbose: print(f"MEAN: {np.mean(runtimes)}")
