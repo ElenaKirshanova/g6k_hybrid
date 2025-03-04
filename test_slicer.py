@@ -241,7 +241,7 @@ if __name__ == "__main__":
             if succ:
                 nsli_succ+=1
             if verbose: print(f"both succeeded: {succ and succbab}", flush=True)
-        print(f"nbab_succ, nsli_succ: {nbab_succ,nsli_succ+nbab_succ} out of {nexp}")
         if verbose: print(f"es_: {sorted(es_)}")
         if verbose: print(f"MEAN: {np.mean(runtimes)}")
         if verbose: print(runtimes)
+    print(f"nbab_succ, nsli_succ: {nbab_succ,nsli_succ+nbab_succ} out of {nexp}")
