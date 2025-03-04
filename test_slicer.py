@@ -201,7 +201,7 @@ if __name__ == "__main__":
             slicer.set_proj_error_bound(norm_slack*(e_@e_))
             slicer.set_max_slicer_interations(slicer_interations)
             slicer.set_Nt(1)
-            slicer.set_saturation_scalar(1.12)
+            slicer.set_saturation_scalar(1.12)  #TODO: should be taken from global_constants
 
             then = time.perf_counter()
             slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], slicer_verbosity)
