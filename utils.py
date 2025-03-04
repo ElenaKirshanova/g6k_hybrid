@@ -203,6 +203,25 @@ def test_vect_proj( G, n_slicer_coord, n_tests, eta=3 ):
         lens.append(lv_)
     return(lens)
 
-# def proj_percentile_is_leq(G, n_slicer_coord, n_tests, perc=50, threshold=0.95, eta=3):
-#     l = test_vect_proj( G, n_slicer_coord, n_tests, eta )
-#     return np.percentile( l,perc ) <= threshold
+def dist_babai(G, t):
+    #Given GSO object G, returns distance between t and G.babai(t).
+    cv = G.babai( t )
+    v = np.array( G.B.multiply_left( cv ) )
+    dist = (t-v)
+    dist = (dist@dist)**0.5
+    return dist
+
+def find_vect_in_list(v,l,tolerance=1.0e-6):
+    assert len(v) == len(l[0]), f"Shapes do not allign! {len(v)} vs. {len(l[0])}"
+    mindiff = float("inf")
+    # print(f"debug v: {v}")
+    for i in range(len(l)):
+        # print(f"debug ti: {l[i]}")
+        tmp = np.abs( np.array(v)-np.array(l[i]) )
+        # print(f"tmp: {tmp}")
+        mindiff = min( mindiff, max(tmp) )
+        if (mindiff<tolerance):
+            # print(f"mindiff: {mindiff}")
+            return i
+    print(f"FAIL mindiff: {mindiff}")
+    return None

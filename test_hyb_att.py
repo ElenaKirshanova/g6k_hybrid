@@ -86,8 +86,6 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
     nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord ) )
     print(f"nsampl: {nsampl}")
     tracer_alg3["key_num"] = nsampl
-    target_candidates = []
-    vtilde2s = []
 
     H12 = IntegerMatrix.from_matrix( [list(b)[:dim-n_guess_coord] for b in B[dim-n_guess_coord:]] )
     sieve_dim = g6k.r-g6k.l
@@ -95,61 +93,14 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
     from hybrid_estimator.batchCVP import batchCVPP_cost
     nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
     nrand = ceil(NRAND_FACTOR*(1./nrand_)**sieve_dim)
-    nrand = ceil(NRAND_FACTOR*(1./nrand_)**sieve_dim)
     print(f"times: {ceil( len(g6k) / nrand )}")
     times = ceil( len(g6k) / nrand )
 
     tracer_alg2_correct, tracer_alg2_wrong = {}, {}
-    # - - - BEGIN CORRECT GUESS - - -
-    correct_guess_time = time.perf_counter()
-
-    tracer_alg2_correct, tracer_alg2_wrong = {}, {}
-    # - - - BEGIN CORRECT GUESS - - -
-    correct_guess_time = time.perf_counter()
-    for times in range(times): #Alg 3 steps 4-7 ceil( (nrand * nsampl) / len(g6k) )
-        if times!=0 and times%1000 == 0:
-            print(f"{times} done out of {nsampl}", end=", ")
-        if times>0:
-            etilde2 = np.array( distrib.sample( n_guess_coord ) ) #= (0 | e2)
-        else:
-            etilde2 = np.array(-s[-n_guess_coord:])
-        vtilde2 = np.array(t2)-etilde2
-        vtilde2s.append( vtilde2  )
-        #compute H12*H22^-1 * vtilde2 = H12*vtilde2 since H22 is identity
-        tmp = np.array( H12.multiply_left(vtilde2) )
-        # print(f"vtilde2 babai norm: {(vtilde2@vtilde2)**0.5}")
-        # print(f"tmp babai norm: {(tmp@tmp)**0.5}")
-
-        t1_ = np.array( list(t1) ) - tmp
-        target_candidates.append( t1_ )
-    print()
-
-    """
-    We return (if we succeed) (-s,e)[dim-kappa-betamax:dim-kappa] to avoid fp errors.
-    """
-    #TODO: deduce what is the betamax
-    # def of alg_2_batched is in hyb_att_on_kyber.py
-    ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg2_correct )
-
-    v1 = np.array( H11.multiply_left( ctilde1 ) )
-    argminv_correct = None
-    minv = 10**12
-    cntr = 0
-    for vtilde2 in vtilde2s:       
-        v2 = np.concatenate( [(dim-n_guess_coord)*[0],vtilde2] )
-        babshift = np.concatenate( [ np.array( H12.multiply_left(vtilde2) ), n_guess_coord*[0] ] )
-        v = np.concatenate([v1,n_guess_coord*[0]]) + v2 + babshift
-
-        v_t = v-np.array( target )
-        vv = v_t@v_t
-        if vv < minv:
-            minv = vv
-            argminv_correct = v
-        cntr+=1
-
-    correct_guess_time = time.perf_counter() - correct_guess_time
-    # - - - END CORRECT GUESS - - -
     # - - - BEGIN INCORRECT GUESS - - -
+    wrong_guess_time_alg3 = time.perf_counter()
+    target_candidates = []
+    vtilde2s = []
     wrong_guess_time = time.perf_counter()
     for times in range(times): #Alg 3 steps 4-7 ceil( (nrand * nsampl) / len(g6k) )
         if times!=0 and times%1000 == 0:
@@ -160,10 +111,7 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
             etilde2 = np.array( distrib.sample( n_guess_coord ) )
         vtilde2 = np.array(t2)-etilde2
         vtilde2s.append( vtilde2  )
-        #compute H12*H22^-1 * vtilde2 = H12*vtilde2 since H22 is identity
         tmp = np.array( H12.multiply_left(vtilde2) )
-        # print(f"vtilde2 babai norm: {(vtilde2@vtilde2)**0.5}")
-        # print(f"tmp babai norm: {(tmp@tmp)**0.5}")
 
         t1_ = np.array( list(t1) ) - tmp
         target_candidates.append( t1_ )
@@ -174,15 +122,18 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
     """
     #TODO: deduce what is the betamax
     # def of alg_2_batched is in hyb_att_on_kyber.py
-    ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg2_wrong )
-    # def of alg_2_batched is in hyb_att_on_kyber.py
-    ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg2_wrong )
+    print(f"- - - alg 2 on incorrect guess - - -")
+    # ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg2_wrong )
+    it = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg2_wrong )
+    ctilde1 = np.zeros( dim-n_guess_coord )
+    for ctilde1 in it: #what's returned is not quite relevant. The guess is wrong by design.
+        break
 
     v1 = np.array( H11.multiply_left( ctilde1 ) )
     argminv = None
     minv = 10**12
     cntr = 0
-    for vtilde2 in vtilde2s:       
+    for vtilde2 in vtilde2s:
         v2 = np.concatenate( [(dim-n_guess_coord)*[0],vtilde2] )
         babshift = np.concatenate( [ np.array( H12.multiply_left(vtilde2) ), n_guess_coord*[0] ] )
         v = np.concatenate([v1,n_guess_coord*[0]]) + v2 + babshift
@@ -194,39 +145,76 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
             argminv = v
         cntr+=1
     wrong_guess_time = time.perf_counter() - wrong_guess_time
+    wrong_guess_time_alg3 = time.perf_counter() - wrong_guess_time_alg3
     # - - - END INCORRECT GUESS - - -
-    if not tracer_alg3 is None:
-        tracer_alg3["wrong_guess_time_alg3"] = wrong_guess_time
-        tracer_alg3["correct_guess_time_alg3"] = correct_guess_time
-        tracer_alg3["wrong_guess_time_alg2"] = tracer_alg2_wrong["walltime"]
-        tracer_alg3["correct_guess_time_alg2"] = tracer_alg2_correct["walltime"]
+    if not tracer_alg3 is None: #this belongs here since this point is always reached
+                    tracer_alg3["wrong_guess_time_alg3"] = wrong_guess_time
+                    tracer_alg3["wrong_guess_time_alg2"] = tracer_alg2_wrong["walltime"]
+    # - - - BEGIN CORRECT GUESS - - -
+    target_candidates = []
+    vtilde2s = []
+    correct_guess_time_start = time.perf_counter()
+    for times in range(times): #Alg 3 steps 4-7 ceil( (nrand * nsampl) / len(g6k) )
+        if times!=0 and times%1000 == 0:
+            print(f"{times} done out of {nsampl}", end=", ")
+        if times>0:
+            etilde2 = np.array( distrib.sample( n_guess_coord ) ) #= (0 | e2)
+        else:
+            etilde2 = np.array(-s[-n_guess_coord:])
+        vtilde2 = np.array(t2)-etilde2
+        vtilde2s.append( vtilde2  )
+        tmp = np.array( H12.multiply_left(vtilde2) )
 
-    return argminv_correct
+        t1_ = np.array( list(t1) ) - tmp
+        target_candidates.append( t1_ )
+    print()
 
-def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
-    # Emulates batch CVPP with guessing.
-    wrong_guess_time = time.perf_counter() - wrong_guess_time
-    # - - - END INCORRECT GUESS - - -
-    if not tracer_alg3 is None:
-        tracer_alg3["wrong_guess_time_alg3"] = wrong_guess_time
-        tracer_alg3["correct_guess_time_alg3"] = correct_guess_time
-        tracer_alg3["wrong_guess_time_alg2"] = tracer_alg2_wrong["walltime"]
-        tracer_alg3["correct_guess_time_alg2"] = tracer_alg2_correct["walltime"]
+    """
+    We return (if we succeed) (-s,e)[dim-kappa-betamax:dim-kappa] to avoid fp errors.
+    """
+    #TODO: deduce what is the betamax
+    # def of alg_2_batched is in hyb_att_on_kyber.py
+    print(f"- - - alg 2 on correct guess - - -")
+    it = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg2_correct )
+    if not tracer_alg3 is None: #this belongs here since we may never start the loop
+                    tracer_alg3["correct_guess_time_alg3"] = 0
+                    tracer_alg3["correct_guess_time_alg2"] = 0
+    for ctilde1 in it: #we do not quite care what it
+        v1 = np.array( H11.multiply_left( ctilde1 ) )
+        argminv_correct = None
+        minv = 10**12
+        cntr = 0
+        for vtilde2 in vtilde2s:
+            v2 = np.concatenate( [(dim-n_guess_coord)*[0],vtilde2] )
+            babshift = np.concatenate( [ np.array( H12.multiply_left(vtilde2) ), n_guess_coord*[0] ] )
+            v = np.concatenate([v1,n_guess_coord*[0]]) + v2 + babshift
 
-    return argminv_correct
+            v_t = v-np.array( target )
+            vv = v_t@v_t
+            if vv < minv:
+                minv = vv
+                argminv_correct = v
+                correct_guess_time = time.perf_counter() - correct_guess_time_start
+                if not tracer_alg3 is None: #this belongs here since we may never reach the end of yield
+                    tracer_alg3["correct_guess_time_alg3"] = correct_guess_time
+                    tracer_alg3["correct_guess_time_alg2"] = tracer_alg2_correct["walltime"]
+                yield argminv_correct
+            cntr+=1
+
+    # correct_guess_time = time.perf_counter() - correct_guess_time
+    # - - - END CORRECT GUESS - - -
+
 
 def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
     # Emulates batch CVPP with guessing.
     # - - - prepare targets - - -
     then_start = perf_counter()
     gh_sub = gaussian_heuristic(g6k.M.r()[-(g6k.r-g6k.l):])
-    gh_sub = gaussian_heuristic(g6k.M.r()[-(g6k.r-g6k.l):])
     dim = B.nrows
     print(f"dim: {dim}")
 
     t1, t2 = target[:-n_guess_coord], target[-n_guess_coord:]
     distrib = centeredBinomial(eta)
-    #TODO: make/(check if is) practical
     #TODO: make/(check if is) practical
     nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord ) )
     print(f"nsampl: {nsampl}")
@@ -242,9 +230,6 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
     print(f"times: {ceil( len(g6k) / nrand )}")
     sieve_dim = g6k.r-g6k.l
 
-    from hybrid_estimator.batchCVP import batchCVPP_cost
-    nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
-    nrand = ceil(NRAND_FACTOR*(1./nrand_)**sieve_dim)
     print(f"times: {ceil( len(g6k) / nrand )}")
     for times in [0]: #Alg 3 steps 4-7 ceil( (nrand * nsampl) / len(g6k) )
         if times!=0 and times%1000 == 0:
@@ -259,8 +244,6 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
         tmp = np.array( H12.multiply_left(vtilde2) )
         print(f"vtilde2 babai norm: {(vtilde2@vtilde2)**0.5}")
         print(f"tmp babai norm: {(tmp@tmp)**0.5}")
-        print(f"vtilde2 babai norm: {(vtilde2@vtilde2)**0.5}")
-        print(f"tmp babai norm: {(tmp@tmp)**0.5}")
 
         t1_ = np.array( list(t1) ) - tmp
         if not tracer_alg3 is None:
@@ -271,25 +254,19 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
     """
     We return (if we succeed) (-s,e)[dim-kappa-betamax:dim-kappa] to avoid fp errors.
     """
-    """
-    We return (if we succeed) (-s,e)[dim-kappa-betamax:dim-kappa] to avoid fp errors.
-    """
     #TODO: deduce what is the betamax
-    # def of alg_2_batched is in hyb_att_on_kyber.py
-    ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg3 )
     # def of alg_2_batched is in hyb_att_on_kyber.py
     ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg3 )
 
     v1 = np.array( H11.multiply_left( ctilde1 ) )
     argminv = None
     minv = 10**12
-    cntr = 0      
-    for vtilde2 in vtilde2s:       
+    cntr = 0
+    for vtilde2 in vtilde2s:
         v2 = np.concatenate( [(dim-n_guess_coord)*[0],vtilde2] )
         babshift = np.concatenate( [ np.array( H12.multiply_left(vtilde2) ), n_guess_coord*[0] ] )
         v = np.concatenate([v1,n_guess_coord*[0]]) + v2 + babshift
 
-        v_t = v-np.array( target )
         v_t = v-np.array( target )
         vv = v_t@v_t
         if vv < minv:
@@ -315,7 +292,7 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
     A, _, _, _, bse = load_lwe(n,q,eta,k,lat_index)
 
     # we don't store the whole lattice basis Binit since it is fairly large for github
-    Binit = [ [int(0) for i in range(2*k*n)] for j in range(2*k*n) ] 
+    Binit = [ [int(0) for i in range(2*k*n)] for j in range(2*k*n) ]
     for i in range( k*n ):
         Binit[i][i] = int( q )
     for i in range(k*n, 2*k*n):
@@ -326,32 +303,22 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
 
     then = perf_counter()
     #restore precomputed g6k and initialize it
-    g6k = Siever.restore_from_file( out_path + filename_g6kdump ) 
-    # g6k.initialize_local(g6k.M.d-n_slicer_coord, g6k.M.d-n_slicer_coord, g6k.M.d)
-    # g6k.initialize_local(g6k.M.d-n_slicer_coord, g6k.M.d-n_slicer_coord, g6k.M.d)
+    g6k = Siever.restore_from_file( out_path + filename_g6kdump )
     # Needed to ensure that all locals are correct.
     # Ideally, already done.
     param_sieve = SieverParams()
     param_sieve['threads'] = nthreads
     param_sieve['otf_lift'] = False
     g6k.params = param_sieve
-    H11 = g6k.M.B 
-
-    param_sieve = SieverParams()
-    param_sieve['threads'] = nthreads
-    param_sieve['otf_lift'] = False
-    g6k.params = param_sieve
-    H11 = g6k.M.B 
+    H11 = g6k.M.B
 
     G = g6k.M #the GSO obj. for first k*n-kappa vectors.
     # Gaussian heuristic for the last sieve_dim dimensioal projective lattice of G.
-    # ALL {from/to}_canonical_scaled calls must use scale_fact=gh_sub, or things will go out of hand.
     # ALL {from/to}_canonical_scaled calls must use scale_fact=gh_sub, or things will go out of hand.
     gh_sub = gaussian_heuristic(G.r()[-n_slicer_coord:])
 
     for (b, s, e) in bse:
         ex_cntr+=1
-        print(f"running exp # {ex_cntr} out of {len(bse)} lat ind: {lat_index}")
         print(f"running exp # {ex_cntr} out of {len(bse)} lat ind: {lat_index}")
         ex_timer = perf_counter()
         assert ( all( (s@A+e)%q == b ) ), f"wrong lwe instance! {(A@s+e)%q , b}"
@@ -380,64 +347,60 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
 
         # no guessing version of alg_3
         # project the error vector onto the last n_sieve_dim GS-vectors.
-        tracer = {}
         # v = alg_3_debug(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
-        v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
-        print(f"e_: {e_}")
-
-        # project the error vector onto the last n_sieve_dim GS-vectors.
         tracer = {}
-        # v = alg_3_debug(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
-        v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
-        print(f"e_: {e_}")
+        iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
+        guess_cntr = 0
+        for v in iter_v:
+            if v is None:
+                v = np.array( len(answer)*[0] )
+            guess_cntr+=1
+            # print(f"v: {v}")
+            # print(f"vs: {answer}")
+            print(f" - - - - - - ")
 
-        if v is None:
-            v = np.array( len(answer)*[0] )
-        print(f"v: {v}")
-        print(f"vs: {answer}")
-        print(f" - - - - - - ")
+            v2 = v
 
-        v2 = v
-
-        sli_succ = answer==v2
-        print(f"slicer:\n {sli_succ}")
-        if all(sli_succ):
-            succ_cntr+=1
+            sli_succ = answer==v2
+            # print(f"slicer:\n {sli_succ}")
+            if all(sli_succ):
+                succ_cntr+=1
+                print(f"Success in experiment! @{guess_cntr} guess")
+                break
+        fail_reason = "other" if guess_cntr<1 else "parasites"
+        a0, a1 = tracer["wrong_guess_time_alg3"] , tracer["wrong_guess_time_alg2"]
+        print(f"a0, a1: {a0,a1}")
+        walltime, walltime_observed = tracer["wrong_guess_time_alg3"] + tracer["wrong_guess_time_alg2"], perf_counter() - ex_timer
         stats_dict[(n,lat_index, n_slicer_coord, n_guess_coord, ex_cntr)] = {
-            "walltime": tracer["wrong_guess_time_alg3"] + tracer["wrong_guess_time_alg2"],
-            "walltime": tracer["wrong_guess_time_alg3"] + tracer["wrong_guess_time_alg2"],
-            "dist_bnd": dist_bnd, 
+            "walltime": walltime,
+            "dist_bnd": dist_bnd,
             "succ": all(sli_succ),
-            "key_num": 0, #number of guessed keys
+            "fail_reason": None if all(sli_succ) else fail_reason,
+            "key_num": tracer["key_num"], #number of guessed keys
+            "g6k_len": len(g6k),
             "wrong_guess_time_alg3": tracer["wrong_guess_time_alg3"],
             "correct_guess_time_alg3": tracer["correct_guess_time_alg3"],
             "wrong_guess_time_alg2": tracer["wrong_guess_time_alg2"],
             "correct_guess_time_alg2": tracer["correct_guess_time_alg2"],
-            "walltime_observed": perf_counter() - ex_timer, 
-            "key_num": 0, #number of guessed keys
-            "wrong_guess_time_alg3": tracer["wrong_guess_time_alg3"],
-            "correct_guess_time_alg3": tracer["correct_guess_time_alg3"],
-            "wrong_guess_time_alg2": tracer["wrong_guess_time_alg2"],
-            "correct_guess_time_alg2": tracer["correct_guess_time_alg2"],
-            "walltime_observed": perf_counter() - ex_timer, 
+            "walltime_observed": walltime_observed,
         }
+        print(f"walltime: {walltime} | walltime_observed: {walltime_observed}")
 
-        print(f" - - - {all(answer==v2)} - - - ")
+        print(f" - - - {all(answer==v2)} after {guess_cntr} guesses - - - ")
     return stats_dict
 
 if __name__=="__main__":
     """
     This file implements the hybrid attack on preprocessed Kyber instances.
     To generate ones, one needs to run attack_on_kyber.py (generating instances), run
-    preprocessing.py (preprocess the data) and then run this file. 
+    preprocessing.py (preprocess the data) and then run this file.
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
-    n, k = 170, 1
+    n, k = 144, 1
     q, eta = 3329, 3
-    latnum = 10
-    n_guess_coord, n_slicer_coord = 6, 88
+    n_guess_coord, n_slicer_coord = 5, 70
     nthreads = 5
-    nworkers = 5
+    nworkers = 2
     latnum = 10
 
     params={}
@@ -456,14 +419,14 @@ if __name__=="__main__":
         tasks.append( pool.apply_async(
             run_experiment, (lat_index, params, output[lat_index])
             ) )
-        
+
     stats_dict_agr = {}
     for t in tasks:
             stats_dict_agr.update(t.get())
 
-    # print(ex_cntr, succ_cntr)
     print(stats_dict_agr)
-
-    with open(f"tha_{n}_{n_guess_coord}_{n_slicer_coord}.pkl", "wb") as file:
+    filename = f"tha_{n}_{n_guess_coord}_{n_slicer_coord}.pkl"
+    print(f"Saving to {filename}")
+    with open(filename, "wb") as file:
         pickle.dump( stats_dict_agr, file )
     pool.close()

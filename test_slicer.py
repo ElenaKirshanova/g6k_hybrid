@@ -15,13 +15,16 @@ if __name__ == "__main__":
 
     slicer_interations = 250
     norm_slack = 1.01      #terminate slicer if norm_slack*||e_projected|| is found
-    approx_factor = 0.95
-    nrand_param = 5
-    nthreads = 5
-    nexp = 25
+    approx_factor = 0.9
+    nrand_param = 20
+    nthreads = 1
+    nexp = 10
+    verbose = False
+    slicer_verbosity = False
+
 
     FPLLL.set_precision(200)
-    n, betamax, sieve_dim = 55, 50, 55
+    n, betamax, sieve_dim = 66, 53, 66
     ft = "ld" if n<90 else ( "dd" if config.have_qd else "mpfr")
     # - - - try load a lattice - - -
     filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
@@ -34,7 +37,7 @@ if __name__ == "__main__":
         G = g6k.M
         B = G.B
         nothing_to_load = False
-        print(f"Load seems to succseed...")
+        if verbose: print(f"Load seems to succeed...")
     except Exception as excpt:
         print(excpt)
         pass
@@ -42,14 +45,14 @@ if __name__ == "__main__":
 
     # - - - Make all fpylll objects - - -
     if nothing_to_load:
-        print(f"Nothing to load. Computing")
+        if verbose: print(f"Nothing to load. Computing")
         B = IntegerMatrix(n,n)
         B.randomize("qary", k=n//2, bits=11.705)
         G = GSO.Mat(B, float_type=ft)
         G.update_gso()
 
-        if sieve_dim<30: print("Slicer is not implemented on dim < 30")
-        if sieve_dim<40: print("LSH won't work on dim < 40")
+        if sieve_dim<30: print("Slicer is not implemented on dim < 30") #TODO: change to warning
+        if sieve_dim<40: print("LSH won't work on dim < 40") #TODO: change to warning
 
         lll = LLL.Reduction(G)
         lll()
@@ -59,7 +62,7 @@ if __name__ == "__main__":
             then_round=time.perf_counter()
             bkz.BKZ(beta,tours=5)
             round_time = time.perf_counter()-then_round
-            print(f"BKZ-{beta} done in {round_time}")
+            if verbose: print(f"BKZ-{beta} done in {round_time}")
             sys.stdout.flush()
 
         int_type = bkz.gso.B.int_type
@@ -71,20 +74,20 @@ if __name__ == "__main__":
         g6k = Siever(G)
         g6k.params = param_sieve
         g6k.initialize_local(n-sieve_dim,n-sieve_dim,n)
-        print("Running bdgl2...")
+        if verbose: print("Running bdgl2...")
         then = time.perf_counter()
         g6k(alg="bdgl2")
-        print(f"siever done in {time.perf_counter()-then}")
+        if verbose: print(f"siever done in {time.perf_counter()-then}")
         g6k.M.update_gso()
         # filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
         g6k.dump_on_disk( filename )
     # - - - end Make all fpylll objects - - -
     gh = min( [G.r()[0], gaussian_heuristic(G.r())] )
     gh_sub = gaussian_heuristic(G.r()[-sieve_dim:]) #min( [G.r()[-sieve_dim], gaussian_heuristic(G.r()[-sieve_dim:])] )
-    print(f"gh: {gh**0.5}, gh_sub: {gh_sub**0.5}")
+    if verbose: print(f"gh: {gh**0.5}, gh_sub: {gh_sub**0.5}")
 
 
-    print(f"dbsize: {len(g6k)}")
+    if verbose: print(f"dbsize: {len(g6k)}")
 
     nbab_succ, nsli_succ = 0, 0
     runtimes=[]
@@ -96,15 +99,15 @@ if __name__ == "__main__":
         e = np.array( random_on_sphere(n,approx_factor*gh**0.5) )
         e = np.round(e)
 
-        print(f"gauss: {gh**0.5} vs r_00: {G.get_r(0,0)**0.5} vs ||err||: {(e@e)**0.5}")
+        if verbose: print(f"gauss: {gh**0.5} vs r_00: {G.get_r(0,0)**0.5} vs ||err||: {(e@e)**0.5}")
 
         e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim,scale_fact=gh_sub) ) #,scale_fact=gh_sub
         e_llr = np.array( from_canonical_scaled(G,e,scale_fact=gh_sub) ) #,scale_fact=gh_sub
         dist_sq_bnd = e_@e_,
-        print(f"projected (e_@e_): {(e_@e_)} vs r/gh: {G.get_r(n-sieve_dim, n-sieve_dim)/gh}")
-        print("projected target squared length:", (e_@e_))
+        if verbose: print(f"projected (e_@e_): {(e_@e_)} vs r/gh: {G.get_r(n-sieve_dim, n-sieve_dim)/gh}")
+        if verbose: print("projected target squared length:", (e_@e_))
 
-        print(f"e_: {e_}")
+        if verbose: print(f"e_: {e_}")
 
         b = G.B.multiply_left( c )
         b_ = np.array(b,dtype=np.int64)
@@ -152,15 +155,15 @@ if __name__ == "__main__":
 
         bab_01=np.array( bab_0+bab_1 )
         succbab = all(c==bab_01)
-        print(f"Babai Success: {succbab}")
+        if verbose: print(f"Babai Success: {succbab}")
         # - - - end prelim check - - -
         # - - - extra check - - -
         bab_t = np.array( g6k.M.babai(t) )
         #print(f"Coeffs of b found: {(c==bab_t)}")
         succ = all(c==bab_t)
-        print(f"Final Babai Success: {succ}")
+        if verbose: print(f"Final Babai Success: {succ}")
         if succ:
-            print(f"t_gs_reduced: {t_gs_reduced}")
+            if verbose: print(f"t_gs_reduced: {t_gs_reduced}")
             nbab_succ+=1
         # else:
         #     print(c==bab_t)
@@ -175,13 +178,13 @@ if __name__ == "__main__":
             slicer = RandomizedSlicer(g6k)
             slicer.set_nthreads(2)
 
-            print("target:", [float(tt) for tt in t_gs_reduced])
-            print("dbsize", g6k.db_size())
+            if verbose: print("target:", [float(tt) for tt in t_gs_reduced])
+            if verbose: print("dbsize", g6k.db_size())
 
             nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
             nrand = ceil(nrand_param*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
             # nrand = 6000
-            print(f"nrand:{nrand}")
+            if verbose: print(f"nrand:{nrand}")
             slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=1100)
 
             blocks = 2 # should be the same as in siever
@@ -196,18 +199,19 @@ if __name__ == "__main__":
             #print("blocks: ", blocks, " buckets: ", buckets )
 
             slicer.set_proj_error_bound(norm_slack*(e_@e_))
-            # slicer.set_lifted_error_bound(1.01*(e_@e_))
             slicer.set_max_slicer_interations(slicer_interations)
+            slicer.set_Nt(1)
+            slicer.set_saturation_scalar(1.05)
 
             then = time.perf_counter()
-            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False)
+            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], slicer_verbosity)
             endtime = time.perf_counter()-then
-            print(f"slicer w. nthreads: {nthreads} done in {endtime}")
+            if verbose: print(f"slicer w. nthreads: {nthreads} done in {endtime}")
             runtimes.append( endtime )
 
             iterator = slicer.itervalues_cdb_t()
             out_gs_reduced = None
-            for tmp in iterator:
+            for tmp, _ in iterator:
                 out_gs_reduced = np.array(tmp)  #cdb[0]
                 break
             assert not( out_gs_reduced is None ), "itervalues_cdb_t is empty"
@@ -226,18 +230,18 @@ if __name__ == "__main__":
 
             # - - - Check - - - -
             # print(f"e_: {e_}")
-            print(f"e_llr: {e_llr}")
-            print(f"out_gs_reduced-e_llr[-sieve_dim:]: {np.concatenate( [out_gs_reduced] ) - e_llr[-sieve_dim:]}")
-            print(f"|e_|: {(e_@e_)**0.5} vs. {G.get_r(n-sieve_dim, n-sieve_dim)**0.5/gh_sub}")
+            if verbose: print(f"e_llr: {e_llr}")
+            if verbose: print(f"out_gs_reduced-e_llr[-sieve_dim:]: {np.concatenate( [out_gs_reduced] ) - e_llr[-sieve_dim:]}")
+            if verbose: print(f"|e_|: {(e_@e_)**0.5} vs. {G.get_r(n-sieve_dim, n-sieve_dim)**0.5/gh_sub}")
             es_.append((e_@e_)**0.5)
 
             succ = all(c==bab_01)
-            print(f"{c==bab_01}")
-            print(f"Success: {(succ)}")
+            if verbose: print(f"{c==bab_01}")
+            if verbose: print(f"Success: {(succ)}")
             if succ:
                 nsli_succ+=1
-            print(f"both succeded: {succ and succbab}", flush=True)
-        print(f"nbab_succ, nsli_succ: {nbab_succ,nsli_succ+nbab_succ} out of {nexp}")
-        print(f"es_: {sorted(es_)}")
-        print(f"MEAN: {np.mean(runtimes)}")
-        print(runtimes)
+            if verbose: print(f"both succeeded: {succ and succbab}", flush=True)
+        if verbose: print(f"es_: {sorted(es_)}")
+        if verbose: print(f"MEAN: {np.mean(runtimes)}")
+        if verbose: print(runtimes)
+    print(f"nbab_succ, nsli_succ: {nbab_succ,nsli_succ+nbab_succ} out of {nexp}")

@@ -169,7 +169,7 @@ def run_exp(g6k,ntests,approx_facts,max_slicer_interations=100, nthreads=1, nran
                         slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False)
 
                         iterator = slicer.itervalues_cdb_t()
-                        for tmp in iterator:
+                        for tmp, _ in iterator:
                             out_gs_reduced = tmp  #cdb[0]
                             break
                         out_gs = out_gs_reduced + t_gs_shift
@@ -212,10 +212,11 @@ if __name__=="__main__":
 
     n = 80
     n_slicer_coord = 60
-    betamax = 42
+    betamax = 53
 
     bits = 11.705
-    approx_facts = [ 0.4 + 0.05*i for i in range(15) ] #
+    # approx_facts = [ 0.4 + 0.05*i for i in range(15) ]
+    approx_facts = [ 0.75 + 0.05*i for i in range(5) ]
     print(approx_facts)
 
     to_be_computed = []

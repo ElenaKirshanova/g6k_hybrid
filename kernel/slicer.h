@@ -10,6 +10,7 @@ static constexpr unsigned int XPC_SLICER_SAMPLING_THRESHOLD = 75; // XPC Thresho
 static constexpr unsigned int XPC_SLICER_THRESHOLD = 96; // XPC Threshold for iterative slicer sampling
 
 #define REDUCE_DIST_MARGIN 1.008
+#define REDUCE_DIST_MARGIN_HALF 1.004
 
 #ifndef MAX_SIEVING_DIM
 #define MAX_SIEVING_DIM 128
@@ -24,7 +25,13 @@ struct Entry_t
     CompressedVector c;                     // Compressed vector (i.e. a simhash)
     UidType uid;                            // Unique identifier for collision detection (essentially a hash)
     FT len = 0.;                            // (squared) length of the vector, renormalized by the local gaussian heuristic
+    IT i;                                   // Index in Unique_entry_t
     //std::array<LFT,OTF_LIFT_HELPER_DIM> otf_helper; // auxiliary information to accelerate otf lifting of pairs, commented out for slicer
+};
+
+struct Unique_entry_t
+{
+    std::array<LFT,MAX_SIEVING_DIM> yr_o;   // Vector coos in gso basis for the input (non-randomized) target; needed for applications of the slicer (hybrid)
 };
 
 
@@ -63,12 +70,16 @@ public:
     CACHELINE_VARIABLE(std::vector<Entry_t>, db_t);             // database of targets
     CACHELINE_VARIABLE(std::vector<CompressedEntry>, cdb_t);  // compressed version, faster access and periodically sorted
     CACHELINE_VARIABLE(std::vector<CompressedEntry>, cdb_t_tmp_copy); // for sorting
+    CACHELINE_VARIABLE(std::vector<Unique_entry_t>, unique_db);  //to store unique targets
     CACHELINE_VARIABLE(rng::threadsafe_rng, rng_t);
 
     // collects various statistics about the slicer. Details about statistics collection are in statistics_slicer.hpp
     CACHELINE_VARIABLE(SlicerStatistics, statistics);
 
     unsigned int n;
+
+    unsigned int Nt = 1;  //number of unique targets
+    FT saturation_scalar = 1.1; // Nt*saturation_scalar = number of vectors of length < proj_error_bound required to terminate
     FT proj_error_bound = 0.9; //arbitrary value, expect to be set by the caller
 
     size_t MAX_SLICER_ITERS = 1000;
@@ -108,6 +119,8 @@ public:
     void set_nthreads(size_t nt){ this->threads = nt;}
     void set_proj_error_bound(FT len) {this->proj_error_bound = len;}
     void set_max_slicer_interations(size_t maxiter){this->MAX_SLICER_ITERS = maxiter;}
+    void set_Nt(unsigned int nt) {this->Nt = nt;}
+    void set_saturation_scalar(FT sat_scalar) {this->saturation_scalar = sat_scalar;}
 
     template<RecomputeSlicer what_to_recompute>
     inline void recompute_data_for_entry_t(Entry_t &e);

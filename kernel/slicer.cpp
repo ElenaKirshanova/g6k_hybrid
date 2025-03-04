@@ -120,12 +120,19 @@ void RandomizedSlicer::randomize_target_small_task(Entry_t &t)
 }
 
 void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_target){
-    //std::cout << "in grow_db"  << std::endl;
-    Entry_t input_t;
 
+    Unique_entry_t unique_input_t;
+    for(int i = 0; i < MAX_SIEVING_DIM; i++){
+        unique_input_t.yr_o[i] = t_yr[i];
+    }
+    unsigned long const Nunique = unique_db.size();
+
+
+    Entry_t input_t;
     for(int i = 0; i < MAX_SIEVING_DIM; i++){
         input_t.yr[i] = t_yr[i];
     }
+    input_t.i = Nunique;
 
     recompute_data_for_entry_t<RandomizedSlicer::RecomputeSlicer::recompute_all>(input_t);
 
@@ -146,6 +153,12 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
     db_t.resize(N);
     cdb_t.resize(N);
 
+    unique_db.reserve(Nunique+1);
+    unique_db.resize(Nunique+1);
+
+
+
+    //adding non-randomized target to db_t, cdb_t
     db_t[start] = input_t;
     CompressedEntry ce;
     ce.len = input_t.len;
@@ -153,13 +166,17 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
     ce.i = start;
     cdb_t[start] = ce;
 
+    unique_db[Nunique] = unique_input_t;
+
+
+    //randomizing target
     for( size_t i = start+1; i < N; i++)
     {
         int col = 0;
 
         Entry_t e = input_t;
 
-        for ( col = 0; col < 10; ++col)
+        for ( col = 0; col < 32; ++col)
         {
             Entry_t tmp = e;
             randomize_target_small_task(tmp);
@@ -167,6 +184,7 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
             if(!uid_hash_table_t.insert_uid(tmp.uid)) {
                 continue;
             }
+            tmp.i = Nunique;
             db_t[i] = tmp;
 
             CompressedEntry ce;
@@ -176,11 +194,10 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
             cdb_t[i] = ce;
 
             if (tmp.len < 0.99*input_t.len) std::cout << "reduced the target during randomization" << std::endl;
-
             break;
 
         }
-        if(col>=64)
+        if(col>=32)
         {
             std::cerr << "Error : All new randomizations collide." << std::endl;
             exit(1);
@@ -192,7 +209,7 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
 
 inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1, const size_t i2,  std::vector<Entry_t>& transaction_db, int64_t& write_index, LFT new_l, int8_t sign)
 {
-    if (new_l < REDUCE_DIST_MARGIN*db_t[i1].len)
+    if (REDUCE_DIST_MARGIN * new_l < db_t[i1].len)
     {
 
         std::array<LFT,MAX_SIEVING_DIM> new_yr = db_t[i1].yr;
@@ -205,6 +222,7 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
             if( index >= 0 ) {
                 Entry_t& new_entry = transaction_db[index];
                 new_entry.yr = new_yr;
+                new_entry.i = db_t[i1].i;
                 recompute_data_for_entry_t<RandomizedSlicer::RecomputeSlicer::recompute_all>(new_entry);
 
                 return 1;
@@ -244,7 +262,7 @@ bool RandomizedSlicer::slicer_replace_in_db(size_t cdb_index, Entry_t &e)
 {
     CompressedEntry &ce = cdb_t[cdb_index];
 
-    if (REDUCE_DIST_MARGIN * e.len >= ce.len)
+    if (REDUCE_DIST_MARGIN_HALF * e.len >= ce.len)  // attempt to insert e
     {
         uid_hash_table_t.erase_uid(e.uid);
         return false;
@@ -321,8 +339,6 @@ void RandomizedSlicer::slicer_bucketing(const size_t blocks, const size_t multi_
                             std::vector<uint32_t> &buckets, std::vector<atomic_size_t_wrapper> &buckets_index)
 {
     // init hash
-    //std::cout << "lsh_seed from sieve: " << this->sieve.lsh_seed << std::endl;
-    //std::cout << "n = " << n << std::endl;
     ProductLSH lsh(n, blocks, nr_buckets_aim, multi_hash, this->sieve.lsh_seed);
 
     const size_t nr_buckets = lsh.codesize;
@@ -424,11 +440,10 @@ void RandomizedSlicer::slicer_process_buckets_task(const size_t t_id,
         const size_t i_start_s = bsize_sieve*b;
         const size_t i_end_s = i_start_s + this->sieve.buckets_i[b].val;
 
-
         //B +=( (i_end - i_start) * (i_end-i_start-1)) / 2;
         for( size_t i = i_start; i < i_end; ++i )
         {
-            if (kk < .1 * S) break;
+            if (kk < .1 * S) break; //TODO: move 0.1 to constants
 
             uint32_t bi = fast_buckets_t[i];
             CompressedEntry *pce1 = &fast_cdb_t[bi];
@@ -443,7 +458,6 @@ void RandomizedSlicer::slicer_process_buckets_task(const size_t t_id,
                 uint32_t bj = fast_buckets[j];
                 if( this->sieve.is_reducible_maybe<XPC_SLICER_THRESHOLD>(cv, fast_cdb[bj].c) ) //TODO:adjust XPC_SLICER_THRESHOLD
                 {
-
                     std::pair<LFT, int> len_and_sign = reduce_to_QEntry_t( pce1, &fast_cdb[bj] );
                     //if( len_and_sign.first < 0.98*pce1->len)
                     if(len_and_sign.first < best_reduction)
@@ -481,15 +495,13 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
     std::vector<atomic_size_t_wrapper> buckets_i;
     std::vector<std::vector<QEntry>> t_queues(threads);
 
-    //TODO: assert that all input parameters are equal to those from bdgl_sieve
-
+    size_t saturation_index = Nt*saturation_scalar;
     size_t it = 0;
     while( it < MAX_SLICER_ITERS ) {
 
-        if(cdb_t[0].len<proj_error_bound){
+        if(cdb_t[saturation_index].len<proj_error_bound){
             if(verbose) {
-                std::cout << "proj_error_bound: " << proj_error_bound << std::endl;
-                std::cout << it << "-th it: solution found of norm:" << cdb_t[0].len << std::endl;
+                std::cout << "Saturated on:" << it  << "-th iteration"  << std::endl;
             }
             return true;
         }
@@ -507,11 +519,12 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
         parallel_sort_cdb();
         //std::cout << "parallel_sort_cdb finished" << std::endl;
 
-        if(it%100==0 && verbose) {
-            std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << " cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
+        if(it%10==0 && verbose) {
+            //std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << " cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
+            std::cout << "iteration " << it << " cdb_t.size() " << cdb_t.size() << std::endl;
         }
         it++;
     }
-    if(verbose) std::cerr << "Couldn't find a close vector after " << MAX_SLICER_ITERS << " iterations" << std::endl;
+    if(verbose) std::cerr << "Couldn't saturate after" << MAX_SLICER_ITERS << " iterations" << std::endl;
     return false;
 }
