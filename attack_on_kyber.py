@@ -23,7 +23,6 @@ except ImportError:
 from LatticeReduction import LatticeReduction
 
 import pickle
-# MAX_LOOPS = 2
 from global_consts import *
 
 inp_path = "lwe_instances/saved_lattices/"
@@ -195,7 +194,7 @@ def attack_on_kyber(n,q,eta,k,betapre,betamax,ntours=5,seed=[0,0],nthreads=5):
 
     for beta in range(betapre-1,min(betamax+1,BKZ_SIEVING_CROSSOVER)):    #BKZ reduce the basis
         par = BKZ.Param(beta,
-                               max_loops=MAX_LOOPS,
+                               max_loops=BKZ_MAX_LOOPS,
                                flags=flags,
                                strategies=BKZ.DEFAULT_STRATEGY
                                )
@@ -223,17 +222,15 @@ def attack_on_kyber(n,q,eta,k,betapre,betamax,ntours=5,seed=[0,0],nthreads=5):
         #we do not use LatticeReduction here since we do not neccesarily
         #want to run all the tours and can interupt after any given one.
         for beta in range(max(BKZ_SIEVING_CROSSOVER,betapre-1),betamax+1):
-            for t in range(MAX_LOOPS):
+            for cntr0 in range(MAX_LOOPS):
                 then_round=time.perf_counter()
                 pump_n_jump_bkz_tour(g6k, dummy_tracer, beta, jump=1,
                  dim4free_fun="default_dim4free_fun",
                  extra_dim4free=0,
                  pump_params={'down_sieve': False},)
                 round_time = time.perf_counter()-then_round
-
-                # print('tour ', t, ' beta:',beta,' done in:', round_time, 'slope:', basis_quality(M)["/"], 'log r00:', float( log( g6k.M.get_r(0,0),2 )/2 ), 'task_id = ', seed)
                 slope = basis_quality(M)["/"]
-                print(f"Sieve tour: {t}, beta: {beta:}, done in: {round_time : 0.4f}, slope: {slope : 0.6f}, log r00: {log( g6k.M.get_r(0,0),2 )/2 : 0.5f} task_id = {seed}", flush=True)
+                print(f"Sieve tour: {cntr0}, beta: {beta:}, done in: {round_time : 0.4f}, slope: {slope : 0.6f}, log r00: {log( g6k.M.get_r(0,0),2 )/2 : 0.5f} task_id = {seed}", flush=True)
                 sys.stdout.flush()  #flush after the BKZ call
 
                 report["time"] += round_time
@@ -259,14 +256,12 @@ if __name__ == "__main__":
             pass    #still in docker if isExists==False, for some reason folder can exist and this will throw an exception.
 
     nthreads = 2
-    nworkers = 5
-    nthreads = 2
     nworkers = 2
     lats_per_dim = 2 #10
-    inst_per_lat = 20 #10 #how many instances per A, q
+    inst_per_lat = 5 #10 #how many instances per A, q
     q, eta = 3329, 3
-    nks = [ (132+10*i,3) for i in range(1) ]
-    betapre,betamax = 32, 62
+    nks = [ (115+10*i,3) for i in range(1) ]
+    betapre,betamax = 37, 62
 
     output = []
     pool = Pool( processes = nworkers )
@@ -279,7 +274,7 @@ if __name__ == "__main__":
             n, k = nk[0], 1
             for latnum in range(lats_per_dim):
                 gen_and_dump_lwe(nk[0], q, eta,k, ntar=inst_per_lat, seed=latnum)
-    assert False
+
     if RECOMPUTE_KYBER or RECOMPUTE_INSTANCE:
         pretasks = []
         for nk in nks:
