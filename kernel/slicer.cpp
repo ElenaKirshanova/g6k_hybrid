@@ -469,9 +469,6 @@ void RandomizedSlicer::slicer_process_buckets_task(const size_t t_id,
                         best_j = j;
                         best_reduction = len_and_sign.first;
                         best_sign = len_and_sign.second;
-
-                        if (kk < .1 * S) break;
-                        kk -= threads;
                     }
 #else
                     if( len_and_sign.first < 0.98*pce1->len)
@@ -485,6 +482,8 @@ void RandomizedSlicer::slicer_process_buckets_task(const size_t t_id,
             }
 #if BEST_IN_BUCKET
             if(best_j!=-1) {
+                if (kk < .1 * S) break;
+                kk -= threads;
                 t_queue.push_back({ pce1->i, fast_cdb[fast_buckets[best_j]].i, best_reduction, (int8_t)best_sign});
             }
 #endif
@@ -530,7 +529,6 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
 
         if(it%20==0 && verbose) {
             //std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << " cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
-            std::cout << "iteration " << it << " cdb_t.size() " << cdb_t.size() << std::endl;
             dump_cdb_t(filename_cdbt, it);
         }
         it++;
