@@ -362,7 +362,7 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
 
             v2 = v
 
-            sli_succ = answer==v2
+            sli_succ = all( answer==v2 )
             # print(f"slicer:\n {sli_succ}")
             if all(sli_succ):
                 succ_cntr+=1
@@ -375,8 +375,8 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
         stats_dict[(n,lat_index, n_slicer_coord, n_guess_coord, ex_cntr)] = {
             "walltime": walltime,
             "dist_bnd": dist_bnd,
-            "succ": all(sli_succ),
-            "fail_reason": None if all(sli_succ) else fail_reason,
+            "succ": (sli_succ),
+            "fail_reason": None if (sli_succ) else fail_reason,
             "key_num": tracer["key_num"], #number of guessed keys
             "g6k_len": len(g6k),
             "wrong_guess_time_alg3": tracer["wrong_guess_time_alg3"],
