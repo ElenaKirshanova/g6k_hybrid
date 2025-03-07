@@ -235,6 +235,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
     # raise NotImplementedError
     if not tracer_alg2 is None:
         startt = time.perf_counter()
+        tracer_alg2["walltime"] = 0
     sieve_dim = g6k.r-g6k.l #n_slicer_coord
     print(f"in alg2 sieve_dim={sieve_dim}", flush=True)
 

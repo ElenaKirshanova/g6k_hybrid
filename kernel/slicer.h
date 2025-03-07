@@ -16,7 +16,7 @@ static constexpr unsigned int XPC_SLICER_THRESHOLD = 96; // XPC Threshold for it
 #define MAX_SIEVING_DIM 128
 #endif
 
-#define BEST_IN_BUCKET true
+#define BEST_IN_BUCKET false
 
 
 struct Entry_t

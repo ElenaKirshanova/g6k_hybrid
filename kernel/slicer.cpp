@@ -527,8 +527,8 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
         parallel_sort_cdb();
         //std::cout << "parallel_sort_cdb finished" << std::endl;
 
-        if(it%20==0 && verbose) {
-            //std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << " cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
+        if( (it<10) || (it%20==0) && verbose) {
+            std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << " cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
             dump_cdb_t(filename_cdbt, it);
         }
         it++;
@@ -539,7 +539,7 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
 
 bool RandomizedSlicer::dump_cdb_t(const char* filename_prefix, size_t it){
 
-    std::string filename = std::string(filename_prefix)+std::to_string(it);
+    std::string filename = std::string("./tmpdir/") + std::string(filename_prefix)+std::to_string(it);
     std::ofstream cdbt_output_file(filename);
     if(cdbt_output_file.is_open())
     {
