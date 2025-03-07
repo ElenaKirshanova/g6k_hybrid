@@ -546,6 +546,8 @@ bool RandomizedSlicer::dump_cdb_t(const char* filename_prefix, size_t it){
         const size_t S = cdb_t.size();
         for (size_t i = 0; i<S; i++) cdbt_output_file<< i << " " << cdb_t[i].len << std::endl;
         cdbt_output_file.close();
+        return true;
     }
     else std::cout << "Unable to open file" << std::endl;
+    return false;
 }
