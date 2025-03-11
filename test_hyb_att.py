@@ -387,7 +387,7 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
         }
         print(f"walltime: {walltime} | walltime_observed: {walltime_observed}")
 
-        print(f" - - - {all(answer==v2)} after {guess_cntr} guesses - - - ")
+        print(f" - - - {sli_succ} after {guess_cntr} guesses - - - ")
     return stats_dict
 
 if __name__=="__main__":
