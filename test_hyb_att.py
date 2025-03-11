@@ -364,7 +364,7 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
 
             sli_succ = all( answer==v2 )
             # print(f"slicer:\n {sli_succ}")
-            if all(sli_succ):
+            if (sli_succ):
                 succ_cntr+=1
                 print(f"Success in experiment! @{guess_cntr} guess")
                 break
