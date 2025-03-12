@@ -22,6 +22,7 @@ except ImportError:
 
 from LatticeReduction import LatticeReduction
 from experiments.lwe_gen import *
+from utils import get_filename
 
 import pickle
 from global_consts import *
@@ -54,7 +55,9 @@ def gen_and_dump_lwe(n, q, dist, dist_param,  ntar, seed=0):
     print(f"- - - n,seed={n,seed} - - - gen")
     A,q,bse= generateLWEInstances(n, q, dist, dist_param, ntar)
 
-    with open(inp_path + f"lwe_instance_{dist}_{n}_{q}_{dist_param:.04f}_{seed}", "wb") as fl:
+    filename = f"lwe_instance_{dist}_{n}_{q}_{dist_param:.04f}_{seed}"
+    # filename = get_filename(  )
+    with open(inp_path + filename, "wb") as fl:
         pickle.dump({"A": A, "q": q, "dist": dist, "dist_param":dist_param,  "bse": bse}, fl)
 
 def load_lwe(n,q,dist,dist_param,seed=0):
@@ -234,31 +237,29 @@ if __name__ == "__main__":
             pass    #still in docker if isExists==False, for some reason folder can exist and this will throw an exception.
 
     nthreads = 2
-    nworkers = 2
+    nworkers = 4
     lats_per_dim = 2 #10
     inst_per_lat = 5 #10 #how many instances per A, q
     dist, dist_param = "ternary", 1/6.
     # dist, dist_param = "binomial", 3
     q = 3329
-    nks = [ (116+10*i,3) for i in range(2) ]
-    betapre,betamax = 45, 70
+    nks = [ (125+3*i) for i in range(2) ]
+    betapre,betamax = 48, 70
 
     output = []
     pool = Pool( processes = nworkers )
     tasks = []
-    RECOMPUTE_INSTANCE = True
+    RECOMPUTE_INSTANCE = False
     RECOMPUTE_KYBER = True
     if RECOMPUTE_INSTANCE:
         print(f"Generating Kyber...")
-        for nk in nks:
-            n, k = nk[0], 1
+        for n in nks:
             for latnum in range(lats_per_dim):
-                gen_and_dump_lwe(nk[0], q, dist, dist_param, ntar=inst_per_lat, seed=latnum)
+                gen_and_dump_lwe(n, q, dist, dist_param, ntar=inst_per_lat, seed=latnum)
 
     if RECOMPUTE_KYBER or RECOMPUTE_INSTANCE:
         pretasks = []
-        for nk in nks:
-            n, k = nk[0], 1
+        for n in nks:
             for latnum in range(lats_per_dim):
                 pretasks.append( pool.apply_async(
                 prepare_kyber, (n,q,dist, dist_param,betapre,[latnum,0], nthreads)
@@ -267,13 +268,12 @@ if __name__ == "__main__":
         for t in pretasks:
             t.get()
 
-    for nk in nks:
-        n, k = nk[0], 1
+    for n in nks:
         for latnum in range(lats_per_dim):
             for tstnum in range(inst_per_lat):
                 # output.append( attack_on_kyber(nk[0],q,eta,57,70,5,[latnum,tstnum],nthreads) )
                 tasks.append( pool.apply_async(
-                    attack_on_kyber, (nk[0],q,dist,dist_param,betapre,betamax,5,[latnum,tstnum],nthreads)
+                    attack_on_kyber, (n,q,dist,dist_param,betapre,betamax,5,[latnum,tstnum],nthreads)
                     ) )
 
 

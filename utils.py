@@ -25,6 +25,67 @@ except ModuleNotFoundError:
 from global_consts import DTYPE
 
 save_folder = "./saved_lattices/"
+inp_path = "lwe_instances/saved_lattices/"
+out_path = "lwe_instances/reduced_lattices/"
+
+def get_filename(which_file,params):
+    """
+    f"lwe_instance_ternary_{n}_{q}_{dist_param:.04f}_{seed}"
+    f"kyb_preprimal_{n}_{q}_ternary_{dist_param:.04f}_{seed[0]}_{betapre}.pkl"
+    f"report_pre_{n}_{q}_ternary_{dist_param:.04f}_{seed[0]}_{betapre}.pkl"
+    f"exp{nks}_{q}_ternary_{dist_param:.04f}.pkl"
+    f'g6kdump_{n}_{q}_ternary_{dist_param:.04f}_{seed[0]}_{kappa}_{g6k.n}.pkl'
+    f"report_prehyb_{n}_{q}_ternary_{dist_param:.04f}_{k}_{seed[0]}_{kappa}_{sieve_dim_min}_{sieve_dim_max}.pkl"
+    f"tha_{n}_{q}_ternary_{dist_param:.04f}_{n_guess_coord}_{n_slicer_coord}.pkl"
+
+    f"lwe_instance_binomial_{n}_{q}_{dist_param}_{seed}"
+    f"kyb_preprimal_{n}_{q}_binomial_{dist_param}_{seed[0]}_{betapre}.pkl"
+    f"report_pre_{n}_{q}_binomial_{dist_param}_{seed[0]}_{betapre}.pkl"
+    f"exp{nks}_{q}_binomial_{dist_param}.pkl"
+    f'g6kdump_{n}_{q}_binomial_{dist_param}_{seed[0]}_{kappa}_{g6k.n}.pkl'
+    f"report_prehyb_{n}_{q}_binomial_{dist_param}_{k}_{seed[0]}_{kappa}_{sieve_dim_min}_{sieve_dim_max}.pkl"
+    f"tha_{n}_{q}_binomial_{dist_param}_{n_guess_coord}_{n_slicer_coord}.pkl"
+    """
+    dp = params["dist_param"]
+    if params["dist"] == "ternary":
+        dpstr = f"{dp:.04f}"
+    elif params["dist"] == "binomial":
+        dpstr = f"{dp}"
+    else: raise ValueError("dist should be either \"ternary\" or \"binomial\" ")
+    # params.update( {"dpstr": dpstr} )
+
+    if "lwe_instance" == which_file:
+        # raise NotImplementedError
+        n, q, seed = params["n"], params["q"], params["seed"]
+        return "lwe_instance_ternary_{n}_{q}_{dpstr}_{seed}.pkl"
+    
+    elif "kyb_preprimal" == which_file:
+        # raise NotImplementedError
+        n, q, seed, betapre, dist = params["n"], params["q"], params["seed"], params["betapre"], params["dist"]
+        return f"kyb_preprimal_{n}_{q}_{dist}_{dpstr}_{seed[0]}_{betapre}.pkl"
+    
+    elif "report_pre" == which_file:
+        # raise NotImplementedError
+        n, q, seed, betapre, dist = params["n"], params["q"], params["seed"], params["betapre"], params["dist"]
+        return f"kyb_preprimal_{n}_{q}_{dist}_{dpstr}_{seed[0]}_{betapre}.pkl"
+    
+    elif "exp" == which_file:
+        raise NotImplementedError
+    
+    elif "g6kdump" == which_file:
+        # raise NotImplementedError
+        n, q, seed, dist, kappa, n_sli_coord = params["n"], params["q"], params["seed"], params["dist"], params["kappa"], params["n_sli_coord"]
+        return f'g6kdump_{n}_{q}_{dist}_{dpstr}_{seed[0]}_{kappa}_{n_sli_coord}.pkl'
+    
+    elif "report_prehyb" == which_file:
+        # raise NotImplementedError dist["
+        n, q, dist, seed, kappa, sieve_dim_min, sieve_dim_max = dist["n"], dist["q"], dist["dist"], dist["seed"], dist["kappa"], dist["sieve_dim_min"], dist["sieve_dim_max"]
+        return f"report_prehyb_{n}_{q}_{dist}_{dpstr}_{seed[0]}_{kappa}_{sieve_dim_min}_{sieve_dim_max}.pkl"
+    
+    elif "tha" == which_file:
+        raise NotImplementedError
+
+    return 0
 
 def gsomat_copy(M):
     n,m,int_type,float_type = M.B.nrows,M.B.ncols,M.int_type,M.float_type

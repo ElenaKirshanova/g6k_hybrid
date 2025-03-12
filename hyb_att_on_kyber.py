@@ -139,7 +139,7 @@ def attacker(input_dict, n_guess_coord, sieve_dim_max, nsieves, nthreads=N_SIEVE
         for j in range(n):
             B[i][j] = int( A[i-n,j] )
 
-    g6k = Siever.restore_from_file( out_path + f'g6kdump_{n}_{q}_{dist}_{dist_param}_{k}_{seed[0]}_{kappa}_{g6k.n}.pkl' )
+    g6k = Siever.restore_from_file( out_path + f'g6kdump_{n}_{q}_{dist}_{dist_param}_{seed[0]}_{kappa}_{g6k.n}.pkl' )
     H11 = g6k.M.B
     B = IntegerMatrix.from_matrix(B)
 
@@ -148,7 +148,7 @@ def attacker(input_dict, n_guess_coord, sieve_dim_max, nsieves, nthreads=N_SIEVE
 
     for sieveid in range(nsieves):
         vec_index = 0
-        filename_siever = out_path+f'g6kdump_{n}_{q}_{dist}_{dist_param}_{k}_{seed[0]}_{kappa}_{g6k.n}.pkl'
+        filename_siever = out_path+f'g6kdump_{n}_{q}_{dist}_{dist_param}_{seed[0]}_{kappa}_{g6k.n}.pkl'
         g6k = Siever.restore_from_file(filename_siever)
         # g6k.params["nthreads"] = nthreads #readonly
         for b, s, e in bse:

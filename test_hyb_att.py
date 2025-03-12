@@ -399,11 +399,11 @@ if __name__=="__main__":
     preprocessing.py (preprocess the data) and then run this file.
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
-    n = 126
+    n = 128
     q, eta = 3329, 3
     dist, dist_param = "ternary", 1/6.
     # dist, dist_param = "binomial", 3
-    n_guess_coord, n_slicer_coord = 6, 46
+    n_guess_coord, n_slicer_coord = 6, 47
     nthreads = 5
     nworkers = 2
     latnum = 2

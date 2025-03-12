@@ -124,11 +124,11 @@ if __name__=="__main__":
     # (dimension, predicted kappa, predicted beta)
     # params = [(140, 12, 48), (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     #params = [(140, 12, 48)]#, (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
-    params = [(116+i*10, 6, 44) for i in range(2)] #for RUB server
+    params = [(125+i*3, 6, 45) for i in range(2)] #for RUB server
     # params = [(180, 6, 93)]
     # params = [(190, 7, 99)]
     # params = [(200, 7, 108)]
-    nworkers, nthreads =  10, N_SIEVE_THREADS #5 (to be changed for kyber 190, 200 !!!)
+    nworkers, nthreads =  4, N_SIEVE_THREADS #5 (to be changed for kyber 190, 200 !!!)
 
     beta_bkz_offset = 1 #bkz blocksize would surpass the predicted value by this offset
     sieve_dim_max_offset = 2 #the largest slicer will work on dim=prediceted beta + this offset
