@@ -51,23 +51,46 @@ def flatter_interface( fpylllB ):
         print("Flatter issues")
     return B
 
-def gen_and_dump_lwe(n, q, dist, dist_param,  ntar, seed=0):
+def gen_and_dump_lwe(params):
+    # n, q, dist, dist_param,  ntar, seed=0
+    n = params["n"]
+    q = params["q"]
+    ntar = params["ntar"]
+    dist = params["dist"]
+    dist_param = params["dist_param"]
+    seed = params["seed"][0]
     print(f"- - - n,seed={n,seed} - - - gen")
     A,q,bse= generateLWEInstances(n, q, dist, dist_param, ntar)
 
-    filename = f"lwe_instance_{dist}_{n}_{q}_{dist_param:.04f}_{seed}"
-    # filename = get_filename(  )
+    # filename = f"lwe_instance_{dist}_{n}_{q}_{dist_param:.04f}_{seed}"
+    filename = get_filename( "lwe_instance", params )
     with open(inp_path + filename, "wb") as fl:
         pickle.dump({"A": A, "q": q, "dist": dist, "dist_param":dist_param,  "bse": bse}, fl)
 
-def load_lwe(n,q,dist,dist_param,seed=0):
+def load_lwe(params):
+    # n,q,dist,dist_param,seed=0
+    n = params["n"]
+    q = params["q"]
+    dist = params["dist"]
+    dist_param = params["dist_param"]
+    seed = params["seed"][0]
     print(f"- - - n,seed={n,seed} - - - load")
-    with open(inp_path + f"lwe_instance_{dist}_{n}_{q}_{dist_param:.04f}_{seed}", "rb") as fl:
+    filename = f"lwe_instance_{dist}_{n}_{q}_{dist_param:.04f}_{seed}"
+    filename = get_filename( "lwe_instance", params )
+    with open(inp_path + filename, "rb") as fl:
         D = pickle.load(fl)
     A_, q_, dist, dist_param, bse_ = D["A"], D["q"], D["dist"], D["dist_param"], D["bse"]
     return A_, q_, bse_
 
-def prepare_kyber(n,q,dist,dist_param,betapre,seed=[0,0], nthreads=5): #for debug purposes
+def prepare_kyber(params): #for debug purposes
+    # n,q,dist,dist_param,betapre,seed=[0,0], nthreads=5
+    n = params["n"]
+    q = params["q"]
+    dist = params["dist"]
+    dist_param = params["dist_param"]
+    betapre = params["betapre"]
+    seed = params["seed"]
+    nthreads = params["nthreads"]
     """
     Prepares a kyber instance. Attempts to call load_lwe to load instances, then extracts
     the instanse bse[seed[1]]. If load fails, calls gen_and_dump_lwe. Then it attenmnpts to load
@@ -80,11 +103,11 @@ def prepare_kyber(n,q,dist,dist_param,betapre,seed=[0,0], nthreads=5): #for debu
     }
 
     try: #try load lwe instance
-        A, q, bse = load_lwe(n,q,dist,dist_param,seed[0]) #D["A"], D["q"], D["bse"]
+        A, q, bse = load_lwe(params) #D["A"], D["q"], D["bse"]
     except FileNotFoundError: #if no such, create one
         print(f"No kyber instance found... generating.")
-        gen_and_dump_lwe(n, q, dist,dist_param,  5, seed[0]) #ntar = 5
-        A, q, bse = load_lwe(n,q,dist,dist_param,seed[0]) #D["A"], D["q"], D["bse"]
+        gen_and_dump_lwe(params) #ntar = 5
+        A, q, bse = load_lwe(params) #D["A"], D["q"], D["bse"]
     #try load reduced kyber
     try:
         with open(out_path + f"kyb_preprimal_{n}_{q}_{dist}_{dist_param:.04f}_{seed[0]}_{betapre}.pkl", "rb") as file:
@@ -118,10 +141,19 @@ def prepare_kyber(n,q,dist,dist_param,betapre,seed=[0,0], nthreads=5): #for debu
 
     return B, A, q, dist, dist_param, bse
 
-def attack_on_kyber(n,q,dist,dist_param,betapre,betamax,ntours=5,seed=[0,0],nthreads=5):
+def attack_on_kyber(params):
     # prepeare the lattice
+    n = params["n"]
+    q = params["q"]
+    dist = params["dist"]
+    dist_param = params["dist_param"]
+    betapre = params["betapre"]
+    betamax = params["betamax"]
+    seed = params["seed"]
+    nthreads = params["nthreads"]
     print( f"launching {n,q,dist,dist_param,seed}" )
-    B, A, q, dist, dist_param, bse = prepare_kyber(n,q,dist,dist_param,betapre,seed, nthreads=5)
+    # n,q,dist,dist_param,betapre,seed, nthreads=5
+    B, A, q, dist, dist_param, bse = prepare_kyber(params)
     dim = B.nrows+1 #dimension of Kannan
 
     print(f"Total instances per lat: {len(bse)} seed={seed[1]}")
@@ -203,7 +235,7 @@ def attack_on_kyber(n,q,dist,dist_param,betapre,betamax,ntours=5,seed=[0,0],nthr
         #we do not use LatticeReduction here since we do not neccesarily
         #want to run all the tours and can interupt after any given one.
         for beta in range(max(BKZ_SIEVING_CROSSOVER,betapre-1),betamax+1):
-            for cntr0 in range(MAX_LOOPS):
+            for cntr0 in range(BKZ_MAX_LOOPS):
                 then_round=time.perf_counter()
                 pump_n_jump_bkz_tour(g6kdummy_tracer, beta, jump=1,
                  dim4free_fun="default_dim4free_fun",
@@ -240,29 +272,53 @@ if __name__ == "__main__":
     nworkers = 4
     lats_per_dim = 2 #10
     inst_per_lat = 5 #10 #how many instances per A, q
-    dist, dist_param = "ternary", 1/6.
-    # dist, dist_param = "binomial", 3
+    # dist, dist_param = "ternary", 1/6.
+    dist, dist_param = "binomial", 2
     q = 3329
-    nks = [ (125+3*i) for i in range(2) ]
-    betapre,betamax = 48, 70
+    nks = [ (110+3*i) for i in range(2) ]
+    betapre,betamax = 46, 63
 
     output = []
     pool = Pool( processes = nworkers )
     tasks = []
-    RECOMPUTE_INSTANCE = False
+    RECOMPUTE_INSTANCE = True
     RECOMPUTE_KYBER = True
     if RECOMPUTE_INSTANCE:
         print(f"Generating Kyber...")
         for n in nks:
             for latnum in range(lats_per_dim):
-                gen_and_dump_lwe(n, q, dist, dist_param, ntar=inst_per_lat, seed=latnum)
+                params = {
+                    "n": n,
+                    "q": q,
+                    "dist": dist,
+                    "dist_param": dist_param,
+                    "ntar": inst_per_lat,
+                    "betapre": betapre,
+                    "betamax": betamax,
+                    "seed": [latnum,0],
+                    "nthreads": nthreads
+                }
+                # n, q, dist, dist_param, ntar=inst_per_lat, seed=latnum
+                gen_and_dump_lwe(params)
+                # prepare_kyber(params)
 
     if RECOMPUTE_KYBER or RECOMPUTE_INSTANCE:
         pretasks = []
         for n in nks:
             for latnum in range(lats_per_dim):
+                params = {
+                    "n": n,
+                    "q": q,
+                    "dist": dist,
+                    "dist_param": dist_param,
+                    "ntar": inst_per_lat,
+                    "betapre": betapre,
+                    "betamax": betamax,
+                    "seed": [latnum,0],
+                    "nthreads": nthreads
+                }
                 pretasks.append( pool.apply_async(
-                prepare_kyber, (n,q,dist, dist_param,betapre,[latnum,0], nthreads)
+                prepare_kyber, (params,) #NOTE: comma is crucial here
                 ) )
         print(f"Preprocessing Kyber...", flush=True)
         for t in pretasks:
@@ -271,10 +327,20 @@ if __name__ == "__main__":
     for n in nks:
         for latnum in range(lats_per_dim):
             for tstnum in range(inst_per_lat):
-                # output.append( attack_on_kyber(nk[0],q,eta,57,70,5,[latnum,tstnum],nthreads) )
+                params = {
+                    "n": n,
+                    "q": q,
+                    "dist": dist,
+                    "dist_param": dist_param,
+                    "betapre": betapre,
+                    "betamax": betamax,
+                    "seed": [latnum,tstnum],
+                    "nthreads": nthreads
+                }
                 tasks.append( pool.apply_async(
-                    attack_on_kyber, (n,q,dist,dist_param,betapre,betamax,5,[latnum,tstnum],nthreads)
+                    attack_on_kyber, ( params, )
                     ) )
+                # attack_on_kyber, (n,q,dist,dist_param,betapre,betamax,5,[latnum,tstnum],nthreads)
 
 
     for t in tasks:
@@ -282,7 +348,7 @@ if __name__ == "__main__":
 
     pool.close()
 
-    name = f"exp{nks}_{q}_{dist}_{dist_param:.04f}.pkl"
+    name = f"exp{nks}_{q}_{dist}_{dist_param:.04f}.pkl" if dist=="ternary" else f"exp{nks}_{q}_{dist}_{dist_param}.pkl"
     with open( out_path+name, "wb" ) as file:
         pickle.dump( output,file )
 

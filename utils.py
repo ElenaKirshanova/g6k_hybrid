@@ -56,8 +56,8 @@ def get_filename(which_file,params):
 
     if "lwe_instance" == which_file:
         # raise NotImplementedError
-        n, q, seed = params["n"], params["q"], params["seed"]
-        return "lwe_instance_ternary_{n}_{q}_{dpstr}_{seed}.pkl"
+        n, q, seed, dist = params["n"], params["q"], params["seed"], params["dist"]
+        return f"lwe_instance_{dist}_{n}_{q}_{dpstr}_{seed[0]}.pkl"
     
     elif "kyb_preprimal" == which_file:
         # raise NotImplementedError
