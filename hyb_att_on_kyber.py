@@ -21,7 +21,7 @@ except ModuleNotFoundError:
 import pickle
 from sample import *
 
-from preprocessing import run_preprocessing
+from preprocessing import load_lwe
 from hybrid_estimator.batchCVP import batchCVPP_cost
 #def run_preprocessing(n,q,eta,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthreads=1)
 
@@ -31,88 +31,88 @@ max_nsampl = 2**31-1
 inp_path = "lwe_instances/saved_lattices/"
 out_path = "lwe_instances/reduced_lattices/"
 
-def kyberGen(n, q = 3329, eta = 3, k=1):
-    polys = []
-    for i in range(k*k):
-        polys.append( uniform_vec(n,0,q) )
-    A = module(polys, k, k)
+# def kyberGen(n, q = 3329, eta = 3, k=1):
+#     polys = []
+#     for i in range(k*k):
+#         polys.append( uniform_vec(n,0,q) )
+#     A = module(polys, k, k)
 
-    return A,q
+#     return A,q
 
-def se_gen(k,n,eta):
-    s = binomial_vec(k*n, eta)
-    e = binomial_vec(k*n, eta)
-    return s, e
+# def se_gen(k,n,eta):
+#     s = binomial_vec(k*n, eta)
+#     e = binomial_vec(k*n, eta)
+#     return s, e
 
-def generateLWEInstances(n, q = 3329, eta = 3, k=1, ntar=5):
-    A,q = kyberGen(n,q = q, eta = eta, k=k)
-    bse = []
-    for _ in range(ntar):
-        s, e = se_gen(k,n,eta)
-        b = (s.dot(A) + e) % q
-        bse.append( (b,s,e) )
+# def generateLWEInstances(n, q = 3329, eta = 3, k=1, ntar=5):
+#     A,q = kyberGen(n,q = q, eta = eta, k=k)
+#     bse = []
+#     for _ in range(ntar):
+#         s, e = se_gen(k,n,eta)
+#         b = (s.dot(A) + e) % q
+#         bse.append( (b,s,e) )
 
-    return A,q,bse
+#     return A,q,bse
 
-def gen_and_dump_lwe(n, q, eta, k, ntar, seed=0):
-    A,q,bse= generateLWEInstances(n, q, eta, k, ntar)
+# def gen_and_dump_lwe(n, q, eta, k, ntar, seed=0):
+#     A,q,bse= generateLWEInstances(n, q, eta, k, ntar)
 
-    with open(inp_path + f"lwe_instance_{n}_{q}_{eta}_{k}_{seed}", "wb") as fl:
-        pickle.dump({"A": A, "q": q, "eta": eta, "k": k, "bse": bse}, fl)
+#     with open(inp_path + f"lwe_instance_{n}_{q}_{eta}_{k}_{seed}", "wb") as fl:
+#         pickle.dump({"A": A, "q": q, "eta": eta, "k": k, "bse": bse}, fl)
 
-def load_lwe(n,q,eta,k,seed=0):
-    print(f"- - - k={k} - - - load")
-    with open(inp_path + f"lwe_instance_{n}_{q}_{eta}_{k}_{seed}", "rb") as fl:
-        D = pickle.load(fl)
-    A_, q_, eta_, k_, bse_ = D["A"], D["q"], D["eta"], D["k"], D["bse"]
-    return A_, q_, eta_, k_, bse_
+# def load_lwe(n,q,eta,k,seed=0):
+#     print(f"- - - k={k} - - - load")
+#     with open(inp_path + f"lwe_instance_{n}_{q}_{eta}_{k}_{seed}", "rb") as fl:
+#         D = pickle.load(fl)
+#     A_, q_, eta_, k_, bse_ = D["A"], D["q"], D["eta"], D["k"], D["bse"]
+#     return A_, q_, eta_, k_, bse_
 
-def prepare_kyber(n,q,eta,k,betamax,kappa,seed=[0,0]): #for debug purposes
-    report = {
-        "kyb": ( n,q,eta,k ),
-        "beta": 0,
-        "kappa": 0,
-        "time": 0
-    }
-    # prepeare the lattice
-    dim = n*k
-    print( f"Launching hybrid on: {n,q,eta,k}" )
-    print(f"betamax,kappa: {betamax,kappa}")
-    try:
-        A, q, eta, k, bse = load_lwe(n,q,eta,k,seed[0]) #D["A"], D["q"], D["bse"]
-        filename = f"g6kdump_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}.pkl"
-        g6k = Siever.restore_from_file( filename )
-    except FileNotFoundError:
-        gen_and_dump_lwe(n, q, eta, k, ntar, seed[0])
-        A, q, eta,k, bse = load_lwe(n,q,eta,k,seed[0]) #D["A"], D["q"], D["bse"]
-    print(f"lenbse: {len(bse)} seed={seed[1]}")
-    b, s, e = bse[seed[1]]
+# def prepare_kyber(n,q,eta,k,betamax,kappa,seed=[0,0]): #for debug purposes
+#     report = {
+#         "kyb": ( n,q,eta,k ),
+#         "beta": 0,
+#         "kappa": 0,
+#         "time": 0
+#     }
+#     # prepeare the lattice
+#     dim = n*k
+#     print( f"Launching hybrid on: {n,q,eta,k}" )
+#     print(f"betamax,kappa: {betamax,kappa}")
+#     try:
+#         A, q, eta, k, bse = load_lwe(n,q,eta,k,seed[0]) #D["A"], D["q"], D["bse"]
+#         filename = f"g6kdump_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}.pkl"
+#         g6k = Siever.restore_from_file( filename )
+#     except FileNotFoundError:
+#         gen_and_dump_lwe(n, q, eta, k, ntar, seed[0])
+#         A, q, eta,k, bse = load_lwe(n,q,eta,k,seed[0]) #D["A"], D["q"], D["bse"]
+#     print(f"lenbse: {len(bse)} seed={seed[1]}")
+#     b, s, e = bse[seed[1]]
 
-    r,c = A.shape
-    print(f"Shape: {A.shape}, n, k: {n,k}")
-    t = np.concatenate([b,[0]*r]) #BDD target
-    x = np.concatenate([b-e,s]) #BBD solution
-    sol = np.concatenate([e,-s])
+#     r,c = A.shape
+#     print(f"Shape: {A.shape}, n, k: {n,k}")
+#     t = np.concatenate([b,[0]*r]) #BDD target
+#     x = np.concatenate([b-e,s]) #BBD solution
+#     sol = np.concatenate([e,-s])
 
-    B = [ [int(0) for i in range(2*k*n)] for j in range(2*k*n) ]
-    for i in range( k*n ):
-        B[i][i] = int( q )
-    for i in range(k*n, 2*k*n):
-        B[i][i] = 1
-    for i in range(k*n, 2*k*n):
-        for j in range(k*n):
-            B[i][j] = int( A[i-k*n,j] )
+#     B = [ [int(0) for i in range(2*k*n)] for j in range(2*k*n) ]
+#     for i in range( k*n ):
+#         B[i][i] = int( q )
+#     for i in range(k*n, 2*k*n):
+#         B[i][i] = 1
+#     for i in range(k*n, 2*k*n):
+#         for j in range(k*n):
+#             B[i][j] = int( A[i-k*n,j] )
 
-    tarnrmsq = EPS2*(sol.dot(sol))
+#     tarnrmsq = EPS2*(sol.dot(sol))
 
-    H11 = deepcopy( B[B.nrows-kappa] ) #the part of basis to be reduced
-    LR = LatticeReduction( H11 )
-    for beta in range(5,betamax+1):
-        then_round=time.perf_counter()
-        LR.BKZ(beta) #was with tours=5, now 5 by default 
-        round_time = time.perf_counter()-then_round
-        print(f"BKZ-{beta} done in {round_time}")
-    return { 'B': B, 'H11': H11, 'q': q, 'eta': eta, 'k': k, 'bse': bse, 'betamax': betamax }
+#     H11 = deepcopy( B[B.nrows-kappa] ) #the part of basis to be reduced
+#     LR = LatticeReduction( H11 )
+#     for beta in range(5,betamax+1):
+#         then_round=time.perf_counter()
+#         LR.BKZ(beta) #was with tours=5, now 5 by default 
+#         round_time = time.perf_counter()-then_round
+#         print(f"BKZ-{beta} done in {round_time}")
+#     return { 'B': B, 'H11': H11, 'q': q, 'eta': eta, 'k': k, 'bse': bse, 'betamax': betamax }
 
 
 def attacker(input_dict, n_guess_coord, sieve_dim_max, nsieves, nthreads=N_SIEVE_THREADS, tracer_exp=None):
@@ -127,28 +127,28 @@ def attacker(input_dict, n_guess_coord, sieve_dim_max, nsieves, nthreads=N_SIEVE
     for i in range(nsieves).
     """
     # B, H11, q, eta, k, bse, betamax = input_dict['B'], input_dict['H11'], input_dict['q'], input_dict['eta'], input_dict['k'], input_dict['bse'], input_dict['betamax']
-    n, kappa, q, eta, k, seed = input_dict['n'], n_guess_coord, input_dict['q'], input_dict['eta'], input_dict['k'], input_dict['seed']
-    A, q, eta, k, bse = load_lwe(n,q,eta,k,seed=seed[0])
+    n, kappa, q, dist, dist_param, seed = input_dict['n'], n_guess_coord, input_dict['q'], input_dict['dist'], input_dict['dist_param'], input_dict['seed']
+    A, q, bse = load_lwe(n,q,dist, dist_param,seed[0])
 
-    B = [ [int(0) for i in range(2*k*n)] for j in range(2*k*n) ]
-    for i in range( k*n ):
+    B = [ [int(0) for i in range(2*n)] for j in range(2*n) ]
+    for i in range( n ):
         B[i][i] = int( q )
-    for i in range(k*n, 2*k*n):
+    for i in range(n, 2*n):
         B[i][i] = 1
-    for i in range(k*n, 2*k*n):
-        for j in range(k*n):
-            B[i][j] = int( A[i-k*n,j] )
+    for i in range(n, 2*n):
+        for j in range(n):
+            B[i][j] = int( A[i-n,j] )
 
-    g6k = Siever.restore_from_file( out_path + f'g6kdump_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}_{sieve_dim_max-1}.pkl' )
+    g6k = Siever.restore_from_file( out_path + f'g6kdump_{n}_{q}_{dist}_{dist_param}_{k}_{seed[0]}_{kappa}_{g6k.n}.pkl' )
     H11 = g6k.M.B
     B = IntegerMatrix.from_matrix(B)
 
-    dim = 2*k*n
+    dim = 2*n
     ft = "ld" if n<145 else ( "dd" if config.have_qd else "mpfr")
 
     for sieveid in range(nsieves):
         vec_index = 0
-        filename_siever = out_path+f'g6kdump_{n}_{q}_{eta}_{k}_{seed[0]}_{kappa}_{sieve_dim_max-nsieves+sieveid}.pkl'
+        filename_siever = out_path+f'g6kdump_{n}_{q}_{dist}_{dist_param}_{k}_{seed[0]}_{kappa}_{g6k.n}.pkl'
         g6k = Siever.restore_from_file(filename_siever)
         # g6k.params["nthreads"] = nthreads #readonly
         for b, s, e in bse:
@@ -235,6 +235,8 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
     # raise NotImplementedError
     if not tracer_alg2 is None:
         startt = time.perf_counter()
+        tracer_alg2["walltime"] = 0
+        
     sieve_dim = g6k.r-g6k.l #n_slicer_coord
     print(f"in alg2 sieve_dim={sieve_dim}", flush=True)
 

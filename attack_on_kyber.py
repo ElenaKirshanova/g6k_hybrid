@@ -54,12 +54,12 @@ def gen_and_dump_lwe(n, q, dist, dist_param,  ntar, seed=0):
     print(f"- - - n,seed={n,seed} - - - gen")
     A,q,bse= generateLWEInstances(n, q, dist, dist_param, ntar)
 
-    with open(inp_path + f"lwe_instance_{dist}_{n}_{q}_{dist_param: .04f}_{seed}", "wb") as fl:
+    with open(inp_path + f"lwe_instance_{dist}_{n}_{q}_{dist_param:.04f}_{seed}", "wb") as fl:
         pickle.dump({"A": A, "q": q, "dist": dist, "dist_param":dist_param,  "bse": bse}, fl)
 
 def load_lwe(n,q,dist,dist_param,seed=0):
     print(f"- - - n,seed={n,seed} - - - load")
-    with open(inp_path + f"lwe_instance_{dist}_{n}_{q}_{dist_param: .04f}_{seed}", "rb") as fl:
+    with open(inp_path + f"lwe_instance_{dist}_{n}_{q}_{dist_param:.04f}_{seed}", "rb") as fl:
         D = pickle.load(fl)
     A_, q_, dist, dist_param, bse_ = D["A"], D["q"], D["dist"], D["dist_param"], D["bse"]
     return A_, q_, bse_
@@ -84,7 +84,7 @@ def prepare_kyber(n,q,dist,dist_param,betapre,seed=[0,0], nthreads=5): #for debu
         A, q, bse = load_lwe(n,q,dist,dist_param,seed[0]) #D["A"], D["q"], D["bse"]
     #try load reduced kyber
     try:
-        with open(out_path + f"kyb_preprimal_{n}_{q}_{dist}_{dist_param: .04f}_{seed[0]}_{betapre}.pkl", "rb") as file:
+        with open(out_path + f"kyb_preprimal_{n}_{q}_{dist}_{dist_param:.04f}_{seed[0]}_{betapre}.pkl", "rb") as file:
             B = pickle.load(file)
             print(f"Kyber located")
     except (FileNotFoundError, EOFError): #if no such, create one
@@ -107,10 +107,10 @@ def prepare_kyber(n,q,dist,dist_param,betapre,seed=[0,0], nthreads=5): #for debu
             print(f"Preprocess BKZ-{beta} done in {round_time}", flush=True)
             report["time"] += round_time
 
-        with open(out_path + f"kyb_preprimal_{n}_{q}_{dist}_{dist_param: .04f}_{seed[0]}_{betapre}.pkl", "wb") as file:
+        with open(out_path + f"kyb_preprimal_{n}_{q}_{dist}_{dist_param:.04f}_{seed[0]}_{betapre}.pkl", "wb") as file:
             pickle.dump( LR.basis, file )
         B = LR.basis
-        with open(out_path + f"report_pre_{n}_{q}_{dist}_{dist_param: .04f}_{seed[0]}_{betapre}.pkl", "wb") as file:
+        with open(out_path + f"report_pre_{n}_{q}_{dist}_{dist_param:.04f}_{seed[0]}_{betapre}.pkl", "wb") as file:
             pickle.dump( report, file )
 
     return B, A, q, dist, dist_param, bse
@@ -237,7 +237,7 @@ if __name__ == "__main__":
     nworkers = 2
     lats_per_dim = 2 #10
     inst_per_lat = 5 #10 #how many instances per A, q
-    dist, dist_param = "ternary", 1/2.
+    dist, dist_param = "ternary", 1/6.
     # dist, dist_param = "binomial", 3
     q = 3329
     nks = [ (116+10*i,3) for i in range(2) ]
@@ -282,7 +282,7 @@ if __name__ == "__main__":
 
     pool.close()
 
-    name = f"exp{nks}_{q}_{dist}_{dist_param: .04f}.pkl"
+    name = f"exp{nks}_{q}_{dist}_{dist_param:.04f}.pkl"
     with open( out_path+name, "wb" ) as file:
         pickle.dump( output,file )
 

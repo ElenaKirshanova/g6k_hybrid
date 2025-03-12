@@ -22,8 +22,6 @@ except ModuleNotFoundError:
 
 from global_consts import *
 
-from global_consts import *
-
 inp_path = "lwe_instances/saved_lattices/"
 out_path = "lwe_instances/reduced_lattices/"
 
@@ -72,7 +70,7 @@ def batch_babai( g6k,target_candidates, dist_sq_bnd ):
     print(f"best_cb: {best_cb}")
     return best_cb
 
-def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
+def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, dist, dist_param, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
     # Emulates batch CVPP with guessing.
     # - - - prepare targets - - -
     then_start = perf_counter()
@@ -81,7 +79,11 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
     print(f"dim: {dim}")
 
     t1, t2 = target[:-n_guess_coord], target[-n_guess_coord:]
-    distrib = centeredBinomial(eta)
+    if dist=="binomial":
+        distrib = centeredBinomial(dist_param)
+    elif dist=="ternary":
+         print(f"dist_param: {dist_param}")
+         distrib = ternaryDist(dist_param)
     #TODO: make/(check if is) practical
     nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord ) )
     print(f"nsampl: {nsampl}")
@@ -277,29 +279,29 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
 
 def run_experiment(lat_index, params, stats_dict, tracer=None):
     nthreads = params["nthreads"]
-    n, k, q, eta = params["n"], params["k"], params["q"], params["eta"]
+    n, q, dist, dist_param = params["n"], params["q"], params["dist"], params["dist_param"]
     n_guess_coord, n_slicer_coord = params["n_guess_coord"], params["n_slicer_coord"]
 
-    ft = "ld" if 2*k*n<140 else ( "dd" if config.have_qd else "mpfr")
+    ft = "ld" if 2*n<140 else ( "dd" if config.have_qd else "mpfr")
     FPLLL.set_precision(210)
-    dim = 2*k*n
+    dim = 2*n
 
     print(f"float_type: {ft}")
     succ_cntr = 0
     ex_cntr = 0
 
-    filename_g6kdump = f"g6kdump_{n}_{q}_{eta}_{k}_{lat_index}_{n_guess_coord}_{n_slicer_coord}.pkl"
-    A, _, _, _, bse = load_lwe(n,q,eta,k,lat_index)
+    filename_g6kdump = f'g6kdump_{n}_{q}_{dist}_{dist_param:.04f}_{lat_index}_{n_guess_coord}_{n_slicer_coord}.pkl'
+    A, q, bse = load_lwe(n,q,dist,dist_param,lat_index)
 
     # we don't store the whole lattice basis Binit since it is fairly large for github
-    Binit = [ [int(0) for i in range(2*k*n)] for j in range(2*k*n) ]
-    for i in range( k*n ):
+    Binit = [ [int(0) for i in range(2*n)] for j in range(2*n) ]
+    for i in range( n ):
         Binit[i][i] = int( q )
-    for i in range(k*n, 2*k*n):
+    for i in range(n, 2*n):
         Binit[i][i] = 1
-    for i in range(k*n, 2*k*n):
-        for j in range(k*n):
-            Binit[i][j] = int( A[i-k*n,j] )
+    for i in range(n, 2*n):
+        for j in range(n):
+            Binit[i][j] = int( A[i-n,j] )
 
     then = perf_counter()
     #restore precomputed g6k and initialize it
@@ -349,8 +351,9 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
         # project the error vector onto the last n_sieve_dim GS-vectors.
         # v = alg_3_debug(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
         tracer = {}
-        iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
+        iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, dist, dist_param, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
         guess_cntr = 0
+        sli_succ = False
         for v in iter_v:
             if v is None:
                 v = np.array( len(answer)*[0] )
@@ -361,9 +364,9 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
 
             v2 = v
 
-            sli_succ = answer==v2
+            sli_succ = all(answer==v2)
             # print(f"slicer:\n {sli_succ}")
-            if all(sli_succ):
+            if (sli_succ):
                 succ_cntr+=1
                 print(f"Success in experiment! @{guess_cntr} guess")
                 break
@@ -374,8 +377,8 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
         stats_dict[(n,lat_index, n_slicer_coord, n_guess_coord, ex_cntr)] = {
             "walltime": walltime,
             "dist_bnd": dist_bnd,
-            "succ": all(sli_succ),
-            "fail_reason": None if all(sli_succ) else fail_reason,
+            "succ": (sli_succ),
+            "fail_reason": None if (sli_succ) else fail_reason,
             "key_num": tracer["key_num"], #number of guessed keys
             "g6k_len": len(g6k),
             "wrong_guess_time_alg3": tracer["wrong_guess_time_alg3"],
@@ -386,7 +389,7 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
         }
         print(f"walltime: {walltime} | walltime_observed: {walltime_observed}")
 
-        print(f" - - - {all(answer==v2)} after {guess_cntr} guesses - - - ")
+        print(f" - - - {sli_succ} after {guess_cntr} guesses - - - ")
     return stats_dict
 
 if __name__=="__main__":
@@ -396,16 +399,18 @@ if __name__=="__main__":
     preprocessing.py (preprocess the data) and then run this file.
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
-    n, k = 144, 1
+    n = 126
     q, eta = 3329, 3
-    n_guess_coord, n_slicer_coord = 5, 70
+    dist, dist_param = "ternary", 1/6.
+    # dist, dist_param = "binomial", 3
+    n_guess_coord, n_slicer_coord = 6, 46
     nthreads = 5
     nworkers = 2
-    latnum = 10
+    latnum = 2
 
     params={}
     params["nthreads"] = nthreads
-    params["n"], params["k"], params["q"], params["eta"] = n, k, q, eta
+    params["n"], params["dist"], params["dist_param"], params["q"] = n, dist, dist_param, q
     params["n_guess_coord"], params["n_slicer_coord"] = n_guess_coord, n_slicer_coord
 
     succ_cntr = 0

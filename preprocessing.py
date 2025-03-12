@@ -32,13 +32,13 @@ if not does_exist:
 
 def load_lwe(n,q,dist,dist_param,seed=0):
     print(f"- - - n,seed={n,seed} - - - load")
-    with open(inp_path + f"lwe_instance_{dist}_{n}_{q}_{dist_param: .04f}_{seed}", "rb") as fl:
+    with open(inp_path + f"lwe_instance_{dist}_{n}_{q}_{dist_param:.04f}_{seed}", "rb") as fl:
         D = pickle.load(fl)
     A_, q_, dist, dist_param, bse_ = D["A"], D["q"], D["dist"], D["dist_param"], D["bse"]
     return A_, q_, bse_
 
 
-def run_preprocessing(n,q,dist,dist_param,k,seed,beta_bkz,sieve_dim_max,nsieves,kappa,nthreads=N_SIEVE_THREADS,dump_bkz=True):
+def run_preprocessing(n,q,dist,dist_param,k,seed,beta_bkz,sieve_dim_max,nsieves, kappa,nthreads=N_SIEVE_THREADS,dump_bkz=True):
     report = {
         "params": (n,q,dist,dist_param,k,seed),
         "beta_bkz": beta_bkz,
@@ -103,7 +103,7 @@ def run_preprocessing(n,q,dist,dist_param,k,seed,beta_bkz,sieve_dim_max,nsieves,
     sys.stdout.flush()
     #NOTE: this dumps
     assert g6k.r - g6k.l == sieve_dim_max-nsieves+i, f"g6k context: {g6k.r - g6k.l} != {sieve_dim_max-nsieves+i}"
-    g6k.dump_on_disk(out_path+f'g6kdump_{n}_{q}_{dist}_{dist_param}_{k}_{seed[0]}_{kappa}_{g6k.n}.pkl')
+    g6k.dump_on_disk(out_path+f'g6kdump_{n}_{q}_{dist}_{dist_param:.04f}_{seed[0]}_{kappa}_{g6k.n}.pkl')
     for i in range(1,nsieves+1):
         g6k.extend_left(1)
         sieve_start = time.perf_counter()
@@ -113,7 +113,7 @@ def run_preprocessing(n,q,dist,dist_param,k,seed,beta_bkz,sieve_dim_max,nsieves,
         sys.stdout.flush()
         #NOTE: this dumps
         assert g6k.r - g6k.l == sieve_dim_max-nsieves+i, f"g6k context: {g6k.r - g6k.l} != {sieve_dim_max-nsieves+i}"
-        g6k.dump_on_disk(out_path+f'g6kdump_{n}_{q}_{dist}_{dist_param}_{k}_{seed[0]}_{kappa}_{g6k.n}.pkl')
+        g6k.dump_on_disk(out_path+f'g6kdump_{n}_{q}_{dist}_{dist_param:.04f}_{seed[0]}_{kappa}_{g6k.n}.pkl')
 
 
     print(report)
@@ -124,19 +124,19 @@ if __name__=="__main__":
     # (dimension, predicted kappa, predicted beta)
     # params = [(140, 12, 48), (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     #params = [(140, 12, 48)]#, (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
-    params = [(116+i*10, 6, 46) for i in range(2)] #for RUB server
+    params = [(116+i*10, 6, 44) for i in range(2)] #for RUB server
     # params = [(180, 6, 93)]
     # params = [(190, 7, 99)]
     # params = [(200, 7, 108)]
     nworkers, nthreads =  10, N_SIEVE_THREADS #5 (to be changed for kyber 190, 200 !!!)
 
     beta_bkz_offset = 1 #bkz blocksize would surpass the predicted value by this offset
-    sieve_dim_max_offset = 4 #the largest slicer will work on dim=prediceted beta + this offset
+    sieve_dim_max_offset = 2 #the largest slicer will work on dim=prediceted beta + this offset
     kappa_offset = 1 #data for predicted kappa up to predicted kappa + kappa_offset - 1 will be saved
 
     lats_per_dim = 2
     inst_per_lat = 2 #how many instances per A, q
-    dist, dist_param = "ternary", 1/2.
+    dist, dist_param = "ternary", 1/6.
     # dist, dist_param = "binomial", 3
     q = 3329
     output = []
@@ -172,7 +172,7 @@ if __name__=="__main__":
         beta_bkz = o_["beta_bkz"]
         sieve_dim_max = o_["sieve_dim_max"]
         sieve_dim_min = o_["sieve_dim_min"]
-        filename = out_path + f"report_prehyb_{n}_{q}_{dist}_{dist_param}_{k}_{seed[0]}_{kappa}_{sieve_dim_min}_{sieve_dim_max}.pkl"
+        filename = out_path + f"report_prehyb_{n}_{q}_{dist}_{dist_param:.04f}_{k}_{seed[0]}_{kappa}_{sieve_dim_min}_{sieve_dim_max}.pkl"
 
         with open(filename, "wb") as file:
             pickle.dump( o_,file )
