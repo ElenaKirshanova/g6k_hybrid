@@ -230,11 +230,18 @@ def attack_on_kyber(params):
         param_sieve = SieverParams()
         param_sieve['threads'] = nthreads #10
         param_sieve['default_sieve'] = "bgj1" #"bgj1" "bdgl2"
-        g6k = Siever(M, param_sieve)
+        # g6k = Siever(M, param_sieve)
 
         #we do not use LatticeReduction here since we do not neccesarily
         #want to run all the tours and can interupt after any given one.
+        LR = LatticeReduction( M.B, threads_bkz=nthreads )
         for beta in range(max(BKZ_SIEVING_CROSSOVER,betapre-1),betamax+1):
+            then_round=time.perf_counter()
+            LR.BKZ(beta,tours=5)
+            round_time = time.perf_counter()-then_round
+            slope = basis_quality(M)["/"]
+            print(f"beta: {beta:}, done in: {round_time : 0.4f}, slope: {slope : 0.6f}, log r00: {log( M.get_r(0,0),2 )/2 : 0.5f} task_id = {seed}", flush=True)
+            """
             for cntr0 in range(BKZ_MAX_LOOPS):
                 then_round=time.perf_counter()
                 pump_n_jump_bkz_tour(g6kdummy_tracer, beta, jump=1,
@@ -247,11 +254,12 @@ def attack_on_kyber(params):
                 sys.stdout.flush()  #flush after the BKZ call
 
                 report["time"] += round_time
+            """
+            if M.get_r(0,0) <= tarnrmsq:
+                print(f"succsess! beta={beta}")
+                report["beta"] = beta
+                return report
 
-                if M.get_r(0,0) <= tarnrmsq:
-                    print(f"succsess! beta={beta}")
-                    report["beta"] = beta
-                    return report
     except Exception as excpt:
         print( excpt )
         print("Sieving died!")
@@ -275,7 +283,7 @@ if __name__ == "__main__":
     # dist, dist_param = "ternary", 1/6.
     dist, dist_param = "binomial", 2
     q = 3329
-    nks = [ (110+3*i) for i in range(2) ]
+    nks = [ (135+3*i) for i in range(2) ]
     betapre,betamax = 46, 63
 
     output = []

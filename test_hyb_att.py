@@ -277,10 +277,12 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
         cntr+=1
     return argminv
 
-def run_experiment(lat_index, params, stats_dict, tracer=None):
+def run_experiment(params, stats_dict, tracer=None):
     nthreads = params["nthreads"]
     n, q, dist, dist_param = params["n"], params["q"], params["dist"], params["dist_param"]
     n_guess_coord, n_slicer_coord = params["n_guess_coord"], params["n_slicer_coord"]
+    seed = params["seed"]
+    lat_index = seed[0]
 
     ft = "ld" if 2*n<140 else ( "dd" if config.have_qd else "mpfr")
     FPLLL.set_precision(210)
@@ -291,7 +293,8 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
     ex_cntr = 0
 
     filename_g6kdump = f'g6kdump_{n}_{q}_{dist}_{dist_param:.04f}_{lat_index}_{n_guess_coord}_{n_slicer_coord}.pkl'
-    A, q, bse = load_lwe(n,q,dist,dist_param,lat_index)
+    #n,q,dist,dist_param,lat_index
+    A, q, bse = load_lwe(params)
 
     # we don't store the whole lattice basis Binit since it is fairly large for github
     Binit = [ [int(0) for i in range(2*n)] for j in range(2*n) ]
@@ -399,11 +402,11 @@ if __name__=="__main__":
     preprocessing.py (preprocess the data) and then run this file.
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
-    n = 128
+    n = 138
     q, eta = 3329, 3
-    dist, dist_param = "ternary", 1/6.
-    # dist, dist_param = "binomial", 3
-    n_guess_coord, n_slicer_coord = 6, 47
+    # dist, dist_param = "ternary", 1/6.
+    dist, dist_param = "binomial", 2
+    n_guess_coord, n_slicer_coord = 6, 58
     nthreads = 5
     nworkers = 2
     latnum = 2
@@ -421,8 +424,9 @@ if __name__=="__main__":
     tasks = []
     for lat_index in range(latnum):
         output.append({})
+        params["seed"] = (lat_index,0)
         tasks.append( pool.apply_async(
-            run_experiment, (lat_index, params, output[lat_index])
+            run_experiment, (params, output[lat_index])
             ) )
 
     stats_dict_agr = {}

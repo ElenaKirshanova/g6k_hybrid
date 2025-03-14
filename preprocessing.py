@@ -14,6 +14,7 @@ except ModuleNotFoundError:
 
 import pickle
 from global_consts import *
+from utils import get_filename
 
 inp_path = "lwe_instances/saved_lattices/"
 out_path = "lwe_instances/reduced_lattices/"
@@ -30,17 +31,30 @@ if not does_exist:
         pass #TODO: why pass?
 
 
-def load_lwe(n,q,dist,dist_param,seed=0):
+def load_lwe(params):
+    # n,q,dist,dist_param,seed=0
+    n = params["n"]
+    q = params["q"]
+    dist = params["dist"]
+    dist_param = params["dist_param"]
+    seed = params["seed"][0]
     print(f"- - - n,seed={n,seed} - - - load")
-    with open(inp_path + f"lwe_instance_{dist}_{n}_{q}_{dist_param:.04f}_{seed}", "rb") as fl:
+    filename = f"lwe_instance_{dist}_{n}_{q}_{dist_param:.04f}_{seed}"
+    filename = get_filename( "lwe_instance", params )
+    with open(inp_path + filename, "rb") as fl:
         D = pickle.load(fl)
     A_, q_, dist, dist_param, bse_ = D["A"], D["q"], D["dist"], D["dist_param"], D["bse"]
     return A_, q_, bse_
 
 
-def run_preprocessing(n,q,dist,dist_param,k,seed,beta_bkz,sieve_dim_max,nsieves, kappa,nthreads=N_SIEVE_THREADS,dump_bkz=True):
+def run_preprocessing(params):
+    # n,q,dist,dist_param,k,seed,beta_bkz,sieve_dim_max,nsieves, kappa,nthreads=N_SIEVE_THREADS,dump_bkz=True
+    n, q, dist, dist_param = params["n"], params["q"], params["dist"], params["dist_param"]
+    seed,beta_bkz,sieve_dim_max,nsieves,kappa = params["seed"],params["beta_bkz"],params["sieve_dim_max"],params["nsieves"],params["kappa"]
+    nthreads=N_SIEVE_THREADS
+    dump_bkz=True
     report = {
-        "params": (n,q,dist,dist_param,k,seed),
+        "params": (n,q,dist,dist_param,seed),
         "beta_bkz": beta_bkz,
         "sieve_dim_max": sieve_dim_max,
         "sieve_dim_min": sieve_dim_max-nsieves,
@@ -48,8 +62,8 @@ def run_preprocessing(n,q,dist,dist_param,k,seed,beta_bkz,sieve_dim_max,nsieves,
         "bkz_runtime": 0,
         "bdgl_runtime": [0]*(nsieves+1),
     }
-    dim = n*k
-    A, q, bse = load_lwe(n,q,dist,dist_param,seed[0]) #D["A"], D["q"], D["bse"]
+    # n,q,dist,dist_param,seed[0]
+    A, q, bse = load_lwe(params) #D["A"], D["q"], D["bse"]
 
     B = [ [int(0) for i in range(2*n)] for j in range(2*n) ]
     for i in range( n ):
@@ -57,7 +71,7 @@ def run_preprocessing(n,q,dist,dist_param,k,seed,beta_bkz,sieve_dim_max,nsieves,
     for i in range(n, 2*n):
         B[i][i] = 1
     for i in range(n, 2*n):
-        for j in range(k*n):
+        for j in range(n):
             B[i][j] = int( A[i-n,j] )
 
     if sieve_dim_max<60:
@@ -124,7 +138,7 @@ if __name__=="__main__":
     # (dimension, predicted kappa, predicted beta)
     # params = [(140, 12, 48), (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     #params = [(140, 12, 48)]#, (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
-    params = [(125+i*3, 6, 45) for i in range(2)] #for RUB server
+    params = [(135+i*3, 6, 53+3*i) for i in range(2)] 
     # params = [(180, 6, 93)]
     # params = [(190, 7, 99)]
     # params = [(200, 7, 108)]
@@ -136,8 +150,8 @@ if __name__=="__main__":
 
     lats_per_dim = 2
     inst_per_lat = 2 #how many instances per A, q
-    dist, dist_param = "ternary", 1/6.
-    # dist, dist_param = "binomial", 3
+    # dist, dist_param = "ternary", 1/6.
+    dist, dist_param = "binomial", 2
     q = 3329
     output = []
     pool = Pool(processes = nworkers )
@@ -145,20 +159,20 @@ if __name__=="__main__":
     for param in params:
         for latnum in range(lats_per_dim):
             for kappa in range(param[1], param[1]+kappa_offset,1):
+                params ={
+                        "n": param[0], #n
+                        "q": q, #q
+                        "dist": dist, 
+                        "dist_param": dist_param,
+                        "seed": [latnum,0], #seed, second value is irrelevant
+                        "beta_bkz": param[2]+beta_bkz_offset, #beta_bkz
+                        "sieve_dim_max": param[2]+sieve_dim_max_offset, #sieve_dim_max
+                        "nsieves": 1,  #nsieves
+                        "kappa": kappa, #kappa
+                        "nthreads": nthreads, #nthreads
+                    }
                 tasks.append( pool.apply_async(
-                    run_preprocessing, (
-                        param[0], #n
-                        q, #q
-                        dist, 
-                        dist_param,
-                        1, #k
-                        [latnum,0], #seed, second value is irrelevant
-                        param[2]+beta_bkz_offset, #beta_bkz
-                        param[2]+sieve_dim_max_offset, #sieve_dim_max
-                        1,  #nsieves
-                        kappa, #kappa
-                        nthreads #nthreads
-                        )
+                    run_preprocessing, (params,)
                 ) )
 
     for t in tasks:
@@ -167,12 +181,13 @@ if __name__=="__main__":
 
     for o_ in output:
         print(o_)
-        n,q,dist, dist_param,k,seed = o_["params"]
+        n,q,dist, dist_param,seed = o_["params"]
         kappa = o_["kappa"]
         beta_bkz = o_["beta_bkz"]
         sieve_dim_max = o_["sieve_dim_max"]
         sieve_dim_min = o_["sieve_dim_min"]
-        filename = out_path + f"report_prehyb_{n}_{q}_{dist}_{dist_param:.04f}_{k}_{seed[0]}_{kappa}_{sieve_dim_min}_{sieve_dim_max}.pkl"
+        filename = f"report_prehyb_{n}_{q}_{dist}_{dist_param:.04f}_{seed[0]}_{kappa}_{sieve_dim_min}_{sieve_dim_max}.pkl" if dist=="ternary" else f"report_prehyb_{n}_{q}_{dist}_{dist_param:.04f}_{seed[0]}_{kappa}_{sieve_dim_min}_{sieve_dim_max}.pkl"
+        filename = out_path + filename
 
         with open(filename, "wb") as file:
             pickle.dump( o_,file )
