@@ -47,35 +47,35 @@ cdef class RandomizedSlicer(object):
         sig_off()
 
     @property
-    def _stat_get_xorpopcnt_total(self):
+    def _stat_get_xorpopcnt(self):
         return self._core.statistics.get_stats_xorpopcnt_total()
 
     @property
-    def _stat_c_xorpopcnt_total(self):
+    def _stat_c_xorpopcnt(self):
         return self._core.statistics.collect_statistics_xorpopcnt
 
     @property
-    def _stat_get_xorpopcnt_pass_total(self):
+    def _stat_get_xorpopcnt_pass(self):
         return self._core.statistics.get_stats_xorpopcnt_pass_total()
 
     @property
-    def _stat_c_xorpopcnt_pass_total(self):
+    def _stat_c_xorpopcnt_pass(self):
         return self._core.statistics.collect_statistics_xorpopcnt_pass
     
     @property
-    def _stat_get_fullscprods_total(self):
+    def _stat_get_fullscprods(self):
         return self._core.statistics.get_stats_xorpopcnt_total()
 
     @property
-    def _stat_c_fullscprods_total(self):
+    def _stat_c_fullscprods(self):
         return self._core.statistics.collect_statistics_fullscprods
     
     @property
-    def _stat_get_redsucc_total(self):
+    def _stat_get_redsucc(self):
         return self._core.statistics.get_stats_redsucc_total()
 
     @property
-    def _stat_c_redsucc_total(self):
+    def _stat_c_redsucc(self):
         return self._core.statistics.collect_statistics_redsucc
     
     @property
@@ -111,7 +111,7 @@ cdef class RandomizedSlicer(object):
         return self._core.statistics.collect_statistics_bucknum
     
     @property
-    def _stat_get_bucknum(self):
+    def _stat_get_buck_over_max(self):
         return self._core.statistics.get_stats_bucknum()
 
     @property
@@ -146,7 +146,7 @@ cdef class RandomizedSlicer(object):
     #           repr argument. Set to "max" to output the max value instead of the sum.
 
     all_statistics = {
-        "xorpopcnt_total"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],
+        "xorpopcnt"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],
         "xorpopcnt_pass"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],
         "fullscprods"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],
         "redsucc"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],

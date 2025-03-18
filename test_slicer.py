@@ -16,9 +16,9 @@ if __name__ == "__main__":
     slicer_interations = 250
     norm_slack = 1.01      #terminate slicer if norm_slack*||e_projected|| is found
     approx_factor = 0.9
-    nrand_param = 20
+    nrand_param = 10
     nthreads = 1
-    nexp = 10
+    nexp = 1
     verbose = False
     slicer_verbosity = False
 
@@ -244,6 +244,11 @@ if __name__ == "__main__":
             if succ:
                 nsli_succ+=1
             if verbose: print(f"both succeeded: {succ and succbab}", flush=True)
+
+            print(f"- - - STATS - - -")
+            print(slicer.stats)
+            print(f"- - - STATS - - -")
+
         if verbose: print(f"es_: {sorted(es_)}")
         if verbose: print(f"MEAN: {np.mean(runtimes)}")
         if verbose: print(runtimes)
