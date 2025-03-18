@@ -92,9 +92,11 @@ void RandomizedSlicer::randomize_target_small_task(Entry_t &t)
         for (size_t k = 0; k < XPC_WORD_LEN; ++k) {
             w1 += __builtin_popcountl(fast_cdb[i].c[k] ^ fast_cdb[j].c[k]);
         }
+        statistics.inc_stats_xorpopcnt_r();
         //std::cout << "w1: " << w1 << std::endl;
         if (w1 < XPC_SLICER_SAMPLING_THRESHOLD || w1 > (XPC_BIT_LEN - XPC_SLICER_SAMPLING_THRESHOLD) || trial > max_trial) {
             if (i == j) continue;
+            statistics.inc_stats_xorpopcnt_pass_r();
             ZT sign = w1 < XPC_SLICER_SAMPLING_THRESHOLD / 2 ? -1 : 1;
 
             //std::cout << "good w1: " << w1 << std::endl;
@@ -107,11 +109,12 @@ void RandomizedSlicer::randomize_target_small_task(Entry_t &t)
 
             this->sieve.addsub_vec(new_yr, this->sieve.db[this->sieve.cdb[j].i].yr, static_cast<ZT>(sign));
 
-            //TODO: change to XPC (if makes sense)
+            statistics.inc_stats_fullscprods_r();
             LFT const inner = std::inner_product(t.yr.begin(), t.yr.begin() + n, new_yr.begin(), static_cast<LFT>(0.));
             sign = inner < 0 ? 1 : -1;
             this->sieve.addsub_vec(t.yr, new_yr, static_cast<ZT>(sign));
 
+            statistics.inc_stats_fullscprods_r();
             recompute_data_for_entry_t<RandomizedSlicer::RecomputeSlicer::recompute_all>(t);
             break;
         }
@@ -134,6 +137,7 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
     }
     input_t.i = Nunique;
 
+    statistics.inc_stats_fullscprods_r();
     recompute_data_for_entry_t<RandomizedSlicer::RecomputeSlicer::recompute_all>(input_t);
 
 
@@ -144,6 +148,7 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
 
     if(!uid_hash_table_t.insert_uid(input_t.uid)){
         std::cerr << "The original target is already in db" << std::endl;
+        statistics.inc_stats_collisions_r();
         // exit(0);
         return;
     }
@@ -182,6 +187,7 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
             randomize_target_small_task(tmp);
 
             if(!uid_hash_table_t.insert_uid(tmp.uid)) {
+                statistics.inc_stats_collisions_r();
                 continue;
             }
             tmp.i = Nunique;
@@ -193,7 +199,11 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
             ce.i = i;
             cdb_t[i] = ce;
 
-            if (tmp.len < 0.99*input_t.len) std::cout << "reduced the target during randomization" << std::endl;
+            if (tmp.len < 0.99*input_t.len){
+                statistics.inc_stats_reds_during_randomization();
+                std::cout << "reduced the target during randomization" << std::endl;
+            }
+
             break;
 
         }
@@ -211,11 +221,11 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
 {
     if (REDUCE_DIST_MARGIN * new_l < db_t[i1].len)
     {
-
         std::array<LFT,MAX_SIEVING_DIM> new_yr = db_t[i1].yr;
         this->sieve.addsub_vec(new_yr,  this->sieve.db[i2].yr, static_cast<ZT>(sign));
         UidType new_uid = uid_hash_table_t.compute_uid_t(new_yr);
 
+        statistics.inc_stats_xorpopcnt_r();
         if( !uid_hash_table_t.check_uid_unsafe(new_uid) && uid_hash_table_t.insert_uid(new_uid) )
         {
             int64_t index = write_index--; // atomic and signed!
@@ -225,6 +235,7 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
                 new_entry.i = db_t[i1].i;
                 recompute_data_for_entry_t<RandomizedSlicer::RecomputeSlicer::recompute_all>(new_entry);
 
+                // statistics.inc_stats_replacements();
                 return 1;
             }
             std::cout << "transaction_db full" << std::endl;
@@ -232,6 +243,9 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
         }
         else
         {
+            #if COLLECT_STATISTICS_COLLISIONS_SLICER
+                if(!uid_hash_table_t.insert_uid(new_uid)) statistics.inc_stats_collisions_s();
+            #endif
             return 0;
         }
     }
@@ -271,6 +285,7 @@ bool RandomizedSlicer::slicer_replace_in_db(size_t cdb_index, Entry_t &e)
     ce.len = e.len;
     ce.c = e.c;
     db_t[ce.i] = e;
+    statistics.inc_stats_replacements();
     return true;
 }
 
@@ -360,8 +375,15 @@ void RandomizedSlicer::slicer_bucketing(const size_t blocks, const size_t multi_
     for( size_t i = 0; i < nr_buckets; ++i ) {
         // bucket overflow
         if( buckets_index[i].val > bsize ) {
+            statistics.inc_stats_buck_over_num();
+            unsigned long maxbsize =  statistics.get_stats_buck_over_max();
+            // std::cout << maxbsize << " vs " << buckets_index[i].val << std::endl;
+            if(maxbsize<buckets_index[i].val){
+                statistics.set_stats_buck_over_max((unsigned long)(buckets_index[i].val));
+                std::cout << "slicer: bucket overflow! setting " << buckets_index[i].val << std::endl;
+            }
+            // std::cout << "slicer: bucket overflow! " << buckets_index[i].val << std::endl;
             buckets_index[i].val = bsize;
-            //std::cout << "slicer: bucket overflow!" << std::endl;
         }
     }
     //exit(1);
@@ -456,9 +478,12 @@ void RandomizedSlicer::slicer_process_buckets_task(const size_t t_id,
             for (size_t j = i_start_s; j < i_end_s; ++j)
             {
                 uint32_t bj = fast_buckets[j];
+                statistics.inc_stats_xorpopcnt_s();
                 if( this->sieve.is_reducible_maybe<XPC_SLICER_THRESHOLD>(cv, fast_cdb[bj].c) ) //TODO:adjust XPC_SLICER_THRESHOLD
                 {
+                    statistics.inc_stats_xorpopcnt_pass_s();
                     std::pair<LFT, int> len_and_sign = reduce_to_QEntry_t( pce1, &fast_cdb[bj] );
+                    statistics.inc_stats_fullscprods_s();
                     //if( len_and_sign.first < 0.98*pce1->len)
                     if(len_and_sign.first < best_reduction)
                     {
@@ -477,6 +502,7 @@ void RandomizedSlicer::slicer_process_buckets_task(const size_t t_id,
                 }
             }
             if(best_j!=-1) {
+                statistics.inc_stats_redsucc_s();
                 t_queue.push_back({ pce1->i, fast_cdb[fast_buckets[best_j]].i, best_reduction, (int8_t)best_sign});
             }
         }
@@ -503,6 +529,8 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
             if(verbose) {
                 std::cout << "Saturated on:" << it  << "-th iteration"  << std::endl;
             }
+            if(verbose) statistics.print_statistics();
+            // std::cout << "stats printed" << std::endl;
             return true;
         }
 
@@ -523,8 +551,10 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
             //std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << " cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
             std::cout << "iteration " << it << " cdb_t.size() " << cdb_t.size() << std::endl;
         }
+        statistics.inc_stats_last_itercount_slicer();
         it++;
     }
-    if(verbose) std::cerr << "Couldn't saturate after" << MAX_SLICER_ITERS << " iterations" << std::endl;
+    if(verbose) statistics.print_statistics();
+    if(verbose) std::cerr << "Couldn't find a close vector after " << MAX_SLICER_ITERS << " iterations" << std::endl;
     return false;
 }

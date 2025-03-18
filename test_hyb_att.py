@@ -254,7 +254,6 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
     """
     We return (if we succeed) (-s,e)[dim-kappa-betamax:dim-kappa] to avoid fp errors.
     """
-    #TODO: deduce what is the betamax
     # def of alg_2_batched is in hyb_att_on_kyber.py
     ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg3 )
 
@@ -345,9 +344,8 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
 
         B = IntegerMatrix.from_matrix(Binit)
 
-        # no guessing version of alg_3
+
         # project the error vector onto the last n_sieve_dim GS-vectors.
-        # v = alg_3_debug(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
         tracer = {}
         iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
         guess_cntr = 0
@@ -398,10 +396,11 @@ if __name__=="__main__":
     """
     n, k = 144, 1
     q, eta = 3329, 3
-    n_guess_coord, n_slicer_coord = 5, 70
-    nthreads = 5
-    nworkers = 2
     latnum = 10
+    n_guess_coord, n_slicer_coord = 6, 65
+    nthreads = 3
+    nworkers = 8
+    latnum = 2
 
     params={}
     params["nthreads"] = nthreads

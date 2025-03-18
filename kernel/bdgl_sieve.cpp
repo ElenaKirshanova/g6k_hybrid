@@ -77,6 +77,7 @@ inline int Siever::bdgl_reduce_with_delayed_replace(const size_t i1, const size_
         {
             // duplicate
             //std::cout << "found duplicate"<< std::endl;
+            statistics.inc_stats_collisions_2inner();
             return 0;
         }
     }
@@ -131,6 +132,7 @@ bool Siever::bdgl_replace_in_db(size_t cdb_index, Entry &e)
     if (REDUCE_LEN_MARGIN_HALF * e.len >= ce.len)
     {
         uid_hash_table.erase_uid(e.uid);
+        statistics.inc_stats_collisions_2inner();
         return false;
     }
     uid_hash_table.erase_uid(db[ce.i].uid);
@@ -235,8 +237,10 @@ void Siever::bdgl_process_buckets_task(const size_t t_id,
             for (size_t j = i_start; j < i; ++j)
             {
                 uint32_t bj = fast_buckets[j];
+                statistics.inc_stats_xorpopcnt_outer();
                 if( is_reducible_maybe<XPC_THRESHOLD>(cv, fast_cdb[bj].c) )
                 {
+                    statistics.inc_stats_xorpopcnt_pass_outer();
                     std::pair<LFT, int> len_and_sign = reduce_to_QEntry( pce1, &fast_cdb[bj] );
                     if( len_and_sign.first < lenbound)
                     {

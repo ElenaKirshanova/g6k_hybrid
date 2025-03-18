@@ -4,9 +4,10 @@
 
 #ifndef G6K_HYBRID_SLICER_H
 #define G6K_HYBRID_SLICER_H
+#endif
 
-static constexpr unsigned int XPC_SLICER_SAMPLING_THRESHOLD = 75; // XPC Threshold for iterative slicer sampling //105
-static constexpr unsigned int XPC_SLICER_THRESHOLD = 96; // XPC Threshold for iterative slicer sampling
+static constexpr unsigned int XPC_SLICER_SAMPLING_THRESHOLD = 75; // XPC Threshold for iterative slicer sampling //75
+static constexpr unsigned int XPC_SLICER_THRESHOLD = 96; // XPC Threshold for iterative slicer sampling //96
 
 #define REDUCE_DIST_MARGIN 1.008
 #define REDUCE_DIST_MARGIN_HALF 1.004
@@ -15,6 +16,8 @@ static constexpr unsigned int XPC_SLICER_THRESHOLD = 96; // XPC Threshold for it
 #define MAX_SIEVING_DIM 128
 #endif
 
+#include "compat.hpp"
+#include "statistics_slicer.hpp"
 
 struct Entry_t
 {
@@ -44,6 +47,7 @@ public:
         this->n = this->sieve.n;
         sim_hashes_t.reset_compress_pos(this->sieve);
         uid_hash_table_t.reset_hash_function(this->sieve);
+        this->statistics.clear_statistics();
     }
 
     friend SimHashes;
@@ -69,6 +73,9 @@ public:
     CACHELINE_VARIABLE(std::vector<CompressedEntry>, cdb_t_tmp_copy); // for sorting
     CACHELINE_VARIABLE(std::vector<Unique_entry_t>, unique_db);  //to store unique targets
     CACHELINE_VARIABLE(rng::threadsafe_rng, rng_t);
+
+    // collects various statistics about the slicer. Details about statistics collection are in statistics_slicer.hpp
+    CACHELINE_VARIABLE(SlicerStatistics, statistics);
 
     unsigned int n;
 
@@ -119,5 +126,3 @@ public:
     template<RecomputeSlicer what_to_recompute>
     inline void recompute_data_for_entry_t(Entry_t &e);
 };
-
-#endif //G6K_HYBRID_SLICER_H
