@@ -206,8 +206,8 @@ cdef extern from "../kernel/siever.h" nogil:
         bool collect_statistics_buck_over_num
         unsigned long get_stats_buck_over_num() const
 
-        bool collect_statistics_last_itercount
-        unsigned long get_stats_last_itercount() const
+        bool collect_statistics_last_itercount_slicer
+        unsigned long get_stats_last_itercount_slicer() const
 
     cdef void show_cpu_stats()
 
@@ -365,5 +365,11 @@ cdef extern from "../kernel/slicer.h" nogil:
         vector[Entry_t] db_t
         vector[CompressedEntry] cdb_t
         #FT db_lifted[NLIFTED][MAX_SIEVING_DIM]
+
+        # statistics and histo:
+        SlicerStatistics statistics
+        unsigned int size_of_histo
+
+        void reset_stats()
 
 

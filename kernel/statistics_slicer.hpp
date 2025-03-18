@@ -384,7 +384,7 @@ public:
     static constexpr bool collect_statistics_collisions  = (COLLECT_STATISTICS_COLLISIONS_SLICER >= 1);
     MAKE_GETTER_AND_INCREMENTER(collisions_r, COLLECT_STATISTICS_COLLISIONS_SLICER)
     MAKE_GETTER_AND_INCREMENTER(collisions_s, COLLECT_STATISTICS_COLLISIONS_SLICER)
-    unsigned long get_stats_collisions_total() const { return get_stats_collisions_s() + get_stats_collisions_r(); }
+    unsigned long get_stats_collisions() const { return get_stats_collisions_s() + get_stats_collisions_r(); }
 
     static constexpr bool collect_statistics_reds_during_randomization  = (COLLECT_STATISTICS_REDS_DURING_RANDOMIZATION >= 1);
     MAKE_GETTER_AND_INCREMENTER(reds_during_randomization, COLLECT_STATISTICS_REDS_DURING_RANDOMIZATION)
@@ -398,7 +398,7 @@ public:
     static constexpr bool collect_statistics_buck_over_num  = (COLLECT_STATISTICS_RANDOMIZE_TRIALNUM_SLICER >= 1);
     MAKE_GETTER_AND_INCREMENTER(buck_over_num, COLLECT_STATISTICS_RANDOMIZE_TRIALNUM_SLICER)
 
-    static constexpr bool collect_statistics_last_itercount = (COLLECT_STATISTICS_LAST_ITERCOUNT_SLICER >= 1);
+    static constexpr bool collect_statistics_last_itercount_slicer = (COLLECT_STATISTICS_LAST_ITERCOUNT_SLICER >= 1);
     MAKE_GETTER_SETTER_AND_INCREMENTER(last_itercount_slicer, COLLECT_STATISTICS_LAST_ITERCOUNT_SLICER)
 
     inline void clear_statistics() noexcept
@@ -493,7 +493,7 @@ public:
 
                 if(collect_statistics_collisions)
                 {
-                    os << "dbt collisions: " << get_stats_collisions_total() << std::endl;
+                    os << "dbt collisions: " << get_stats_collisions() << std::endl;
                     os << "while randomizing: " << get_stats_collisions_r();
                     os << "\n";
                     os << "while slicing: " << get_stats_collisions_s();
@@ -520,7 +520,7 @@ public:
                     os << "dbt buck_over_num: " << get_stats_buck_over_num();
                     os << "\n";
                 }
-                if(collect_statistics_last_itercount){
+                if(collect_statistics_last_itercount_slicer){
                     os << "iterations: " << get_stats_last_itercount_slicer();
                     os << "\n";
                 }
