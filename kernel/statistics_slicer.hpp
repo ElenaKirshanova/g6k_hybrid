@@ -20,16 +20,12 @@
     XORPOPCNT_SLICER ( the sum of two following values )
     XORPOPCNT_SLICER_R ( xor-pop-count computations during the randomization phase )
     XORPOPCNT_SLICER_S ( xor-pop-count computations during the slicing phase )
-    XORPOPCNT_PASS_SLICER ( the sum of two following values )
+    XORPOPCNT_PASS_SLICER ( how often these are "successful" )
     XORPOPCNT_PASS_SLICER_R ( how often these are "successful" during the randomization phase )
     XORPOPCNT_PASS_SLICER_S ( how often these are "successful" during the slicing phase )
     FULLSCPRODS_SLICER ( full scalar product computations inside the randomization and slicing phase of the slicer)
-    FULLSCPRODS_SLICER_R
-    FULLSCPRODS_SLICER_S
     FILTER_PASS_SLICER ( how often vectors pass our filters (for bucketing / filtered lists) )
     REDSUCCESS_SLICER ( how often we actually successfully (believe to) create a short vector in dbt )
-    REDSUCCESS_SLICER_R
-    REDSUCCESS_SLICER_S
     REPLACEMENTS_SLICER ( dbt replacements - slicing phase only )
     REPLACEMENTFAILURE_SLICER ( failures for various reasons - slicing phase only )
     COLLISIONS_SLICER ( hash collisions )
@@ -45,37 +41,14 @@
 #define COLLECT_STATISTICS_XORPOPCNT_SLICER COLLECT_STATISTICS
 #endif
 
-// #ifndef COLLECT_STATISTICS_XORPOPCNT_SLICER_R
-// #define COLLECT_STATISTICS_XORPOPCNT_SLICER_R COLLECT_STATISTICS
-// #endif
-
-// #ifndef COLLECT_STATISTICS_XORPOPCNT_SLICER_S
-// #define COLLECT_STATISTICS_XORPOPCNT_SLICER_S COLLECT_STATISTICS
-// #endif
 
 #ifndef COLLECT_STATISTICS_XORPOPCNT_PASS_SLICER
 #define COLLECT_STATISTICS_XORPOPCNT_PASS_SLICER COLLECT_STATISTICS
 #endif
 
-// #ifndef COLLECT_STATISTICS_XORPOPCNT_PASS_SLICER_R
-// #define COLLECT_STATISTICS_XORPOPCNT_PASS_SLICER_R COLLECT_STATISTICS
-// #endif
-
-// #ifndef COLLECT_STATISTICS_XORPOPCNT_PASS_SLICER_S
-// #define COLLECT_STATISTICS_XORPOPCNT_PASS_SLICER_S COLLECT_STATISTICS
-// #endif
-
 #ifndef COLLECT_STATISTICS_FULLSCPRODS_SLICER
 #define COLLECT_STATISTICS_FULLSCPRODS_SLICER COLLECT_STATISTICS
 #endif
-
-// #ifndef COLLECT_STATISTICS_FULLSCPRODS_SLICER_R
-// #define COLLECT_STATISTICS_FULLSCPRODS_SLICER_R COLLECT_STATISTICS
-// #endif
-
-// #ifndef COLLECT_STATISTICS_FULLSCPRODS_SLICER_S
-// #define COLLECT_STATISTICS_FULLSCPRODS_SLICER_S COLLECT_STATISTICS
-// #endif
 
 #ifndef COLLECT_STATISTICS_FILTER_PASS_SLICER
 #define COLLECT_STATISTICS_FILTER_PASS_SLICER COLLECT_STATISTICS
@@ -84,14 +57,6 @@
 #ifndef COLLECT_STATISTICS_REDSUCCESS_SLICER
 #define COLLECT_STATISTICS_REDSUCCESS_SLICER COLLECT_STATISTICS
 #endif
-
-// #ifndef COLLECT_STATISTICS_REDSUCCESS_SLICER_R
-// #define COLLECT_STATISTICS_REDSUCCESS_SLICER_R COLLECT_STATISTICS
-// #endif
-
-// #ifndef COLLECT_STATISTICS_REDSUCCESS_SLICER_S
-// #define COLLECT_STATISTICS_REDSUCCESS_SLICER_S COLLECT_STATISTICS
-// #endif
 
 #ifndef COLLECT_STATISTICS_REPLACEMENTS_SLICER
 #define COLLECT_STATISTICS_REPLACEMENTS_SLICER COLLECT_STATISTICS
@@ -122,14 +87,6 @@
 #define COLLECT_STATISTICS_RANDOMIZE_TRIALNUM_SLICER COLLECT_STATISTICS
 #endif
 
-/**
-    ENABLE_IF_STATS_*(x) is equal to x if COLLECT_STATISTICS_* is != 0
-    This is intended to make more concise statements in the rest of the code that are conditional
-    on statistics collection (such as defining thread-local counters).
-    Note that the actual operations on the global statistics objects do not need to be wrapped in such a macro:
-    We use incrementers which default to no-ops (and let the compiler optimize away the call)
-*/
-
 // Note that ENABLE_IF_STATS_FOO(s) is defined as s and not s; The semicolon has to go inside the argument.
 #if COLLECT_STATISTICS_XORPOPCNT_SLICER
     #define ENABLE_IF_STATS_XORPOPCNT_SLICER(s) s
@@ -137,35 +94,11 @@
     #define ENABLE_IF_XORPOPCNT_SLICER(s)
 #endif
 
-// #if COLLECT_STATISTICS_XORPOPCNT_SLICER_R
-//     #define ENABLE_IF_STATS_XORPOPCNT_SLICER_R(s) s
-// #else
-//     #define ENABLE_IF_STATS_XORPOPCNT_SLICER_R(s)
-// #endif
-
-// #if COLLECT_STATISTICS_XORPOPCNT_SLICER_S
-//     #define ENABLE_IF_STATS_XORPOPCNT_SLICER_S(s) s
-// #else
-//     #define ENABLE_IF_STATS_XORPOPCNT_SLICER_S(s)
-// #endif
-
 #if COLLECT_STATISTICS_XORPOPCNT_PASS_SLICER
     #define ENABLE_IF_STATS_XORPOPCNT_PASS_SLICER(s) s
 #else
     #define ENABLE_IF_STATS_XORPOPCNT_PASS_SLICER(s)
 #endif
-
-// #if COLLECT_STATISTICS_XORPOPCNT_PASS_SLICER_R
-//     #define ENABLE_IF_STATS_XORPOPCNT_PASS_SLICER_R(s) s
-// #else
-//     #define ENABLE_IF_STATS_XORPOPCNT_PASS_SLICER_R(s)
-// #endif
-
-// #if COLLECT_STATISTICS_XORPOPCNT_PASS_SLICER_S
-//     #define ENABLE_IF_STATS_PASS_SLICER_S(s) s
-// #else
-//     #define ENABLE_IF_STATS_XORPOPCNT_PASS_SLICER_S(s)
-// #endif
 
 #if COLLECT_STATISTICS_FULLSCPRODS_SLICER
     #define ENABLE_IF_STATS_FULLSCPRODS_SLICER(s) s
@@ -173,41 +106,11 @@
     #define ENABLE_IF_STATS_FULLSCPRODS_SLICER(s)
 #endif
 
-// #if COLLECT_STATISTICS_FULLSCPRODS_SLICER_R
-//     #define ENABLE_IF_STATS_FULLSCPRODS_SLICER_R(s) s
-// #else
-//     #define ENABLE_IF_STATS_FULLSCPRODS_SLICER_R(s)
-// #endif
-
-// #if COLLECT_STATISTICS_FULLSCPRODS_SLICER_S
-//     #define ENABLE_IF_STATS_FULLSCPRODS_SLICER_S(s) s
-// #else
-//     #define ENABLE_IF_STATS_FULLSCPRODS_SLICER_S(s)
-// #endif
-
-// #if COLLECT_STATISTICS_FILTER_PASS_SLICER
-//     #define ENABLE_IF_STATS_FILTER_PASS_SLICER(s) s
-// #else
-//     #define ENABLE_IF_STATS_FILTER_PASS_SLICER(s)
-// #endif
-
 #if COLLECT_STATISTICS_REDSUCCESS_SLICER
     #define ENABLE_IF_STATS_REDSUCCESS_SLICER(s) s
 #else
     #define ENABLE_IF_STATS_REDSUCCESS_SLICER(s)
 #endif
-
-// #if COLLECT_STATISTICS_REDSUCCESS_SLICER_R
-//     #define ENABLE_IF_STATS_REDSUCCESS_SLICER_R(s) s
-// #else
-//     #define ENABLE_IF_STATS_REDSUCCESS_SLICER_R(s)
-// #endif
-
-// #if COLLECT_STATISTICS_REDSUCCESS_SLICER_S
-//     #define ENABLE_IF_STATS_REDSUCCESS_SLICER_S(s) s
-// #else
-//     #define ENABLE_IF_STATS_REDSUCCESS_SLICER_S(s)
-// #endif
 
 #if COLLECT_STATISTICS_REPLACEMENTS_SLICER
     #define ENABLE_IF_STATS_REPLACEMENTS_SLICER(s) s
@@ -277,7 +180,6 @@
 
 class SlicerStatistics
 {
-// see statistics.hpp
 private:
 
 #if COLLECT_STATISTICS_XORPOPCNT_SLICER
@@ -291,7 +193,6 @@ private:
 #endif
 
 #if COLLECT_STATISTICS_XORPOPCNT_PASS_SLICER
-    // std::atomic_ulong   stats_xorpopcnt_pass;
     std::atomic_ulong   stats_xorpopcnt_pass_r;
     std::atomic_ulong   stats_xorpopcnt_pass_s;
 #else 
@@ -301,7 +202,6 @@ private:
 #endif
 
 #if COLLECT_STATISTICS_FULLSCPRODS_SLICER
-    // std::atomic_ulong   stats_fullscprods;
     std::atomic_ulong   stats_fullscprods_r;
     std::atomic_ulong   stats_fullscprods_s;
 #else 
@@ -310,14 +210,7 @@ private:
     static constexpr unsigned long stats_fullscprods_s = 0;
 #endif
 
-// #if COLLECT_STATISTICS_FILTER_PASS_SLICER
-//     std::atomic_ulong   stats_filterpass;
-// #else 
-//     static constexpr unsigned long stats_filterpass = 0;
-// #endif
-
 #if COLLECT_STATISTICS_REDSUCCESS_SLICER
-    // std::atomic_ulong   stats_redsucc;
     std::atomic_ulong   stats_redsucc_r;
     std::atomic_ulong   stats_redsucc_s;
 #else 
@@ -333,17 +226,15 @@ private:
 #endif
 
 #if COLLECT_STATISTICS_COLLISIONS_SLICER
-    // std::atomic_ulong   stats_fullscprods;
     std::atomic_ulong   stats_collisions_r;
     std::atomic_ulong   stats_collisions_s;
 #else 
-    // static constexpr unsigned long stats_fullscprods = 0;
     static constexpr unsigned long stats_collisions_r = 0;
     static constexpr unsigned long stats_collisions_s = 0;
 #endif
 
 #if COLLECT_STATISTICS_REDS_DURING_RANDOMIZATION
-    std::atomic_ulong   stats_reds_during_randomization; //stats_sorts
+    std::atomic_ulong   stats_reds_during_randomization;
 #else 
     static constexpr unsigned long stats_reds_during_randomization = 0;
 #endif
@@ -562,18 +453,6 @@ public:
     #endif
     }
 
-    // enum class StatisticsOutputForAlg : int
-    // {
-    //     none = 0,
-    //     randomize = 1,
-    //     slice = 2
-    // };
-
-    // void print_statistics(std::ostream &os = std::cout)
-    // {
-    //     return print_statistics(os);
-    // }
-
     void print_statistics(std::ostream &os = std::cout)
     {   
                 #ifdef COLLECT_STATISTICS
@@ -583,8 +462,6 @@ public:
                 if(collect_statistics_xorpopcnt)
                 {
                     os << "XORpopcnt calls: " << get_stats_xorpopcnt_total() << std::endl;
-                    // STATS_PRINT_IF(xorpopcnt_r, ", while randomizing: ")
-                    // STATS_PRINT_IF(xorpopcnt_s, ", while slicing: ")
                     os << "while randomizing: " << get_stats_xorpopcnt_r();
                     os << "\n";
                     os << "while slicing: " << get_stats_xorpopcnt_s();
@@ -593,8 +470,6 @@ public:
                 if(collect_statistics_xorpopcnt_pass)
                 {
                     os << "XORpopcnt passes: " << get_stats_xorpopcnt_pass_total() << std::endl;
-                    // STATS_PRINT_IF(xorpopcnt_pass_r, ", while randomizing: ")
-                    // STATS_PRINT_IF(xorpopcnt_pass_s, ", while slicing: ")
                     os << "while randomizing: " << get_stats_xorpopcnt_pass_r();
                     os << "\n";
                     os << "while slicing: " << get_stats_xorpopcnt_pass_s();
@@ -603,15 +478,11 @@ public:
                 if(collect_statistics_fullscprods)
                 {
                     os << "Total scalar prods: " << get_stats_fullscprods_total();
-                    // STATS_PRINT_IF(fullscprods_r, ", while randomizing: ")
-                    // STATS_PRINT_IF(fullscprods_s, ", while slicing: ")
                     os << "\n";
                 }
                 if(collect_statistics_redsucc)
                 {
                     os << "Succ. reductions: " << get_stats_redsucc_total();
-                    // STATS_PRINT_IF(redsucc_r, ", while randomizing: ")
-                    // STATS_PRINT_IF(redsucc_s, ", while slicing: ")
                     os << "\n";
                 }
                 if(collect_statistics_replacements)
