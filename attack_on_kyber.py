@@ -25,6 +25,9 @@ from LatticeReduction import LatticeReduction
 import pickle
 from global_consts import *
 
+from signal import signal, SIGPIPE, SIG_DFL  
+signal(SIGPIPE,SIG_DFL) 
+
 inp_path = "lwe_instances/saved_lattices/"
 out_path = "lwe_instances/reduced_lattices/"
 
