@@ -84,14 +84,17 @@
         - Optionally: Add it to the tracer, if special treatment is neccessary.
 
 */
-
-#if defined ENABLE_EXTENDED_STATS
-    #define COLLECT_STATISTICS 2
-#elif defined ENABLE_STATS
-    #define COLLECT_STATISTICS 1
-#else
-    #define COLLECT_STATISTICS 0
+#define ENABLE_EXTENDED_STATS
+#ifndef COLLECT_STATISTICS
+    #if defined ENABLE_EXTENDED_STATS
+        #define COLLECT_STATISTICS 2
+    #elif defined ENABLE_STATS
+        #define COLLECT_STATISTICS 1
+    #else
+        #define COLLECT_STATISTICS 0
+    #endif
 #endif
+
 
 /**
     Define macros COLLECT_STATISTICS_*:

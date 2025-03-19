@@ -77,7 +77,10 @@ if __name__ == "__main__":
         if verbose: print("Running bdgl2...")
         then = time.perf_counter()
         g6k(alg="bdgl2")
-        if verbose: print(f"siever done in {time.perf_counter()-then}")
+        print(f"siever done in {time.perf_counter()-then}")
+        print(" - - - SIEVER STATS - - -")
+        sievestats = g6k.stats
+        print(sievestats)
         g6k.M.update_gso()
         # filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
         g6k.dump_on_disk( filename )
@@ -120,7 +123,7 @@ if __name__ == "__main__":
         # g6k.initialize_local(n-sieve_dim,n-sieve_dim,n)
         # print("Running bdgl2...")
         # g6k(alg="bdgl2")
-        # g6k.M.update_gso() 
+        # g6k.M.update_gso()
         #
         # print(f"dbsize: {len(g6k)}")
 
@@ -184,8 +187,8 @@ if __name__ == "__main__":
             nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
             nrand = ceil(nrand_param*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
             # nrand = 6000
-            if verbose: print(f"nrand:{nrand}")
-            slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=1100)
+            print(f"nrand:{nrand}")
+            slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
 
             blocks = 2 # should be the same as in siever
             blocks = min(3, max(1, blocks))
@@ -243,7 +246,12 @@ if __name__ == "__main__":
             if succ:
                 nsli_succ+=1
             if verbose: print(f"both succeeded: {succ and succbab}", flush=True)
-        print(f"nbab_succ, nsli_succ: {nbab_succ,nsli_succ+nbab_succ} out of {nexp}")
+
+            print(f"- - - STATS - - -")
+            print(slicer.stats)
+            print(f"- - - STATS - - -")
+
         if verbose: print(f"es_: {sorted(es_)}")
         if verbose: print(f"MEAN: {np.mean(runtimes)}")
         if verbose: print(runtimes)
+    print(f"nbab_succ, nsli_succ: {nbab_succ,nsli_succ+nbab_succ} out of {nexp}")

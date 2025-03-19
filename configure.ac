@@ -146,6 +146,24 @@ elif test $enable_stats = "2"; then
 fi
 
 #
+# Enable stats for slicer
+# 
+
+enable_stats_slicer=0
+
+AC_ARG_WITH(stats_slicer,
+    AC_HELP_STRING([--with-stats-slicer@<:@=STATS@:>@], [enable statistics_slicer [supported=0,1,2; default=0]]),
+    [enable_stats_slicer=$withval],
+    [enable_stats_slicer=0]
+)
+
+if test $enable_stats_slicer = "1"; then
+    AC_DEFINE_UNQUOTED([ENABLE_STATS_SLICER], 1, [enable statistics_slicer])
+#elif test $enable_stats_slicer = "2"; then
+#    AC_DEFINE_UNQUOTED([ENABLE_EXTENDED_STATS], 1, [enable extended statistics])
+fi
+
+#
 # Sieving parameters
 #
 

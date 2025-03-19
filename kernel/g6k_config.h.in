@@ -6,6 +6,9 @@
 /* enable statistics */
 #undef ENABLE_STATS
 
+/* enable statistics_slicer */
+#undef ENABLE_STATS_SLICER
+
 /* major version */
 #undef G6K_MAJOR_VERSION
 

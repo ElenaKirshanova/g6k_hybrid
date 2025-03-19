@@ -109,7 +109,7 @@ def prepare_kyber(n,q,eta,k,betamax,kappa,seed=[0,0]): #for debug purposes
     LR = LatticeReduction( H11 )
     for beta in range(5,betamax+1):
         then_round=time.perf_counter()
-        LR.BKZ(beta) #was with tours=5, now 5 by default 
+        LR.BKZ(beta) #was with tours=5, now 5 by default
         round_time = time.perf_counter()-then_round
         print(f"BKZ-{beta} done in {round_time}")
     return { 'B': B, 'H11': H11, 'q': q, 'eta': eta, 'k': k, 'bse': bse, 'betamax': betamax }
@@ -329,7 +329,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
                 tracer_alg2["len(target_candidates)"] = len(target_candidates)
                 tracer_alg2["nrand"] = nrand
             yield best_bab_01
-            
+
         """
         for index in range(len(shift_babai_c_list)):
             t = np.array( target_candidates[index], dtype=DTYPE )
@@ -351,7 +351,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
 
     print(f"alg2 terminates after {attemptcntr} searches")
 
-    
+
     return best_bab_01
 
 
