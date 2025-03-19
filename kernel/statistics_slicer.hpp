@@ -12,6 +12,16 @@
     #error Do not include siever.inl directly
 #endif
 
+#ifndef COLLECT_STATISTICS_SLICER
+    #if defined ENABLE_EXTENDED_STATS
+        #define COLLECT_STATISTICS_SLICER 2
+    #elif defined ENABLE_STATS
+        #define COLLECT_STATISTICS_SLICER 1
+    #else
+        #define COLLECT_STATISTICS_SLICER 0
+    #endif
+#endif
+
 /**
     Define macros COLLECT_STATISTICS_*:
     COLLECT_STATISTICS_* gives a level how fine-grained the statistics are to be collected.
@@ -33,58 +43,58 @@
     BUCKETS_SLICER (number of buckets considered) REMOVE!
     BUCKETS_OVERFLOW_MAX_SLICER (max number of vectors attempted to be inserted into a bucket)
     BUCKETS_OVERFLOW_COUNT_SLICER (cumulative number of bucket overflows)
-    LAST_ITERCOUNT_SLICER (number of iterations during the last call of bdgl_like_sieve)
+    ITERCOUNT_SLICER (number of iterations during the last call of bdgl_like_sieve)
     RANDOMIZE_TRIALNUM_SLICER (cumulative number of trials in randomize_target_small_task)
 */
 
 #ifndef COLLECT_STATISTICS_XORPOPCNT_SLICER
-#define COLLECT_STATISTICS_XORPOPCNT_SLICER COLLECT_STATISTICS
+#define COLLECT_STATISTICS_XORPOPCNT_SLICER COLLECT_STATISTICS_SLICER
 #endif
 
 
 #ifndef COLLECT_STATISTICS_XORPOPCNT_PASS_SLICER
-#define COLLECT_STATISTICS_XORPOPCNT_PASS_SLICER COLLECT_STATISTICS
+#define COLLECT_STATISTICS_XORPOPCNT_PASS_SLICER COLLECT_STATISTICS_SLICER
 #endif
 
 #ifndef COLLECT_STATISTICS_FULLSCPRODS_SLICER
-#define COLLECT_STATISTICS_FULLSCPRODS_SLICER COLLECT_STATISTICS
+#define COLLECT_STATISTICS_FULLSCPRODS_SLICER COLLECT_STATISTICS_SLICER
 #endif
 
 #ifndef COLLECT_STATISTICS_FILTER_PASS_SLICER
-#define COLLECT_STATISTICS_FILTER_PASS_SLICER COLLECT_STATISTICS
+#define COLLECT_STATISTICS_FILTER_PASS_SLICER COLLECT_STATISTICS_SLICER
 #endif
 
 #ifndef COLLECT_STATISTICS_REDSUCCESS_SLICER
-#define COLLECT_STATISTICS_REDSUCCESS_SLICER COLLECT_STATISTICS
+#define COLLECT_STATISTICS_REDSUCCESS_SLICER COLLECT_STATISTICS_SLICER
 #endif
 
 #ifndef COLLECT_STATISTICS_REPLACEMENTS_SLICER
-#define COLLECT_STATISTICS_REPLACEMENTS_SLICER COLLECT_STATISTICS
+#define COLLECT_STATISTICS_REPLACEMENTS_SLICER COLLECT_STATISTICS_SLICER
 #endif
 
 #ifndef COLLECT_STATISTICS_COLLISIONS_SLICER
-#define COLLECT_STATISTICS_COLLISIONS_SLICER COLLECT_STATISTICS
+#define COLLECT_STATISTICS_COLLISIONS_SLICER COLLECT_STATISTICS_SLICER
 #endif
 
 #ifndef COLLECT_STATISTICS_REDS_DURING_RANDOMIZATION
-#define COLLECT_STATISTICS_REDS_DURING_RANDOMIZATION COLLECT_STATISTICS
+#define COLLECT_STATISTICS_REDS_DURING_RANDOMIZATION COLLECT_STATISTICS_SLICER
 #endif
 
 #ifndef COLLECT_STATISTICS_BUCKETS_SLICER
-#define COLLECT_STATISTICS_BUCKETS_SLICER COLLECT_STATISTICS
+#define COLLECT_STATISTICS_BUCKETS_SLICER COLLECT_STATISTICS_SLICER
 #endif
 
 #ifndef COLLECT_STATISTICS_BUCKETS_OVERFLOW_MAX_SLICER
-#define COLLECT_STATISTICS_BUCKETS_OVERFLOW_MAX_SLICER COLLECT_STATISTICS
+#define COLLECT_STATISTICS_BUCKETS_OVERFLOW_MAX_SLICER COLLECT_STATISTICS_SLICER
 #endif
 
-#ifndef COLLECT_STATISTICS_LAST_ITERCOUNT_SLICER
-#define COLLECT_STATISTICS_LAST_ITERCOUNT_SLICER COLLECT_STATISTICS
+#ifndef COLLECT_STATISTICS_ITERCOUNT_SLICER
+#define COLLECT_STATISTICS_ITERCOUNT_SLICER COLLECT_STATISTICS_SLICER
 #endif
 
 
 #ifndef COLLECT_STATISTICS_RANDOMIZE_TRIALNUM_SLICER
-#define COLLECT_STATISTICS_RANDOMIZE_TRIALNUM_SLICER COLLECT_STATISTICS
+#define COLLECT_STATISTICS_RANDOMIZE_TRIALNUM_SLICER COLLECT_STATISTICS_SLICER
 #endif
 
 // Note that ENABLE_IF_STATS_FOO(s) is defined as s and not s; The semicolon has to go inside the argument.
@@ -154,10 +164,10 @@
     #define ENABLE_IF_STATS_BUCKETS_OVERFLOW_COUNT_SLICER(s)
 #endif
 
-#if COLLECT_STATISTICS_LAST_ITERCOUNT_SLICER
-    #define ENABLE_IF_STATS_LAST_ITERCOUNT_SLICER(s) s
+#if COLLECT_STATISTICS_ITERCOUNT_SLICER
+    #define ENABLE_IF_STATS_ITERCOUNT_SLICER(s) s
 #else
-    #define ENABLE_IF_STATS_LAST_ITERCOUNT_SLICER(s)
+    #define ENABLE_IF_STATS_ITERCOUNT_SLICER(s)
 #endif
 
 #if COLLECT_STATISTICS_RANDOMIZE_TRIALNUM_SLICER
@@ -175,7 +185,7 @@
             (This essentially allows to query what options we compiled with)
         - incrementer functions inc_stats_* to increment data.
         In some cases, we also have dec_stats_* to decrement data 
-        and appropriate setters (eg. for BUCKETS_OVERFLOW_MAX_SLICER and LAST_ITERCOUNT_SLICER).
+        and appropriate setters (eg. for BUCKETS_OVERFLOW_MAX_SLICER and ITERCOUNT_SLICER).
 **/
 
 class SlicerStatistics
@@ -251,10 +261,10 @@ private:
     static constexpr unsigned long stats_buck_over_max = 0;
 #endif
 
-#if COLLECT_STATISTICS_LAST_ITERCOUNT_SLICER
-    std::atomic_ulong   stats_last_itercount_slicer;
+#if COLLECT_STATISTICS_ITERCOUNT_SLICER
+    std::atomic_ulong   stats_itercount_slicer;
 #else 
-    static constexpr unsigned long stats_last_itercount_slicer = 0;
+    static constexpr unsigned long stats_itercount_slicer = 0;
 #endif
 
 #if COLLECT_STATISTICS_RANDOMIZE_TRIALNUM_SLICER
@@ -398,8 +408,8 @@ public:
     static constexpr bool collect_statistics_buck_over_num  = (COLLECT_STATISTICS_RANDOMIZE_TRIALNUM_SLICER >= 1);
     MAKE_GETTER_AND_INCREMENTER(buck_over_num, COLLECT_STATISTICS_RANDOMIZE_TRIALNUM_SLICER)
 
-    static constexpr bool collect_statistics_last_itercount_slicer = (COLLECT_STATISTICS_LAST_ITERCOUNT_SLICER >= 1);
-    MAKE_GETTER_SETTER_AND_INCREMENTER(last_itercount_slicer, COLLECT_STATISTICS_LAST_ITERCOUNT_SLICER)
+    static constexpr bool collect_statistics_itercount_slicer = (COLLECT_STATISTICS_ITERCOUNT_SLICER >= 1);
+    MAKE_GETTER_SETTER_AND_INCREMENTER(itercount_slicer, COLLECT_STATISTICS_ITERCOUNT_SLICER)
 
     inline void clear_statistics() noexcept
     {
@@ -444,8 +454,8 @@ public:
         stats_buck_over_max = 0;
     #endif
 
-    #if COLLECT_STATISTICS_LAST_ITERCOUNT_SLICER
-        stats_last_itercount_slicer = 0;
+    #if COLLECT_STATISTICS_ITERCOUNT_SLICER
+        stats_itercount_slicer = 0;
     #endif
 
     #if COLLECT_STATISTICS_RANDOMIZE_TRIALNUM_SLICER
@@ -520,8 +530,8 @@ public:
                     os << "dbt buck_over_num: " << get_stats_buck_over_num();
                     os << "\n";
                 }
-                if(collect_statistics_last_itercount_slicer){
-                    os << "iterations: " << get_stats_last_itercount_slicer();
+                if(collect_statistics_itercount_slicer){
+                    os << "iterations: " << get_stats_itercount_slicer();
                     os << "\n";
                 }
                 #ifdef COLLECT_STATISTICS

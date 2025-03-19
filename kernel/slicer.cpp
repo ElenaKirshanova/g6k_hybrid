@@ -550,7 +550,7 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
             //std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << " cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
             std::cout << "iteration " << it << " cdb_t.size() " << cdb_t.size() << std::endl;
         }
-        statistics.inc_stats_last_itercount_slicer();
+        statistics.inc_stats_itercount_slicer();
         it++;
     }
     if(verbose) statistics.print_statistics();

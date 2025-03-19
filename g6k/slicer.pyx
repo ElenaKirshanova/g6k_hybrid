@@ -127,12 +127,12 @@ cdef class RandomizedSlicer(object):
         return self._core.statistics.collect_statistics_buck_over_num
     
     @property
-    def _stat_get_last_itercount(self):
-        return self._core.statistics.get_stats_last_itercount_slicer()
+    def _stat_get_itercount(self):
+        return self._core.statistics.get_stats_itercount_slicer()
 
     @property
-    def _stat_c_last_itercount_slicer(self):
-        return self._core.statistics.collect_statistics_last_itercount_slicer
+    def _stat_c_itercount_slicer(self):
+        return self._core.statistics.collect_statistics_itercount_slicer
     
         # This dictionary controls how statistics are exported / displayed.
     #
