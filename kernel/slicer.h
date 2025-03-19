@@ -2,11 +2,13 @@
 // Created by Elena Kirshanova on 07/09/2024.
 //
 
+
 #ifndef G6K_HYBRID_SLICER_H
 #define G6K_HYBRID_SLICER_H
+#endif
 
-static constexpr unsigned int XPC_SLICER_SAMPLING_THRESHOLD = 75; // XPC Threshold for iterative slicer sampling //105
-static constexpr unsigned int XPC_SLICER_THRESHOLD = 96; // XPC Threshold for iterative slicer sampling
+static constexpr unsigned int XPC_SLICER_SAMPLING_THRESHOLD = 75; // XPC Threshold for iterative slicer sampling //75
+static constexpr unsigned int XPC_SLICER_THRESHOLD = 96; // XPC Threshold for iterative slicer sampling //96
 
 #define REDUCE_DIST_MARGIN 1.008
 #define REDUCE_DIST_MARGIN_HALF 1.004
@@ -14,6 +16,9 @@ static constexpr unsigned int XPC_SLICER_THRESHOLD = 96; // XPC Threshold for it
 #ifndef MAX_SIEVING_DIM
 #define MAX_SIEVING_DIM 128
 #endif
+
+#include "compat.hpp"
+#include "statistics_slicer.hpp"
 
 
 struct Entry_t
@@ -44,6 +49,7 @@ public:
         this->n = this->sieve.n;
         sim_hashes_t.reset_compress_pos(this->sieve);
         uid_hash_table_t.reset_hash_function(this->sieve);
+        this->statistics.clear_statistics();
     }
 
     friend SimHashes;
@@ -70,6 +76,9 @@ public:
     CACHELINE_VARIABLE(std::vector<Unique_entry_t>, unique_db);  //to store unique targets
     CACHELINE_VARIABLE(rng::threadsafe_rng, rng_t);
 
+    // collects various statistics about the slicer. Details about statistics collection are in statistics_slicer.hpp
+    CACHELINE_VARIABLE(SlicerStatistics, statistics);
+
     unsigned int n;
 
     unsigned int Nt = 1;  //number of unique targets
@@ -85,6 +94,8 @@ public:
 
     thread_pool::thread_pool threadpool;
     size_t sorted_until = 0;
+
+    const char* filename_cdbt = "cdbt_out.txt";
 
     void parallel_sort_cdb();
 
@@ -115,9 +126,11 @@ public:
     void set_max_slicer_interations(size_t maxiter){this->MAX_SLICER_ITERS = maxiter;}
     void set_Nt(unsigned int nt) {this->Nt = nt;}
     void set_saturation_scalar(FT sat_scalar) {this->saturation_scalar = sat_scalar;}
+    void set_filename_cdbt(const char* filename_prefix) {this->filename_cdbt = filename_prefix;}
+
+    bool dump_cdb_t(const char* filename_prefix, size_t it);
+
 
     template<RecomputeSlicer what_to_recompute>
     inline void recompute_data_for_entry_t(Entry_t &e);
 };
-
-#endif //G6K_HYBRID_SLICER_H

@@ -41,10 +41,136 @@ cdef class RandomizedSlicer(object):
     def set_saturation_scalar(self, sat_scalar):
         self._core.set_saturation_scalar(sat_scalar)
 
+    def set_filename_cdbt(self, char* filename):
+       self._core.set_filename_cdbt(filename)
+
+
     def bdgl_like_sieve(self, size_t nr_buckets, size_t blocks, size_t multi_hash, verbose):
         sig_on()
         self._core.bdgl_like_sieve(nr_buckets, blocks, multi_hash, verbose)
         sig_off()
+
+    @property
+    def _stat_get_xorpopcnt(self):
+        return self._core.statistics.get_stats_xorpopcnt_total()
+
+    @property
+    def _stat_c_xorpopcnt(self):
+        return self._core.statistics.collect_statistics_xorpopcnt
+
+    @property
+    def _stat_get_xorpopcnt_pass(self):
+        return self._core.statistics.get_stats_xorpopcnt_pass_total()
+
+    @property
+    def _stat_c_xorpopcnt_pass(self):
+        return self._core.statistics.collect_statistics_xorpopcnt_pass
+    
+    @property
+    def _stat_get_fullscprods(self):
+        return self._core.statistics.get_stats_xorpopcnt_total()
+
+    @property
+    def _stat_c_fullscprods(self):
+        return self._core.statistics.collect_statistics_fullscprods
+    
+    @property
+    def _stat_get_redsucc(self):
+        return self._core.statistics.get_stats_redsucc_total()
+
+    @property
+    def _stat_c_redsucc(self):
+        return self._core.statistics.collect_statistics_redsucc
+    
+    @property
+    def _stat_get_replacements(self):
+        return self._core.statistics.get_stats_replacements()
+
+    @property
+    def _stat_c_replacements(self):
+        return self._core.statistics.collect_statistics_replacements
+    
+    @property
+    def _stat_get_collisions(self):
+        return self._core.statistics.get_stats_collisions()
+
+    @property
+    def _stat_c_collisions(self):
+        return self._core.statistics.collect_statistics_collisions
+    
+    @property
+    def _stat_get_reds_during_randomization(self):
+        return self._core.statistics.get_stats_reds_during_randomization()
+
+    @property
+    def _stat_c_reds_during_randomization(self):
+        return self._core.statistics.collect_statistics_reds_during_randomization
+    
+    @property
+    def _stat_get_bucknum(self):
+        return self._core.statistics.get_stats_bucknum()
+
+    @property
+    def _stat_c_bucknum(self):
+        return self._core.statistics.collect_statistics_bucknum
+    
+    @property
+    def _stat_get_buck_over_max(self):
+        return self._core.statistics.get_stats_bucknum()
+
+    @property
+    def _stat_c_buck_over_max(self):
+        return self._core.statistics.collect_statistics_buck_over_max
+    
+    @property
+    def _stat_get_buck_over_num(self):
+        return self._core.statistics.get_stats_buck_over_num()
+
+    @property
+    def _stat_c_buck_over_num(self):
+        return self._core.statistics.collect_statistics_buck_over_num
+    
+    @property
+    def _stat_get_itercount(self):
+        return self._core.statistics.get_stats_itercount_slicer()
+
+    @property
+    def _stat_c_itercount_slicer(self):
+        return self._core.statistics.collect_statistics_itercount_slicer
+    
+        # This dictionary controls how statistics are exported / displayed.
+    #
+    # Format is as follows: key equals the C++ = decl.pxd = _stat_get_ name
+    # Value is [SequenceID, short description, long description, algs, OPTIONAL: repr]
+    # where  SequenceID is a number used to determine in which order we write output
+    #        short description is the prefix used in (short) humand-readable output
+    #        long description is a meaningful "docstring"
+    #        algs is a set of algorithms where this statistic is meaningful
+    #        repr is optional and is passed to the Accumulator inside the TreeTracer as its
+    #           repr argument. Set to "max" to output the max value instead of the sum.
+
+    all_statistics = {
+        "xorpopcnt"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],
+        "xorpopcnt_pass"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],
+        "fullscprods"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],
+        "redsucc"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],
+        "replacements"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],
+        "collisions"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],
+        "reds_during_randomization"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],
+        "bucknum"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],
+        "buck_over_max"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],  
+        "buck_over_max"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}], 
+        "buck_over_max"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                            {"bdgl2"}], 
+     }
+
+    @property
+    def stats(self):
+        "Returns all collected statistics of the current sieve as a dictionary"
+        ret = {"cdb_t-size:" : self._core.cdb_t.size()}
+        for key in RandomizedSlicer.all_statistics:
+            if(getattr(self,"_stat_c_" + key) == True):
+                ret[key] = getattr(self, "_stat_get_" + key)
+        return ret
 
     def itervalues_cdb_t(self,return_with_index=True):
         """
@@ -57,7 +183,6 @@ cdef class RandomizedSlicer(object):
             e = &self._core.db_t[self._core.cdb_t[i].i]
             r = [e.yr[j] for j in range(self._core.n)]
             index = e.i
-            #r_0 = [e.yr_o[j] for j in range(self._core.n)] #TODO: remove
             if return_with_index:
                 yield ( tuple(r), index )
             else:

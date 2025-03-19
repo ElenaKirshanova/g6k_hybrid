@@ -13,18 +13,18 @@ import time
 
 if __name__ == "__main__":
 
-    slicer_interations = 250
+    slicer_interations = 140
     norm_slack = 1.01      #terminate slicer if norm_slack*||e_projected|| is found
     approx_factor = 0.9
-    nrand_param = 20
+    nrand_param = 10
     nthreads = 1
-    nexp = 10
-    verbose = False
-    slicer_verbosity = False
+    nexp = 1
+    verbose = True
+    slicer_verbosity = True
 
 
     FPLLL.set_precision(200)
-    n, betamax, sieve_dim = 66, 53, 66
+    n, betamax, sieve_dim = 75, 53, 75
     ft = "ld" if n<90 else ( "dd" if config.have_qd else "mpfr")
     # - - - try load a lattice - - -
     filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
@@ -77,7 +77,10 @@ if __name__ == "__main__":
         if verbose: print("Running bdgl2...")
         then = time.perf_counter()
         g6k(alg="bdgl2")
-        if verbose: print(f"siever done in {time.perf_counter()-then}")
+        print(f"siever done in {time.perf_counter()-then}")
+        print(" - - - SIEVER STATS - - -")
+        sievestats = g6k.stats
+        print(sievestats)
         g6k.M.update_gso()
         # filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
         g6k.dump_on_disk( filename )
@@ -93,7 +96,7 @@ if __name__ == "__main__":
     runtimes=[]
 
     es_ = []
-    for _ in range(nexp):
+    for ctr_experiment in range(nexp):
         c = [ randrange(-33,34) for j in range(n) ]
         # e = np.array( [ randrange(-8,9) for j in range(n) ],dtype=np.int64 )
         e = np.array( random_on_sphere(n,approx_factor*gh**0.5) )
@@ -120,7 +123,7 @@ if __name__ == "__main__":
         # g6k.initialize_local(n-sieve_dim,n-sieve_dim,n)
         # print("Running bdgl2...")
         # g6k(alg="bdgl2")
-        # g6k.M.update_gso() 
+        # g6k.M.update_gso()
         #
         # print(f"dbsize: {len(g6k)}")
 
@@ -184,8 +187,8 @@ if __name__ == "__main__":
             nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
             nrand = ceil(nrand_param*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
             # nrand = 6000
-            if verbose: print(f"nrand:{nrand}")
-            slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=1100)
+            print(f"nrand:{nrand}")
+            slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
 
             blocks = 2 # should be the same as in siever
             blocks = min(3, max(1, blocks))
@@ -202,9 +205,11 @@ if __name__ == "__main__":
             slicer.set_max_slicer_interations(slicer_interations)
             slicer.set_Nt(1)
             slicer.set_saturation_scalar(1.05)
+            filename = ("cdbt_dim_n"+str(n)+"_beta"+str(betamax)+"_sdim"+str(sieve_dim)+"_"+str(ctr_experiment)+"_").encode('utf-8')
+            # slicer.set_filename_cdbt(filename)
 
             then = time.perf_counter()
-            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], slicer_verbosity)
+            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], True) #slicer_verbosity
             endtime = time.perf_counter()-then
             if verbose: print(f"slicer w. nthreads: {nthreads} done in {endtime}")
             runtimes.append( endtime )
@@ -241,6 +246,11 @@ if __name__ == "__main__":
             if succ:
                 nsli_succ+=1
             if verbose: print(f"both succeeded: {succ and succbab}", flush=True)
+
+            print(f"- - - STATS - - -")
+            print(slicer.stats)
+            print(f"- - - STATS - - -")
+
         if verbose: print(f"es_: {sorted(es_)}")
         if verbose: print(f"MEAN: {np.mean(runtimes)}")
         if verbose: print(runtimes)

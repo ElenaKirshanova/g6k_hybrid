@@ -138,7 +138,7 @@ if __name__=="__main__":
     # (dimension, predicted kappa, predicted beta)
     # params = [(140, 12, 48), (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     #params = [(140, 12, 48)]#, (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
-    params = [(135+i*3, 6, 53+3*i) for i in range(2)] 
+    params = [(135+i*3, 6, 53+3*i) for i in range(2)]
     # params = [(180, 6, 93)]
     # params = [(190, 7, 99)]
     # params = [(200, 7, 108)]
@@ -162,7 +162,7 @@ if __name__=="__main__":
                 params ={
                         "n": param[0], #n
                         "q": q, #q
-                        "dist": dist, 
+                        "dist": dist,
                         "dist_param": dist_param,
                         "seed": [latnum,0], #seed, second value is irrelevant
                         "beta_bkz": param[2]+beta_bkz_offset, #beta_bkz
