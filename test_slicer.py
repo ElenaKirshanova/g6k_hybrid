@@ -13,18 +13,18 @@ import time
 
 if __name__ == "__main__":
 
-    slicer_interations = 250
+    slicer_interations = 140
     norm_slack = 1.01      #terminate slicer if norm_slack*||e_projected|| is found
     approx_factor = 0.9
     nrand_param = 10
     nthreads = 1
     nexp = 1
-    verbose = False
-    slicer_verbosity = False
+    verbose = True
+    slicer_verbosity = True
 
 
     FPLLL.set_precision(200)
-    n, betamax, sieve_dim = 66, 53, 66
+    n, betamax, sieve_dim = 75, 53, 75
     ft = "ld" if n<90 else ( "dd" if config.have_qd else "mpfr")
     # - - - try load a lattice - - -
     filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
@@ -96,7 +96,7 @@ if __name__ == "__main__":
     runtimes=[]
 
     es_ = []
-    for _ in range(nexp):
+    for ctr_experiment in range(nexp):
         c = [ randrange(-33,34) for j in range(n) ]
         # e = np.array( [ randrange(-8,9) for j in range(n) ],dtype=np.int64 )
         e = np.array( random_on_sphere(n,approx_factor*gh**0.5) )
@@ -205,9 +205,11 @@ if __name__ == "__main__":
             slicer.set_max_slicer_interations(slicer_interations)
             slicer.set_Nt(1)
             slicer.set_saturation_scalar(1.05)
+            filename = ("cdbt_dim_n"+str(n)+"_beta"+str(betamax)+"_sdim"+str(sieve_dim)+"_"+str(ctr_experiment)+"_").encode('utf-8')
+            # slicer.set_filename_cdbt(filename)
 
             then = time.perf_counter()
-            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], slicer_verbosity)
+            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], True) #slicer_verbosity
             endtime = time.perf_counter()-then
             if verbose: print(f"slicer w. nthreads: {nthreads} done in {endtime}")
             runtimes.append( endtime )

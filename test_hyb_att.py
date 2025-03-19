@@ -22,7 +22,7 @@ except ModuleNotFoundError:
 
 from global_consts import *
 
-from signal import signal, SIGPIPE, SIG_DFL  
+from signal import signal, SIGPIPE, SIG_DFL
 signal(SIGPIPE,SIG_DFL)
 
 inp_path = "lwe_instances/saved_lattices/"
@@ -350,6 +350,7 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
         tracer = {}
         iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
         guess_cntr = 0
+        sli_succ = False
         for v in iter_v:
             if v is None:
                 v = np.array( len(answer)*[0] )
@@ -360,9 +361,9 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
 
             v2 = v
 
-            sli_succ = answer==v2
+            sli_succ = all( answer==v2 )
             # print(f"slicer:\n {sli_succ}")
-            if all(sli_succ):
+            if (sli_succ):
                 succ_cntr+=1
                 print(f"Success in experiment! @{guess_cntr} guess")
                 break
@@ -373,8 +374,8 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
         stats_dict[(n,lat_index, n_slicer_coord, n_guess_coord, ex_cntr)] = {
             "walltime": walltime,
             "dist_bnd": dist_bnd,
-            "succ": all(sli_succ),
-            "fail_reason": None if all(sli_succ) else fail_reason,
+            "succ": (sli_succ),
+            "fail_reason": None if (sli_succ) else fail_reason,
             "key_num": tracer["key_num"], #number of guessed keys
             "g6k_len": len(g6k),
             "wrong_guess_time_alg3": tracer["wrong_guess_time_alg3"],
@@ -385,7 +386,7 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
         }
         print(f"walltime: {walltime} | walltime_observed: {walltime_observed}")
 
-        print(f" - - - {all(answer==v2)} after {guess_cntr} guesses - - - ")
+        print(f" - - - {sli_succ} after {guess_cntr} guesses - - - ")
     return stats_dict
 
 if __name__=="__main__":
@@ -395,12 +396,11 @@ if __name__=="__main__":
     preprocessing.py (preprocess the data) and then run this file.
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
-    n, k = 144, 1
+    n, k = 115, 1
     q, eta = 3329, 3
-    latnum = 10
-    n_guess_coord, n_slicer_coord = 6, 65
-    nthreads = 3
-    nworkers = 8
+    n_guess_coord, n_slicer_coord = 4, 46
+    nthreads = 5
+    nworkers = 2
     latnum = 2
 
     params={}

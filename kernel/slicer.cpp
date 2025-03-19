@@ -1,3 +1,7 @@
+#include <iostream>
+#include <fstream>
+#include <cstring>
+
 #include "siever.h"
 #include "slicer.h"
 #include "fht_lsh.h"
@@ -482,26 +486,19 @@ void RandomizedSlicer::slicer_process_buckets_task(const size_t t_id,
                 {
                     statistics.inc_stats_xorpopcnt_pass_s();
                     std::pair<LFT, int> len_and_sign = reduce_to_QEntry_t( pce1, &fast_cdb[bj] );
-                    statistics.inc_stats_fullscprods_s();
-                    //if( len_and_sign.first < 0.98*pce1->len)
                     if(len_and_sign.first < best_reduction)
                     {
                         best_j = j;
                         best_reduction = len_and_sign.first;
                         best_sign = len_and_sign.second;
-
-                        if (kk < .1 * S) break;
-                        kk -= threads;
-                        //t_queue.push_back({ pce1->i, fast_cdb[bj].i, len_and_sign.first, (int8_t)len_and_sign.second});
-
                     }
-                    //else if( params.otf_lift and len_and_sign.first < params.lift_radius ) {
-                    //    bdgl_lift( pce1->i, fast_cdb[bj].i, len_and_sign.first, len_and_sign.second );
-                    //}
+
                 }
             }
+
             if(best_j!=-1) {
-                statistics.inc_stats_redsucc_s();
+                if (kk < .1 * S) break;
+                kk -= threads;
                 t_queue.push_back({ pce1->i, fast_cdb[fast_buckets[best_j]].i, best_reduction, (int8_t)best_sign});
             }
         }
@@ -546,14 +543,29 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
         parallel_sort_cdb();
         //std::cout << "parallel_sort_cdb finished" << std::endl;
 
-        if(it%10==0 && verbose) {
-            //std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << " cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
-            std::cout << "iteration " << it << " cdb_t.size() " << cdb_t.size() << std::endl;
+        if( (it<10) || (it%20==0) && verbose) {
+            std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << " cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
+            dump_cdb_t(filename_cdbt, it);
         }
         statistics.inc_stats_itercount_slicer();
         it++;
     }
     if(verbose) statistics.print_statistics();
     if(verbose) std::cerr << "Couldn't find a close vector after " << MAX_SLICER_ITERS << " iterations" << std::endl;
+    return false;
+}
+
+bool RandomizedSlicer::dump_cdb_t(const char* filename_prefix, size_t it){
+
+    std::string filename = std::string("./tmpdir/") + std::string(filename_prefix)+std::to_string(it);
+    std::ofstream cdbt_output_file(filename);
+    if(cdbt_output_file.is_open())
+    {
+        const size_t S = cdb_t.size();
+        for (size_t i = 0; i<S; i++) cdbt_output_file<< i << " " << cdb_t[i].len << std::endl;
+        cdbt_output_file.close();
+        return true;
+    }
+    else std::cout << "Unable to open file" << std::endl;
     return false;
 }

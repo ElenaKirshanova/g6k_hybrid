@@ -235,21 +235,21 @@ def test_batch(params):
             print(f"es_: {sorted(es_)}")
             print(f"MEAN: {np.mean(runtimes)}")
             print(runtimes)
-    return nbab_succ, nsli_succ
+    return nbab_succ, nsli_succ, runtimes
 
 if __name__ == "__main__":
 
     slicer_interations = 250
     norm_slack = 1.01      #terminate slicer if norm_slack*||e_projected|| is found
-    approx_factor = 0.41
-    n_targets = 20
+    approx_factor = 0.9
+    n_targets = 50
     saturation_scalar = 1.05
     nrand_param = 5 #5
     nthreads = 5
     nexp = 5
 
     FPLLL.set_precision(200)
-    n, betamax, sieve_dim = 128, 53, 70
+    n, betamax, sieve_dim = 80, 53, 80
 
     params = {
         "slicer_interations" : slicer_interations,
@@ -265,6 +265,9 @@ if __name__ == "__main__":
         "sieve_dim" : sieve_dim,
     }
 
-    test_batch(params)
+    nbab_succ, nsli_succ, runtimes = test_batch(params)
+    print(f"nbab_succ: {nbab_succ}")
+    print(f"nsli_succ: {nsli_succ}")
+    print(runtimes)
     
     
