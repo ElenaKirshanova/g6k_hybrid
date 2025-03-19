@@ -463,30 +463,21 @@ void RandomizedSlicer::slicer_process_buckets_task(const size_t t_id,
                 if( this->sieve.is_reducible_maybe<XPC_SLICER_THRESHOLD>(cv, fast_cdb[bj].c) ) //TODO:adjust XPC_SLICER_THRESHOLD
                 {
                     std::pair<LFT, int> len_and_sign = reduce_to_QEntry_t( pce1, &fast_cdb[bj] );
-#if BEST_IN_BUCKET
                     if(len_and_sign.first < best_reduction)
                     {
                         best_j = j;
                         best_reduction = len_and_sign.first;
                         best_sign = len_and_sign.second;
                     }
-#else
-                    if( len_and_sign.first < 0.98*pce1->len)
-                    {
-                        t_queue.push_back({ pce1->i, fast_cdb[bj].i, len_and_sign.first, (int8_t)len_and_sign.second});
-                        if (kk < .1 * S) break;
-                        kk -= threads;
-                    }
-#endif
+
                 }
             }
-#if BEST_IN_BUCKET
+
             if(best_j!=-1) {
                 if (kk < .1 * S) break;
                 kk -= threads;
                 t_queue.push_back({ pce1->i, fast_cdb[fast_buckets[best_j]].i, best_reduction, (int8_t)best_sign});
             }
-#endif
         }
     }
     std::sort( t_queue.begin(), t_queue.end(), &compare_QEntry);
