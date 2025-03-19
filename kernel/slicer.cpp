@@ -380,9 +380,8 @@ void RandomizedSlicer::slicer_bucketing(const size_t blocks, const size_t multi_
             // std::cout << maxbsize << " vs " << buckets_index[i].val << std::endl;
             if(maxbsize<buckets_index[i].val){
                 statistics.set_stats_buck_over_max((unsigned long)(buckets_index[i].val));
-                std::cout << "slicer: bucket overflow! setting " << buckets_index[i].val << std::endl;
+                // std::cout << "slicer: bucket overflow! setting " << buckets_index[i].val << std::endl;
             }
-            // std::cout << "slicer: bucket overflow! " << buckets_index[i].val << std::endl;
             buckets_index[i].val = bsize;
         }
     }
