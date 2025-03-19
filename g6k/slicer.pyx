@@ -159,8 +159,8 @@ cdef class RandomizedSlicer(object):
         "reds_during_randomization"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],
         "bucknum"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],
         "buck_over_max"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],  
-        "buck_over_max"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}], 
-        "buck_over_max"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                            {"bdgl2"}], 
+        "buck_over_num"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}], 
+        "itercount_slicer"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                            {"bdgl2"}], 
      }
 
     @property
