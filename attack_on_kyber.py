@@ -282,13 +282,13 @@ if __name__ == "__main__":
 
     nthreads = 4
     nworkers = 4
-    lats_per_dim = 10 #10
+    lats_per_dim = 2 #10
     inst_per_lat = 10 #10 #how many instances per A, q
     dist, dist_param = "ternary", 1/6.
     # dist, dist_param = "binomial", 2
     q = 3329
     nks = [ (140+10*i) for i in range(2) ]
-    betapre,betamax = 52, 70
+    betapre,betamax = 45, 70
 
     output = []
     pool = Pool( processes = nworkers )

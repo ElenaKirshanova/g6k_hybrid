@@ -21,6 +21,7 @@ except ModuleNotFoundError:
     from multiprocessing import Pool
 
 from global_consts import *
+from copy import copy
 
 inp_path = "lwe_instances/saved_lattices/"
 out_path = "lwe_instances/reduced_lattices/"
@@ -375,7 +376,7 @@ def run_experiment(params, stats_dict, tracer=None):
         a0, a1 = tracer["wrong_guess_time_alg3"] , tracer["wrong_guess_time_alg2"]
         print(f"a0, a1: {a0,a1}")
         walltime, walltime_observed = tracer["wrong_guess_time_alg3"] + tracer["wrong_guess_time_alg2"], perf_counter() - ex_timer
-        stats_dict[(n,lat_index, n_slicer_coord, n_guess_coord, ex_cntr)] = {
+        stats_dict[(n, lat_index, n_slicer_coord, n_guess_coord, ex_cntr)] = {
             "walltime": walltime,
             "dist_bnd": dist_bnd,
             "succ": (sli_succ),
@@ -400,11 +401,11 @@ if __name__=="__main__":
     preprocessing.py (preprocess the data) and then run this file.
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
-    n = 138
+    n = 144
     q, eta = 3329, 3
-    # dist, dist_param = "ternary", 1/6.
-    dist, dist_param = "binomial", 2
-    n_guess_coord, n_slicer_coord = 6, 58
+    dist, dist_param = "ternary", 1/6.
+    # dist, dist_param = "binomial", 2
+    n_guess_coord, n_slicer_coord = 6, 46
     nthreads = 5
     nworkers = 2
     latnum = 2
@@ -424,7 +425,7 @@ if __name__=="__main__":
         output.append({})
         params["seed"] = (lat_index,0)
         tasks.append( pool.apply_async(
-            run_experiment, (params, output[lat_index])
+            run_experiment, (copy(params), output[lat_index])
             ) )
 
     stats_dict_agr = {}
@@ -437,3 +438,4 @@ if __name__=="__main__":
     with open(filename, "wb") as file:
         pickle.dump( stats_dict_agr, file )
     pool.close()
+    print( stats_dict_agr )
