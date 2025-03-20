@@ -525,8 +525,6 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
             if(verbose) {
                 std::cout << "Saturated on:" << it  << "-th iteration"  << std::endl;
             }
-            if(verbose) statistics.print_statistics();
-            // std::cout << "stats printed" << std::endl;
             return true;
         }
 
@@ -543,9 +541,8 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
         parallel_sort_cdb();
         //std::cout << "parallel_sort_cdb finished" << std::endl;
 
-        if( (it<10) || (it%20==0) && verbose) {
+        if( (it%100==0) && verbose) {
             std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << " cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
-            dump_cdb_t(filename_cdbt, it);
         }
         statistics.inc_stats_itercount_slicer();
         it++;

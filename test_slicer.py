@@ -24,7 +24,7 @@ if __name__ == "__main__":
 
 
     FPLLL.set_precision(200)
-    n, betamax, sieve_dim = 75, 53, 75
+    n, betamax, sieve_dim = 60, 53, 60
     ft = "ld" if n<90 else ( "dd" if config.have_qd else "mpfr")
     # - - - try load a lattice - - -
     filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
