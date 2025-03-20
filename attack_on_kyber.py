@@ -280,7 +280,7 @@ if __name__ == "__main__":
         except:
             pass    #still in docker if isExists==False, for some reason folder can exist and this will throw an exception.
 
-    nthreads = 2
+    nthreads = 4
     nworkers = 4
     lats_per_dim = 10 #10
     inst_per_lat = 10 #10 #how many instances per A, q
@@ -288,12 +288,12 @@ if __name__ == "__main__":
     # dist, dist_param = "binomial", 2
     q = 3329
     nks = [ (140+10*i) for i in range(2) ]
-    betapre,betamax = 40, 70
+    betapre,betamax = 52, 70
 
     output = []
     pool = Pool( processes = nworkers )
     tasks = []
-    RECOMPUTE_INSTANCE = True
+    RECOMPUTE_INSTANCE = False
     RECOMPUTE_KYBER = True
     if RECOMPUTE_INSTANCE:
         print(f"Generating Kyber...")

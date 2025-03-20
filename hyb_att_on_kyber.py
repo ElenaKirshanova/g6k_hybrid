@@ -289,7 +289,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
     buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
     buckets = max(buckets, 2**(blocks-1))
 
-    slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], True)
+    slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False)
 
     # print(f"t_gs_reduced: {t_gs_reduced}")
     print(f"t_gs_reduced norm: {t_gs_reduced@t_gs_reduced}")
