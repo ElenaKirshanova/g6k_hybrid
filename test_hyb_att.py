@@ -208,7 +208,7 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, dist, dist_param, s, dist_sq_
     # - - - END CORRECT GUESS - - -
 
 
-def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
+def alg_3_debug(g6k,H11,B,target,n_guess_coord, distrib, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
     # Emulates batch CVPP with guessing.
     # - - - prepare targets - - -
     then_start = perf_counter()
@@ -217,7 +217,7 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
     print(f"dim: {dim}")
 
     t1, t2 = target[:-n_guess_coord], target[-n_guess_coord:]
-    distrib = centeredBinomial(eta)
+    # distrib = centeredBinomial(eta)
     #TODO: make/(check if is) practical
     nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord ) )
     print(f"nsampl: {nsampl}")
@@ -283,6 +283,13 @@ def run_experiment(params, stats_dict, tracer=None):
     n_guess_coord, n_slicer_coord = params["n_guess_coord"], params["n_slicer_coord"]
     seed = params["seed"]
     lat_index = seed[0]
+
+    # if dist == "binomial":
+    #     distrib = centeredBinomial(dist_param)
+    # elif dist=="ternary":
+    #     distrib = ternaryDist(dist_param)
+    # else:
+    #      raise ValueError(f"distrib: expected \"binomial\" or \"ternary\", got {distrib}")
 
     ft = "ld" if 2*n<140 else ( "dd" if config.have_qd else "mpfr")
     FPLLL.set_precision(210)
