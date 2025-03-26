@@ -17,8 +17,7 @@ lwe_inst = [ #do we need lats_per_dim and inst_per_lat?
     {"n": 170, "q": 3329, "dist": 'ternary', "dist_param": 0.16666666666666666},
     # {"n": 180, "q": 3329, "dist": 'ternary', "dist_param": 0.16666666666666666},
 ]
-corresponding_blocksizes = {140:40, 150:45, 160:50, 170:50} #betapre's from attack_on_kyber
-# hparams = [ (140,6,46), (150,6,46), (160,6,55), (170,6,59) ] #sieve_dim_min's from preprocessing.py
+corresponding_blocksizes = {140:40, 150:40, 160:50, 170:50} #betapre's from attack_on_kyber
 hparams = { #n_guess_coord's from preprocessing.py
     140: (6,46),
     150: (6,46),
@@ -210,23 +209,30 @@ for n in hparams.keys():
             
 
 wtimes = {}
+succs = {}
 for n in available_ns:
     wtimes[n] = []
+    if not n in succs:
+        succs[n] = [0,0]
+    
 
 for key in L:
     n, _, n_slicer_coord, n_guess_coord, _ = key
     if n_guess_coord == 6:
         nrand_, _ = batchCVPP_cost(n_slicer_coord,100,L[key]["g6k_len"] **(1./n_slicer_coord),1)
         nrand = ceil(NRAND_FACTOR*(1./nrand_)**n_slicer_coord)
-        utar_per_batch = ceil( L[key]["g6k_len"] / nrand )
+        utar_per_batch = ceil( L[key]["g6k_len"] / nrand ) #how many unique targets in batch
         # print(times, L[key]["wrong_guess_time_alg2"] )
     
         curtime = abs( L[key]["wrong_guess_time_alg2"] ) + abs( L[key]["wrong_guess_time_alg3"] )
-        curtime *=  L[key]["key_num"]/utar_per_batch
+        curtime *=  L[key]["key_num"]/utar_per_batch #time * how many batches needed
         wtimes[n].append( curtime )
+        succs[n][0]+=1
+        succs[n][1]+=L[key]['succ']
 
 for n in available_ns:
     wtimes[n] = np.mean(wtimes[n])
+    succs[n] = float(succs[n][1] / succs[n][0])
 
 # batch_unions = { #how many guesses are computed per guess (nrand 10)
 #     140: 8.,
@@ -246,7 +252,8 @@ ltot_hyb_att = {}
 for key in wtimes.keys():
     walltime = wtimes[key]
     nrand = 6
-    ltot_hyb_att[key] = l1[key] + ( 2*walltime )  #* n_guesses[nrand] / batch_unions[key]
+    ltot_hyb_att[key] = l1[key] + ( 2*walltime ) / succs[key]  #success rate is 1/2 * slicer's proba
+
 
 plotfilename = f"time_{dist}_{dist_param:0.4f}_{available_ns}.png"
 P.save_image( plotfilename,title=f'Preprocessing + attack Time for Hybrid, Kyber-$n$. Ternary', figsize=12 )
