@@ -281,14 +281,14 @@ if __name__ == "__main__":
             pass    #still in docker if isExists==False, for some reason folder can exist and this will throw an exception.
 
     nthreads = 4
-    nworkers = 4
+    nworkers = 2
     lats_per_dim = 2 #10
     inst_per_lat = 10 #10 #how many instances per A, q
-    dist, dist_param = "ternary", 1/6.
-    # dist, dist_param = "binomial", 2
-    q = 3329
-    nks = [ (140+10*i) for i in range(2) ]
-    betapre,betamax = 45, 70
+    # dist, dist_param = "ternary", 1/6.
+    dist, dist_param = "binomial", 5
+    q = 4096
+    nks = [ (120+5*i) for i in range(2) ]
+    betapre,betamax = 47, 73
 
     output = []
     pool = Pool( processes = nworkers )
