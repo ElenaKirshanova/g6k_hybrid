@@ -248,10 +248,10 @@ def uniform_in_ball(num_points, dimension, radius=1):
     # Return the list of random (direction & length) points.
     return radius * (random_directions * random_radii).T
 
-def test_vect_proj( G, n_slicer_coord, n_tests, eta=3 ):
+def test_vect_proj( G, n_slicer_coord, n_tests, dist ):
     # Gives norms of n_tests projected and scaled vectors ~Bin(eta). The projection is onto
     # the last n_slicer_coord dimensional projective lattice.
-    dist = centeredBinomial(eta)
+    # dist = centeredBinomial(eta)
 
     gh_sub = gaussian_heuristic( G.r()[-n_slicer_coord:] )
     lens = []

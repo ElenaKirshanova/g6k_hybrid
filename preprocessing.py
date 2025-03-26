@@ -143,10 +143,10 @@ if __name__=="__main__":
     # params = [(180, 6, 93)]
     # params = [(190, 7, 99)]
     # params = [(200, 7, 108)]
-    nworkers, nthreads =  4, N_SIEVE_THREADS #5 (to be changed for kyber 190, 200 !!!)
+    nworkers, nthreads =  2, N_SIEVE_THREADS #5 (to be changed for kyber 190, 200 !!!)
 
-    beta_bkz_offset = 1 #bkz blocksize would surpass the predicted value by this offset
-    sieve_dim_max_offset = 2 #the largest slicer will work on dim=prediceted beta + this offset
+    beta_bkz_offset = 0 #bkz blocksize would surpass the predicted value by this offset
+    sieve_dim_max_offset = 1 #the largest slicer will work on dim=prediceted beta + this offset
     kappa_offset = 1 #data for predicted kappa up to predicted kappa + kappa_offset - 1 will be saved
 
     lats_per_dim = 2
