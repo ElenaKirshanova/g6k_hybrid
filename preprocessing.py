@@ -43,7 +43,8 @@ def load_lwe(params):
     filename = get_filename( "lwe_instance", params )
     with open(inp_path + filename, "rb") as fl:
         D = pickle.load(fl)
-    A_, q_, dist, dist_param, bse_ = D["A"], D["q"], D["dist"], D["dist_param"], D["bse"]
+    # A_, q_, dist, dist_param, bse_ = D["A"], D["q"], D["dist"], D["dist_param"], D["bse"]
+    A_, q_,  bse_ = D["A"], D["q"], D["bse"]
     return A_, q_, bse_
 
 
