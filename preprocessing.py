@@ -151,7 +151,7 @@ if __name__=="__main__":
     # params = [(140, 12, 48), (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     #params = [(140, 12, 48)]#, (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     # params = [(135+i*3, 6, 53+3*i) for i in range(2)]
-    params = [ (135,5,56), (140,5,61) ]
+    params = [ (135,5,45) ]
     # params = [(180, 6, 93)]
     # params = [(190, 7, 99)]
     # params = [(200, 7, 108)]
@@ -161,7 +161,7 @@ if __name__=="__main__":
     sieve_dim_max_offset = 2 #the largest slicer will work on dim=prediceted beta + this offset
     kappa_offset = 2 #data for predicted kappa up to predicted kappa + kappa_offset - 1 will be saved
 
-    lats_per_dim = 2
+    lats_per_dim = 10
     inst_per_lat = 10 #how many instances per A, q
     # dist, dist_param = "ternary", 1/6.
     dist, dist_param = "binomial", 2
@@ -171,23 +171,23 @@ if __name__=="__main__":
     tasks = []
     for param in params:
         for latnum in range(lats_per_dim):
-            for kappa in range(param[1], param[1]+kappa_offset,1):
-                params ={
-                        "n": param[0], #n
-                        "q": q, #q
-                        "dist": dist,
-                        "dist_param": dist_param,
-                        "seed": [latnum,0], #seed, second value is irrelevant
-                        "beta_bkz": param[2], #beta_bkz
-                        "beta_bkz_offset": beta_bkz_offset,
-                        "sieve_dim_max": param[2]+sieve_dim_max_offset, #sieve_dim_max
-                        "nsieves": 1,  #nsieves
-                        "kappa": kappa, #kappa
-                        "nthreads": nthreads, #nthreads
-                    }
-                tasks.append( pool.apply_async(
-                    run_preprocessing, (params,)
-                ) )
+            kappa = param[1]
+            params ={
+                    "n": param[0], #n
+                    "q": q, #q
+                    "dist": dist,
+                    "dist_param": dist_param,
+                    "seed": [latnum,0], #seed, second value is irrelevant
+                    "beta_bkz": param[2], #beta_bkz
+                    "beta_bkz_offset": beta_bkz_offset,
+                    "sieve_dim_max": param[2]+sieve_dim_max_offset, #sieve_dim_max
+                    "nsieves": 1,  #nsieves
+                    "kappa": kappa, #kappa
+                    "nthreads": nthreads, #nthreads
+                }
+            tasks.append( pool.apply_async(
+                run_preprocessing, (params,)
+            ) )
 
     for t in tasks:
         output.append( t.get() )
