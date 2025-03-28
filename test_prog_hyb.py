@@ -32,6 +32,7 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
     nthreads = params["nthreads"]
     n, q, dist, dist_param = params["n"], params["q"], params["dist"], params["dist_param"]
     n_guess_coord, n_slicer_coord = params["n_guess_coord"], params["n_slicer_coord"]
+    beta_pre = params["beta_pre"]
 
     ft = "ld" if 2*n<140 else ( "dd" if config.have_qd else "mpfr")
     FPLLL.set_precision(210)
@@ -41,7 +42,7 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
     succ_cntr = 0
     ex_cntr = 0
 
-    filename_g6kdump = f'g6kdump_{n}_{q}_{dist}_{dist_param:.04f}_{lat_index}_{n_guess_coord}_{n_slicer_coord}.pkl'
+    
     # A, _, _, _, bse = load_lwe(n,q,eta,k,lat_index)
     A, q, bse = load_lwe(params)
 
@@ -56,6 +57,7 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
             Binit[i][j] = int( A[i-n,j] )
 
     then = perf_counter()
+    filename_g6kdump = f'g6kdump_{n}_{q}_{dist}_{dist_param:.04f}_{lat_index}_{n_guess_coord}_{n_slicer_coord}_{beta_pre}.pkl'
     #restore precomputed g6k and initialize ittest_vect_proj(G, n_slicer_coord, n_tests=NPROJ_TESTS, eta=eta)
     g6k = Siever.restore_from_file( out_path + filename_g6kdump )
     # Needed to ensure that all locals are correct.
@@ -199,8 +201,7 @@ if __name__=="__main__":
     dist, dist_param = "ternary", 1/6.
     latnum = 2
     n_guess_coord, n_slicer_coord = 6, 46
-    # bkz_beta_range = range(n_slicer_coord-1,n_slicer_coord+4) #range of values of beta or None if no additional reduction to be performed
-    # bkz_beta_range = range(48,49) #range(60,62,1) range(52,54)
+    beta_pre = 46
     delta_slicer_coord = 5 #integer >=0, n_slicer_coord + delta_slicer_coord will be the slicer dimension
     nthreads = 5
     nworkers = 2
@@ -209,6 +210,7 @@ if __name__=="__main__":
     params["nthreads"] = nthreads
     params["n"], params["dist"], params["dist_param"], params["q"] = n, dist, dist_param, q
     params["n_guess_coord"], params["n_slicer_coord"] = n_guess_coord, n_slicer_coord
+    params["beta_pre"] = beta_pre
 
     succ_cntr = 0
     ex_cntr = 0

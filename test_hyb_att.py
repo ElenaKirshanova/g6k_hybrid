@@ -281,6 +281,7 @@ def run_experiment(params, stats_dict, tracer=None):
     nthreads = params["nthreads"]
     n, q, dist, dist_param = params["n"], params["q"], params["dist"], params["dist_param"]
     n_guess_coord, n_slicer_coord = params["n_guess_coord"], params["n_slicer_coord"]
+    beta_pre = params["beta_pre"]
     seed = params["seed"]
     lat_index = seed[0]
 
@@ -299,7 +300,6 @@ def run_experiment(params, stats_dict, tracer=None):
     succ_cntr = 0
     ex_cntr = 0
 
-    filename_g6kdump = f'g6kdump_{n}_{q}_{dist}_{dist_param:.04f}_{lat_index}_{n_guess_coord}_{n_slicer_coord}.pkl'
     #n,q,dist,dist_param,lat_index
     A, q, bse = load_lwe(params)
 
@@ -314,6 +314,7 @@ def run_experiment(params, stats_dict, tracer=None):
             Binit[i][j] = int( A[i-n,j] )
 
     then = perf_counter()
+    filename_g6kdump = f'g6kdump_{n}_{q}_{dist}_{dist_param:.04f}_{lat_index}_{n_guess_coord}_{n_slicer_coord}_{beta_pre}.pkl'
     #restore precomputed g6k and initialize it
     g6k = Siever.restore_from_file( out_path + filename_g6kdump )
     # Needed to ensure that all locals are correct.
@@ -408,11 +409,12 @@ if __name__=="__main__":
     preprocessing.py (preprocess the data) and then run this file.
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
-    n = 144
+    n = 135
     q, eta = 3329, 3
-    dist, dist_param = "ternary", 1/6.
-    # dist, dist_param = "binomial", 2
-    n_guess_coord, n_slicer_coord = 6, 46
+    # dist, dist_param = "ternary", 1/6.
+    dist, dist_param = "binomial", 3
+    n_guess_coord, n_slicer_coord = 5, 59
+    beta_pre = 57
     nthreads = 5
     nworkers = 2
     latnum = 2
@@ -421,6 +423,7 @@ if __name__=="__main__":
     params["nthreads"] = nthreads
     params["n"], params["dist"], params["dist_param"], params["q"] = n, dist, dist_param, q
     params["n_guess_coord"], params["n_slicer_coord"] = n_guess_coord, n_slicer_coord
+    params["beta_pre"] = beta_pre
 
     succ_cntr = 0
     ex_cntr = 0
@@ -440,7 +443,8 @@ if __name__=="__main__":
             stats_dict_agr.update(t.get())
 
     print(stats_dict_agr)
-    filename = f"tha_{n}_{n_guess_coord}_{n_slicer_coord}.pkl"
+    #filename = f"tha_{n}_{n_guess_coord}_{n_slicer_coord}.pkl"
+    filename = f"tha_{n}_{n_guess_coord}_{n_slicer_coord}_{beta_pre}.pkl"
     print(f"Saving to {filename}")
     with open(filename, "wb") as file:
         pickle.dump( stats_dict_agr, file )

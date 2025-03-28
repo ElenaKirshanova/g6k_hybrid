@@ -74,8 +74,8 @@ def get_filename(which_file,params):
     
     elif "g6kdump" == which_file:
         # raise NotImplementedError
-        n, q, seed, dist, kappa, n_sli_coord = params["n"], params["q"], params["seed"], params["dist"], params["kappa"], params["n_sli_coord"]
-        return f'g6kdump_{n}_{q}_{dist}_{dpstr}_{seed[0]}_{kappa}_{n_sli_coord}.pkl'
+        n, q, seed, dist, kappa, n_sli_coord, bkz_beta = params["n"], params["q"], params["seed"], params["dist"], params["kappa"], params["n_sli_coord"], params["bkz_beta"]
+        return f'g6kdump_{n}_{q}_{dist}_{dpstr}_{seed[0]}_{kappa}_{n_sli_coord}_{bkz_beta}.pkl'
     
     elif "report_prehyb" == which_file:
         # raise NotImplementedError dist["

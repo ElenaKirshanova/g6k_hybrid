@@ -52,6 +52,7 @@ def run_preprocessing(params):
     # n,q,dist,dist_param,k,seed,beta_bkz,sieve_dim_max,nsieves, kappa,nthreads=N_SIEVE_THREADS,dump_bkz=True
     n, q, dist, dist_param = params["n"], params["q"], params["dist"], params["dist_param"]
     seed,beta_bkz,sieve_dim_max,nsieves,kappa = params["seed"],params["beta_bkz"],params["sieve_dim_max"],params["nsieves"],params["kappa"]
+    beta_bkz_offset = params["beta_bkz_offset"]
     nthreads=N_SIEVE_THREADS
     dump_bkz=True
     report = {
@@ -94,41 +95,51 @@ def run_preprocessing(params):
         round_time = time.perf_counter()-then_round
         print(f"BKZ-{beta} done in {round_time}")
         sys.stdout.flush()
+    
     report["bkz_runtime"] = time.perf_counter() - bkz_start
-    H11 = LR.basis
 
+    for beta in range(beta_bkz, beta_bkz+beta_bkz_offset):
+        then_round=time.perf_counter()
+        LR.BKZ(beta)
+        round_time = time.perf_counter()-then_round
+        print(f"BKZ-{beta} done in {round_time} seed {seed[0]}")
+        sys.stdout.flush()
+        report["bkz_runtime"] += time.perf_counter() - then_round
 
-    #---------run sieving------------
-    int_type = H11.int_type
-    FPLLL.set_precision(210)
-    ft = "dd" if config.have_qd else "mpfr"
-    G = GSO.Mat( H11, U=IntegerMatrix.identity(H11r,int_type=int_type), UinvT=IntegerMatrix.identity(H11r,int_type=int_type), float_type=ft )
-    G.update_gso()
-    param_sieve = SieverParams()
-    param_sieve['threads'] = nthreads
-    param_sieve['otf_lift'] = False
-    g6k = Siever(G,param_sieve)
-    g6k.initialize_local(H11r-sieve_dim_max, H11r-sieve_dim_max+nsieves ,H11r)
+        H11 = LR.basis
+        #---------run sieving------------
+        int_type = H11.int_type
+        FPLLL.set_precision(210)
+        ft = "dd" if config.have_qd else "mpfr"
+        G = GSO.Mat( H11, U=IntegerMatrix.identity(H11r,int_type=int_type), UinvT=IntegerMatrix.identity(H11r,int_type=int_type), float_type=ft )
+        G.update_gso()
+        param_sieve = SieverParams()
+        param_sieve['threads'] = nthreads
+        param_sieve['otf_lift'] = False
+        g6k = Siever(G,param_sieve)
+        g6k.initialize_local(H11r-sieve_dim_max, H11r-sieve_dim_max+nsieves ,H11r)
 
-    sieve_start = time.perf_counter()
-    g6k(alg="bdgl2")
-    i = 0
-    report["bdgl_runtime"][i] = time.perf_counter()-sieve_start
-    print(f"siever-{seed[0]}-{kappa}-{sieve_dim_max-nsieves+i} finished in added time {time.perf_counter()-sieve_start}\n" )
-    sys.stdout.flush()
-    #NOTE: this dumps
-    assert g6k.r - g6k.l == sieve_dim_max-nsieves+i, f"g6k context: {g6k.r - g6k.l} != {sieve_dim_max-nsieves+i}"
-    g6k.dump_on_disk(out_path+f'g6kdump_{n}_{q}_{dist}_{dist_param:.04f}_{seed[0]}_{kappa}_{g6k.n}.pkl')
-    for i in range(1,nsieves+1):
-        g6k.extend_left(1)
         sieve_start = time.perf_counter()
         g6k(alg="bdgl2")
+        i = 0
         report["bdgl_runtime"][i] = time.perf_counter()-sieve_start
-        print(f"siever-{seed[0]}-{kappa}-{sieve_dim_max-nsieves+i} finished in added time {time.perf_counter()-sieve_start}\n", flush=True )
+        print(f"siever-{seed[0]}-{kappa}-{sieve_dim_max-nsieves+i} for beta={beta} finished in added time {time.perf_counter()-sieve_start}\n" )
         sys.stdout.flush()
         #NOTE: this dumps
         assert g6k.r - g6k.l == sieve_dim_max-nsieves+i, f"g6k context: {g6k.r - g6k.l} != {sieve_dim_max-nsieves+i}"
-        g6k.dump_on_disk(out_path+f'g6kdump_{n}_{q}_{dist}_{dist_param:.04f}_{seed[0]}_{kappa}_{g6k.n}.pkl')
+        g6kdumppath = f'g6kdump_{n}_{q}_{dist}_{dist_param:.04f}_{seed[0]}_{kappa}_{g6k.n}_{beta}.pkl'
+        g6k.dump_on_disk(out_path+g6kdumppath)
+        for i in range(1,nsieves+1):
+            g6k.extend_left(1)
+            sieve_start = time.perf_counter()
+            g6k(alg="bdgl2")
+            report["bdgl_runtime"][i] = time.perf_counter()-sieve_start
+            print(f"siever-{seed[0]}-{kappa}-{sieve_dim_max-nsieves+i} for beta={beta} finished in added time {time.perf_counter()-sieve_start}\n", flush=True )
+            sys.stdout.flush()
+            #NOTE: this dumps
+            assert g6k.r - g6k.l == sieve_dim_max-nsieves+i, f"g6k context: {g6k.r - g6k.l} != {sieve_dim_max-nsieves+i}"
+            g6kdumppath = f'g6kdump_{n}_{q}_{dist}_{dist_param:.04f}_{seed[0]}_{kappa}_{g6k.n}_{beta}.pkl'
+            g6k.dump_on_disk(out_path+g6kdumppath)
 
 
     print(report)
@@ -140,20 +151,20 @@ if __name__=="__main__":
     # params = [(140, 12, 48), (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     #params = [(140, 12, 48)]#, (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     # params = [(135+i*3, 6, 53+3*i) for i in range(2)]
-    params = [ (144,6,45) ]
+    params = [ (135,5,56), (140,5,61) ]
     # params = [(180, 6, 93)]
     # params = [(190, 7, 99)]
     # params = [(200, 7, 108)]
-    nworkers, nthreads =  2, N_SIEVE_THREADS #5 (to be changed for kyber 190, 200 !!!)
+    nworkers, nthreads =  8, N_SIEVE_THREADS #5 (to be changed for kyber 190, 200 !!!)
 
-    beta_bkz_offset = 0 #bkz blocksize would surpass the predicted value by this offset
-    sieve_dim_max_offset = 1 #the largest slicer will work on dim=prediceted beta + this offset
-    kappa_offset = 1 #data for predicted kappa up to predicted kappa + kappa_offset - 1 will be saved
+    beta_bkz_offset = 2 #bkz blocksize would surpass the predicted value by this offset
+    sieve_dim_max_offset = 2 #the largest slicer will work on dim=prediceted beta + this offset
+    kappa_offset = 2 #data for predicted kappa up to predicted kappa + kappa_offset - 1 will be saved
 
     lats_per_dim = 2
     inst_per_lat = 10 #how many instances per A, q
-    dist, dist_param = "ternary", 1/6.
-    # dist, dist_param = "binomial", 2
+    # dist, dist_param = "ternary", 1/6.
+    dist, dist_param = "binomial", 3
     q = 3329
     output = []
     pool = Pool(processes = nworkers )
@@ -167,7 +178,8 @@ if __name__=="__main__":
                         "dist": dist,
                         "dist_param": dist_param,
                         "seed": [latnum,0], #seed, second value is irrelevant
-                        "beta_bkz": param[2]+beta_bkz_offset, #beta_bkz
+                        "beta_bkz": param[2], #beta_bkz
+                        "beta_bkz_offset": beta_bkz_offset,
                         "sieve_dim_max": param[2]+sieve_dim_max_offset, #sieve_dim_max
                         "nsieves": 1,  #nsieves
                         "kappa": kappa, #kappa
