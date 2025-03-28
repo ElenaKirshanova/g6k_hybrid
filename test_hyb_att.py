@@ -412,7 +412,7 @@ if __name__=="__main__":
     n = 135
     q, eta = 3329, 3
     # dist, dist_param = "ternary", 1/6.
-    dist, dist_param = "binomial", 3
+    dist, dist_param = "binomial", 2
     n_guess_coord, n_slicer_coord = 5, 59
     beta_pre = 57
     nthreads = 5

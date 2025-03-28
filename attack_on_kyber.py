@@ -285,7 +285,7 @@ if __name__ == "__main__":
     lats_per_dim = 2 #10
     inst_per_lat = 10 #10 #how many instances per A, q
     # dist, dist_param = "ternary", 1/6.
-    dist, dist_param = "binomial", 3
+    dist, dist_param = "binomial", 2
     q = 3329
     nks = [ (135+5*i) for i in range(2) ]
     betapre,betamax = 47, 73

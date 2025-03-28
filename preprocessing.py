@@ -96,7 +96,7 @@ def run_preprocessing(params):
         print(f"BKZ-{beta} done in {round_time}")
         sys.stdout.flush()
     
-    report["bkz_runtime"] = time.perf_counter() - bkz_start
+    report["bkz_runtime"] = [ time.perf_counter() - bkz_start ]
 
     for beta in range(beta_bkz, beta_bkz+beta_bkz_offset):
         then_round=time.perf_counter()
@@ -104,7 +104,7 @@ def run_preprocessing(params):
         round_time = time.perf_counter()-then_round
         print(f"BKZ-{beta} done in {round_time} seed {seed[0]}")
         sys.stdout.flush()
-        report["bkz_runtime"] += time.perf_counter() - then_round
+        report["bkz_runtime"].append( time.perf_counter() - then_round )
 
         H11 = LR.basis
         #---------run sieving------------
@@ -164,7 +164,7 @@ if __name__=="__main__":
     lats_per_dim = 2
     inst_per_lat = 10 #how many instances per A, q
     # dist, dist_param = "ternary", 1/6.
-    dist, dist_param = "binomial", 3
+    dist, dist_param = "binomial", 2
     q = 3329
     output = []
     pool = Pool(processes = nworkers )
@@ -200,7 +200,7 @@ if __name__=="__main__":
         beta_bkz = o_["beta_bkz"]
         sieve_dim_max = o_["sieve_dim_max"]
         sieve_dim_min = o_["sieve_dim_min"]
-        filename = f"report_prehyb_{n}_{q}_{dist}_{dist_param:.04f}_{seed[0]}_{kappa}_{sieve_dim_min}_{sieve_dim_max}.pkl" if dist=="ternary" else f"report_prehyb_{n}_{q}_{dist}_{dist_param:.04f}_{seed[0]}_{kappa}_{sieve_dim_min}_{sieve_dim_max}.pkl"
+        filename = f"report_prehyb_{n}_{q}_{dist}_{dist_param:.04f}_{seed[0]}_{kappa}_{sieve_dim_min}_{sieve_dim_max}_{beta_bkz}.pkl" if dist=="ternary" else f"report_prehyb_{n}_{q}_{dist}_{dist_param:.04f}_{seed[0]}_{kappa}_{sieve_dim_min}_{sieve_dim_max}_{beta_bkz}.pkl"
         filename = out_path + filename
 
         with open(filename, "wb") as file:
