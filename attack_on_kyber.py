@@ -256,8 +256,9 @@ def attack_on_kyber(params):
                 print(f"Sieve tour: {cntr0}, beta: {beta:}, done in: {round_time : 0.4f}, slope: {slope : 0.6f}, log r00: {log( g6k.M.get_r(0,0),2 )/2 : 0.5f} task_id = {seed}", flush=True)
                 sys.stdout.flush()  #flush after the BKZ call
 
-                report["time"] += round_time
             """
+            report["time"] += round_time
+            
             M = LR.gso
             if M.get_r(0,0) <= tarnrmsq:
                 print(f"succsess! beta={beta}")
