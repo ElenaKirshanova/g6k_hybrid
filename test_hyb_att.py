@@ -361,7 +361,7 @@ def run_experiment(params, stats_dict, tracer=None):
 
         # project the error vector onto the last n_sieve_dim GS-vectors.
         tracer = {}
-        iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, dist, dist_param, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
+        iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, dist, dist_param, s, dist_sq_bnd=EPS2 * dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
         guess_cntr = 0
         sli_succ = False
         for v in iter_v:

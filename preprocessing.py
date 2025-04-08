@@ -159,7 +159,6 @@ if __name__=="__main__":
 
     beta_bkz_offset = 2 #bkz blocksize would surpass the predicted value by this offset
     sieve_dim_max_offset = 2 #the largest slicer will work on dim=prediceted beta + this offset
-    kappa_offset = 2 #data for predicted kappa up to predicted kappa + kappa_offset - 1 will be saved
 
     lats_per_dim = 10
     inst_per_lat = 10 #how many instances per A, q

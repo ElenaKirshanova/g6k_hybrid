@@ -321,7 +321,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
         diff = t - solution_candidate
         diff_nrm_sq = diff@diff
 
-        if diff_nrm_sq < min_norm_err_sq:
+        if diff_nrm_sq <= min_norm_err_sq:
             min_norm_err_sq = diff_nrm_sq
             best_bab_01 = bab_01
             if not tracer_alg2 is None:
