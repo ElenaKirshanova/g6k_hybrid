@@ -288,7 +288,7 @@ if __name__ == "__main__":
     # dist, dist_param = "ternary", 1/6.
     dist, dist_param = "binomial", 2
     q = 3329
-    nks = [ (135+5*i) for i in range(2) ]
+    nks = [ (144+5*i) for i in range(1) ]
     betapre,betamax = 47, 73
 
     output = []
@@ -314,7 +314,7 @@ if __name__ == "__main__":
                 # n, q, dist, dist_param, ntar=inst_per_lat, seed=latnum
                 gen_and_dump_lwe(params)
                 # prepare_kyber(params)
-
+    assert False
     if RECOMPUTE_KYBER or RECOMPUTE_INSTANCE:
         pretasks = []
         for n in nks:

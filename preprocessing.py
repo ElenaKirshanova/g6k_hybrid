@@ -39,7 +39,7 @@ def load_lwe(params):
     dist_param = params["dist_param"]
     seed = params["seed"][0]
     print(f"- - - n,seed={n,seed} - - - load")
-    filename = f"lwe_instance_{dist}_{n}_{q}_{dist_param:.04f}_{seed}"
+    filename = f"lwe_instance_{dist}_{dist_param}_{n}_{q}_{dist_param:.04f}_{seed}"
     filename = get_filename( "lwe_instance", params )
     with open(inp_path + filename, "rb") as fl:
         D = pickle.load(fl)
@@ -151,16 +151,16 @@ if __name__=="__main__":
     # params = [(140, 12, 48), (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     #params = [(140, 12, 48)]#, (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     # params = [(135+i*3, 6, 53+3*i) for i in range(2)]
-    params = [ (135,5,45) ]
+    params = [ (144,10,48) ]
     # params = [(180, 6, 93)]
     # params = [(190, 7, 99)]
     # params = [(200, 7, 108)]
-    nworkers, nthreads =  8, N_SIEVE_THREADS #5 (to be changed for kyber 190, 200 !!!)
+    nworkers, nthreads =  2, N_SIEVE_THREADS #5 (to be changed for kyber 190, 200 !!!)
 
     beta_bkz_offset = 2 #bkz blocksize would surpass the predicted value by this offset
     sieve_dim_max_offset = 2 #the largest slicer will work on dim=prediceted beta + this offset
 
-    lats_per_dim = 10
+    lats_per_dim = 2
     inst_per_lat = 10 #how many instances per A, q
     # dist, dist_param = "ternary", 1/6.
     dist, dist_param = "binomial", 2

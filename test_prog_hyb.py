@@ -80,26 +80,23 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
     for delta in range(n_slicer_coord,n_slicer_coord+delta_slicer_coord+1):
         lens = test_vect_proj(G, n_slicer_coord, NPROJ_TESTS, distrib)
         est_norm = np.percentile(lens,50)
-        print(f"#{lat_index} est_proj_norm is: {est_norm} for dim={delta}")
+        print(f"#{lat_index} est_proj_norm is: {est_norm} for dim={delta}",flush=True)
         if est_norm <= HYB_PROJ_THRESHOLD:
             break
-        g6k.extend_left() #for each new dimension, we extend
 
-    # overhead_tbkz_ = time.perf_counter() - overhead_tbkz
-    # overhead_tbkz += overhead_tbkz_
-    print(f"#{lat_index} final est_proj_norm is: {est_norm}")
+    print(f"#{lat_index} final est_proj_norm is: {est_norm} @dim={delta}")
 
     # - - - when we chose the slicing dimension, we are ready to go
     n_slicer_coord = delta
     overhead_tsieve = time.perf_counter()
     assert n_slicer_coord <= G.d, f"Too many slicer coords: {n_slicer_coord}>{G.d}"
 
-    # g6k = Siever(G,param_sieve)
+    g6k = Siever(G,param_sieve)
     print(g6k.M.d-n_slicer_coord)
-    # g6k.initialize_local(g6k.M.d-n_slicer_coord,g6k.M.d-n_slicer_coord,g6k.M.d)
+    g6k.initialize_local(g6k.M.d-n_slicer_coord,g6k.M.d-n_slicer_coord,g6k.M.d)
     print("Running bdgl2...")
     then = time.perf_counter()
-    g6k() #alg="bdgl2"
+    g6k(alg="bdgl2") #alg="bdgl2"
     print(f"bdgl2 done in {time.perf_counter()-then}")
 
     overhead_tsieve = time.perf_counter() - overhead_tsieve
@@ -161,7 +158,7 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
             sli_succ = all(answer==v2)
             if sli_succ:
                 succ_cntr+=1
-                print(f"Success in experiment! @{guess_cntr} guess")
+                print(f"Success in experiment! @{guess_cntr} guess - - - - - - - - - - - - - - - - - - - - - - !!!")
                 break
         print(f"v2 is none: {v2 is None}")
         fail_reason = "other" if guess_cntr<1 else "parasites"
@@ -198,10 +195,11 @@ if __name__=="__main__":
     """
     n = 144
     q = 3329
-    dist, dist_param = "ternary", 1/6.
+    # dist, dist_param = "ternary", 1/6.
+    dist, dist_param = "binomial", 2
     latnum = 2
-    n_guess_coord, n_slicer_coord = 6, 46
-    beta_pre = 46
+    n_guess_coord, n_slicer_coord = 10, 49
+    beta_pre = 48
     delta_slicer_coord = 5 #integer >=0, n_slicer_coord + delta_slicer_coord will be the slicer dimension
     nthreads = 5
     nworkers = 2
@@ -232,7 +230,7 @@ if __name__=="__main__":
     # print(ex_cntr, succ_cntr)
     print(stats_dict_agr)
 
-    filename = f"tph_{n}_{n_guess_coord}_{n_slicer_coord+delta_slicer_coord}.pkl"
+    filename = f"tph_{n}_{dist}_{dist_param}_{beta_pre}_{n_slicer_coord+delta_slicer_coord}.pkl"
     print(f"saving results to {filename}")
     with open(filename, "wb") as file:
         pickle.dump( stats_dict_agr, file )

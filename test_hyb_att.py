@@ -409,12 +409,12 @@ if __name__=="__main__":
     preprocessing.py (preprocess the data) and then run this file.
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
-    n = 135
+    n = 149
     q, eta = 3329, 3
-    # dist, dist_param = "ternary", 1/6.
-    dist, dist_param = "binomial", 2
-    n_guess_coord, n_slicer_coord = 5, 59
-    beta_pre = 57
+    dist, dist_param = "ternary", 1/6.
+    # dist, dist_param = "binomial", 2
+    n_guess_coord, n_slicer_coord = 10, 49
+    beta_pre = 48
     nthreads = 5
     nworkers = 2
     latnum = 2
