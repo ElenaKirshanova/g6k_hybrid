@@ -66,10 +66,10 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
     param_sieve['threads'] = nthreads
     param_sieve['otf_lift'] = False
     g6k.params = param_sieve
+    H11 = g6k.M.B
 
-    # overhead_tbkz = time.perf_counter()
-    beta = 0
-    G = g6k.M #the GSO obj. for first k*n-kappa vectors.
+    G = g6k.M
+    G.update_gso()
     # bkz_performed = False
     # LR = LatticeReduction( G.B, threads_bkz=nthreads )
     if dist=="binomial":
@@ -78,7 +78,7 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
          print(f"dist_param: {dist_param}")
          distrib = ternaryDist(dist_param)
     for delta in range(n_slicer_coord,n_slicer_coord+delta_slicer_coord+1):
-        lens = test_vect_proj(G, n_slicer_coord, NPROJ_TESTS, distrib)
+        lens = test_vect_proj(G, delta, NPROJ_TESTS, distrib)
         est_norm = np.percentile(lens,50)
         print(f"#{lat_index} est_proj_norm is: {est_norm} for dim={delta}",flush=True)
         if est_norm <= HYB_PROJ_THRESHOLD:
@@ -87,30 +87,25 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
     print(f"#{lat_index} final est_proj_norm is: {est_norm} @dim={delta}")
 
     # - - - when we chose the slicing dimension, we are ready to go
-    n_slicer_coord = delta
     overhead_tsieve = time.perf_counter()
     assert n_slicer_coord <= G.d, f"Too many slicer coords: {n_slicer_coord}>{G.d}"
 
     g6k = Siever(G,param_sieve)
-    print(g6k.M.d-n_slicer_coord)
-    g6k.initialize_local(g6k.M.d-n_slicer_coord,g6k.M.d-n_slicer_coord,g6k.M.d)
+    print(g6k.M.d-delta)
+    g6k.initialize_local(g6k.M.d-delta,g6k.M.d-delta,g6k.M.d)
     print("Running bdgl2...")
     then = time.perf_counter()
     g6k(alg="bdgl2") #alg="bdgl2"
     print(f"bdgl2 done in {time.perf_counter()-then}")
 
     overhead_tsieve = time.perf_counter() - overhead_tsieve
-    H11 = g6k.M.B
+    n_slicer_coord = delta
+    print(f"n_slic_c: {n_slicer_coord}")
 
     # Gaussian heuristic for the last sieve_dim dimensioal projective lattice of G.
     # ALL {from/to}_canonical_scaled calls must use scale_fact=gh_sub, or things go out of hand.
     gh_sub = gaussian_heuristic(G.r()[-n_slicer_coord:])
     print(f"Sieving-1 done in {perf_counter() - then}")
-    b0 = None
-    for tmp in g6k.itervalues():
-        b0 = G.B[-n_slicer_coord:].multiply_left( tmp )
-        break
-    b0 = from_canonical_scaled( G, b0, offset=n_slicer_coord,scale_fact=gh_sub )
     # lambda1 = (b0@b0)**0.5
 
     print(f"r / r = {(g6k.M.r()[-n_slicer_coord] / g6k.M.r()[-1])**0.5}")
@@ -144,7 +139,7 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
         tracer = {}
         # v = alg_3_debug(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
         # iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
-        iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, dist, dist_param, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
+        iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, dist, dist_param, s, dist_sq_bnd=EPS2 * dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
         guess_cntr = 0
         sli_succ = False
         v2 = None
@@ -200,7 +195,7 @@ if __name__=="__main__":
     latnum = 2
     n_guess_coord, n_slicer_coord = 10, 49
     beta_pre = 48
-    delta_slicer_coord = 5 #integer >=0, n_slicer_coord + delta_slicer_coord will be the slicer dimension
+    delta_slicer_coord = 10 #integer >=0, n_slicer_coord + delta_slicer_coord will be the slicer dimension
     nthreads = 5
     nworkers = 2
 
@@ -230,7 +225,7 @@ if __name__=="__main__":
     # print(ex_cntr, succ_cntr)
     print(stats_dict_agr)
 
-    filename = f"tph_{n}_{dist}_{dist_param}_{beta_pre}_{n_slicer_coord+delta_slicer_coord}.pkl"
+    filename = f"tph_{n}_{dist}_{dist_param:0.4f}_{n_guess_coord}_{beta_pre}_{n_slicer_coord+delta_slicer_coord}.pkl"
     print(f"saving results to {filename}")
     with open(filename, "wb") as file:
         pickle.dump( stats_dict_agr, file )
