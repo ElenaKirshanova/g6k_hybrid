@@ -233,13 +233,13 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
         density_plot.append( (s,slicer_suc[cntr]+babai_suc[cntr]) )
         cntr+=1
         s *= shrink_factor
-    return density_plot
+    return density_plot, dbsize_start
 
 
 if __name__ == '__main__':
 
-    Nexperiments = 50
-    Nlats = 20
+    Nexperiments = 10
+    Nlats = 5
     path = "saved_lattices/"
     isExist = os.path.exists(path)
     if not isExist:
@@ -251,13 +251,13 @@ if __name__ == '__main__':
 
     FPLLL.set_precision(200)
 
-    n, betamax, sieve_dim = 50, 45, 50
+    n, betamax, sieve_dim = 50, 48, 50
 
     nthreads = 2
-    nworkers = 10 # number of workers
+    nworkers = 5 # number of workers
     nrand_param = 1.
     shrink_factor = 0.7071 # ~ 1/sqrt(2)
-    n_shrinkings = 8
+    n_shrinkings = 5
     pool = Pool(processes = nworkers )
     tasks = []
 
@@ -268,11 +268,14 @@ if __name__ == '__main__':
         ) )
 
     for t in tasks:
-        density_plots.append( t.get() )
+        density_plot, dbsize_start = t.get()
+        density_plots.append( density_plot )
 
     pool.close()
-    with open(f"dbsize_{n}_exp.pkl", "wb") as file:
-        pickle.dump( density_plots, file )
+    filename = f"dbsize_{n}_{betamax}_exp.pkl"
+    with open(filename, "wb") as file:
+        pickle.dump( {"density_plots":density_plots, "Nexperiments": Nexperiments, "nrand_param": nrand_param, "Nlats": Nlats, "dbsize_start": dbsize_start}, file )
 
     print(density_plots)
+    print(f"Saved to {filename}")
     sys.stdout.flush()

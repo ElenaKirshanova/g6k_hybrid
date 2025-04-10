@@ -7,16 +7,6 @@ filename = f"slicsucc_{n}.pkl"
 with open(filename,"rb") as file:
     aggregated_data = pickle.load(file)
 
-# n=90
-# with open(f"slicsucc_{n}.pkl","rb") as file:
-#     aggregated_data = pickle.load(file)
-# sieve_dim = n
-
-
-# n = 80
-# sieve_dim = 60
-# with open(f"slicsucc_{n}_{sieve_dim}.pkl","rb") as file:
-#     aggregated_data = pickle.load(file)
 
 L = {}
 nlats = len(aggregated_data)
@@ -27,7 +17,6 @@ for aggregated_data_ in aggregated_data:
             L[approx] = []
         L[approx] +=  Ds 
 
-# L = aggregated_data
 Laggr = {}
 for nrand in L.keys():
     if not nrand in Laggr.keys():
