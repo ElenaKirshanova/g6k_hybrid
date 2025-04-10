@@ -76,11 +76,10 @@ print( lacvp )
 
 print( f"nlats: {nlats}" )
 
-P = list_plot( lbab, color = "red", plotjoined=True, legend_label="Babai" ) +\
-list_plot( ls[1.], color = "blue", legend_label="Slicer", plotjoined = True ) +\
-list_plot( ls[5.], color = "darkcyan", legend_label="Slicer x5 rerand", plotjoined = True ) +\
-list_plot( ls[10.], color = "purple", legend_label="Slicer x10 rerand", plotjoined = True ) +\
-line( [(0.75,0.5),(1.1,0.5)], color = "black" ) + line( [(0.95,0.),(0.95,1.0)], color = "black" )
+P = list_plot( lbab, color = "red", plotjoined=True, legend_label="Babai" )
+for nrand in L.keys():
+    P += list_plot( ls[nrand], color = Color([uniform(0,1) for i in range(3)]), legend_label=f"Slicer x{nrand:0.2f} rerand", plotjoined = True )
+P += line( [(0.75,0.5),(1.1,0.5)], color = "black" ) + line( [(0.95,0.),(0.95,1.0)], color = "black" )
 P.set_legend_options(loc='lower left')
 
 filename = f"sli_appr_fact_{dim}.png"

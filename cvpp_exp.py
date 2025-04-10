@@ -215,9 +215,9 @@ if __name__=="__main__":
     nthreads = 5
     nworkers = 2
     max_slicer_interations = 300
-    ntests = 20 #200
-    nlats = 10 #10
-    n = 65
+    ntests = 5 #200
+    nlats = 2 #10
+    n = 54
     bits = 11.705
     betamax = 53
     # approx_facts = [ 0.4 + 0.05*i for i in range(15) ] #
@@ -273,9 +273,8 @@ if __name__=="__main__":
     for tmp in aggregated_data:
         print(f"nrand_parameter: {aggregated_data[0]}")
         print(aggregated_data[1])
-        print(f"poisoned: {poison_dbt}")
 
-    filename = f"slicsucc_{n}" + ( "_poisoned" if poison_dbt else "" ) + ".pkl"
+    filename = f"slicsucc_{n}.pkl"
     with open(filename,"wb") as file:
         pickle.dump(aggregated_data, file)
     print( f"saved in {filename}" )
