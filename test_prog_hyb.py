@@ -19,13 +19,12 @@ try:
 except ModuleNotFoundError:
     from multiprocessing import Pool
 
-from LatticeReduction import LatticeReduction
-from test_hyb_att import alg_3_debug, alg_3_debug_v2 #, generateLWEInstances, se_gen, kyberGen
+from test_hyb_att import alg_3_debug_v2 #, generateLWEInstances, se_gen, kyberGen
 from global_consts import *
+from copy import copy
 
 inp_path = "lwe_instances/saved_lattices/"
-out_path = "lwe_instances/reduced_lattices/"
-max_nsampl = 2**10
+out_path = "lwe_instances/reduced_lattices/" 
 
 
 def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
@@ -34,7 +33,7 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
     n_guess_coord, n_slicer_coord = params["n_guess_coord"], params["n_slicer_coord"]
     beta_pre = params["beta_pre"]
 
-    ft = "ld" if 2*n<140 else ( "dd" if config.have_qd else "mpfr")
+    ft = "dd" #"ld" if 2*n<140 else ( "dd" if config.have_qd else "mpfr")
     FPLLL.set_precision(210)
     dim = 2*n
 
@@ -66,7 +65,6 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
     param_sieve['threads'] = nthreads
     param_sieve['otf_lift'] = False
     g6k.params = param_sieve
-    H11 = g6k.M.B
 
     G = g6k.M
     G.update_gso()
@@ -90,6 +88,8 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
     overhead_tsieve = time.perf_counter()
     assert n_slicer_coord <= G.d, f"Too many slicer coords: {n_slicer_coord}>{G.d}"
 
+    # G = GSO.Mat( G.B, U=IntegerMatrix.identity(g6k.M.d,int_type="mpz"), UinvT=IntegerMatrix.identity(g6k.M.d,int_type="mpz"), float_type=ft )
+    G = g6k.M
     g6k = Siever(G,param_sieve)
     print(g6k.M.d-delta)
     g6k.initialize_local(g6k.M.d-delta,g6k.M.d-delta,g6k.M.d)
@@ -98,13 +98,18 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
     g6k(alg="bdgl2") #alg="bdgl2"
     print(f"bdgl2 done in {time.perf_counter()-then}")
 
+    H11 = g6k.M.B
+
     overhead_tsieve = time.perf_counter() - overhead_tsieve
     n_slicer_coord = delta
     print(f"n_slic_c: {n_slicer_coord}")
 
+    # assert n_slicer_coord == g6k.r-g6k.l-1, f"No | n_slicer_coord: {n_slicer_coord} l:{g6k.l} r:{g6k.r} g6k.r-g6k.l-1: {g6k.r-g6k.l-1}"
+
     # Gaussian heuristic for the last sieve_dim dimensioal projective lattice of G.
     # ALL {from/to}_canonical_scaled calls must use scale_fact=gh_sub, or things go out of hand.
     gh_sub = gaussian_heuristic(G.r()[-n_slicer_coord:])
+
     print(f"Sieving-1 done in {perf_counter() - then}")
     # lambda1 = (b0@b0)**0.5
 
@@ -125,6 +130,8 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
         # project the error vector onto the last n_sieve_dim GS-vectors.
         e_ = from_canonical_scaled( G,e_,offset=n_slicer_coord,scale_fact=gh_sub )
 
+        # print(f"prog e_: {e_}")
+
         #deduce the projected error norm
         dist_sq_bnd = e_@e_
         dist_bnd = dist_sq_bnd**0.5
@@ -135,10 +142,11 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
 
         B = IntegerMatrix.from_matrix(Binit)
 
-        len_bound = dist_sq_bnd
         tracer = {}
         # v = alg_3_debug(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
         # iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
+        with open("progvar","wb") as file:
+            pickle.dump([n_slicer_coord,t,e,s,EPS2 * dist_sq_bnd, g6k.M.r(), gh_sub], file)
         iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, dist, dist_param, s, dist_sq_bnd=EPS2 * dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
         guess_cntr = 0
         sli_succ = False
@@ -155,6 +163,8 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
                 succ_cntr+=1
                 print(f"Success in experiment! @{guess_cntr} guess - - - - - - - - - - - - - - - - - - - - - - !!!")
                 break
+        if not sli_succ:
+            print(f"Fail @{lat_index, ex_cntr}")
         print(f"v2 is none: {v2 is None}")
         fail_reason = "other" if guess_cntr<1 else "parasites"
         a0, a1 = tracer["wrong_guess_time_alg3"] , tracer["wrong_guess_time_alg2"]
@@ -193,9 +203,9 @@ if __name__=="__main__":
     # dist, dist_param = "ternary", 1/6.
     dist, dist_param = "binomial", 2
     latnum = 2
-    n_guess_coord, n_slicer_coord = 10, 49
-    beta_pre = 48
-    delta_slicer_coord = 10 #integer >=0, n_slicer_coord + delta_slicer_coord will be the slicer dimension
+    n_guess_coord, n_slicer_coord = 6, 53
+    beta_pre = 52
+    delta_slicer_coord = 5 #integer >=0, n_slicer_coord + delta_slicer_coord is the cap on slicer dimension
     nthreads = 5
     nworkers = 2
 
@@ -213,9 +223,9 @@ if __name__=="__main__":
     tasks = []
     for lat_index in range(latnum):
         output.append({})
-        params["seed"] = [lat_index,0]
+        params["seed"] = (lat_index,0)
         tasks.append( pool.apply_async(
-            run_experiment, (lat_index, params, output[lat_index],delta_slicer_coord)
+            run_experiment, (lat_index, copy(params), output[lat_index],delta_slicer_coord)
             ) )
 
     stats_dict_agr = {}

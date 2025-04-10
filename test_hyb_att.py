@@ -8,7 +8,7 @@ import sys
 from time import perf_counter
 from experiments.lwe_gen import *
 
-from hyb_att_on_kyber import alg_3, alg_2_batched
+from hyb_att_on_kyber import alg_2_batched
 from sample import *
 
 from g6k.siever import SaturationError
@@ -345,6 +345,7 @@ def run_experiment(params, stats_dict, tracer=None):
         e_ = np.concatenate([e,-s])[:-n_guess_coord]
         # project the error vector onto the last n_sieve_dim GS-vectors.
         e_ = from_canonical_scaled( G,e_,offset=n_slicer_coord,scale_fact=gh_sub )
+        # print(f"hyb e_: {e_}")
 
         #deduce the projected error norm
         dist_sq_bnd = e_@e_
@@ -361,6 +362,8 @@ def run_experiment(params, stats_dict, tracer=None):
 
         # project the error vector onto the last n_sieve_dim GS-vectors.
         tracer = {}
+        with open("hybHvar","wb") as file:
+            pickle.dump(pickle.dump([n_slicer_coord,t,e,s,EPS2 * dist_sq_bnd, g6k.M.r(), gh_sub], file), file)
         iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, dist, dist_param, s, dist_sq_bnd=EPS2 * dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
         guess_cntr = 0
         sli_succ = False
@@ -380,6 +383,7 @@ def run_experiment(params, stats_dict, tracer=None):
                 succ_cntr+=1
                 print(f"Success in experiment! @{guess_cntr} guess")
                 break
+
         fail_reason = "other" if guess_cntr<1 else "parasites"
         a0, a1 = tracer["wrong_guess_time_alg3"] , tracer["wrong_guess_time_alg2"]
         print(f"a0, a1: {a0,a1}")
@@ -409,14 +413,14 @@ if __name__=="__main__":
     preprocessing.py (preprocess the data) and then run this file.
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
-    n = 149
+    n = 135
     q, eta = 3329, 3
-    dist, dist_param = "ternary", 1/6.
-    # dist, dist_param = "binomial", 2
-    n_guess_coord, n_slicer_coord = 10, 49
-    beta_pre = 48
+    # dist, dist_param = "ternary", 1/6.
+    dist, dist_param = "binomial", 2
+    n_guess_coord, n_slicer_coord = 6, 53
+    beta_pre = 52
     nthreads = 5
-    nworkers = 2
+    nworkers = 1
     latnum = 2
 
     params={}
