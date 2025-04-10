@@ -270,7 +270,7 @@ if __name__ == '__main__':
     for t in tasks:
         density_plots.append( t.get() )
 
-
+    pool.close()
     with open(f"dbsize_{n}_exp.pkl", "wb") as file:
         pickle.dump( density_plots, file )
 
