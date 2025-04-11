@@ -4,7 +4,7 @@ from hybrid_estimator.batchCVP import batchCVPP_cost
 import matplotlib.pyplot as plt
 import pickle
 
-nbs = [(80+i*10,53) for i in range(3)]
+nbs = [(50+i*10,48) for i in range(1)]
 Ddata = {}
 for n, beta in nbs:
     filename = f"dbsize_{n}_{beta}_exp.pkl"
@@ -69,7 +69,7 @@ for key in Ddata:
     yaxis_pr = average
     if cntr==0:
         ax.plot( xaxis, yaxis_th, label="Theory" )
-    ax.plot( xaxis, yaxis_pr, label= f"Practise n={dim}" )
+    ax.plot( xaxis, yaxis_pr, label= f"Practice n={dim}" )
     cntr+=1
 
 ax.set_xlabel('log_2 shrinking factor')
