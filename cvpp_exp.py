@@ -8,12 +8,6 @@ from g6k.slicer import RandomizedSlicer
 
 from global_consts import *
 
-import pickle
-# try:
-#     from multiprocess import Pool  # you might need pip install multiprocess
-# except ModuleNotFoundError:
-#     from multiprocessing import Pool
-from multiprocessing import Pool 
 
 from LatticeReduction import LatticeReduction
 from utils import * #random_on_sphere, reduce_to_fund_par_proj
@@ -27,11 +21,11 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705,seed=0,threads=1,verbose=Fals
     B.randomize("qary", bits=bits, k = k)
 
     LR = LatticeReduction( B )
+    then = perf_counter()
     for beta in range(5,betamax+1):
-        then = perf_counter()
         LR.BKZ(beta)
-        if verbose:
-            print(f"BKZ-{beta} done in {perf_counter()-then}", flush=True)
+
+    if verbose: print(f"BKZ-{betamax} done in {perf_counter()-then}", flush=True)
 
     int_type = LR.gso.B.int_type
     ft = "ld" if n<145 else ( "dd" if config.have_qd else "mpfr")
@@ -54,7 +48,7 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705,seed=0,threads=1,verbose=Fals
     g6k.M.update_gso()
     g6k.dump_on_disk(f"cvppg6k_n{n}_{seed}_test.pkl")
 
-def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, nrand_params=[1.], poison_dbt=False,verbose=False):
+def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, nrand_params=[1.], verbose=False):
     saturation_scalar = SATURATION_SCALAR
     g6k = Siever.restore_from_file(f"cvppg6k_n{n}_{cntr}_test.pkl")
     param_sieve = SieverParams()
@@ -89,16 +83,11 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
                 """
                 Testing Babai.
                 """
-                then = perf_counter()
                 ctmp = G.babai( t )
                 tmp = B.multiply_left( ctmp )
-                if verbose: print(f"Babai-{n} done in {perf_counter()-then}")
                 err = tmp-b
                 succ_bab = (err@err)<10**-6
-                if not ( succ_bab ) and verbose:
-                    print(f"FAIL after babai: {(err@err)}")
-                else:
-                    if verbose: print(f"SUCCSESS after babai!")
+                if succ_bab:
                     nsucc_bab += 1
                     nsucc_slic += 1
                     nsucc_slic_apprcvp += 1
@@ -112,7 +101,6 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
                     try:
                         e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim,scale_fact=gh) )
                         gh_sub = gaussian_heuristic( G.r()[-sieve_dim:] )
-                        if verbose: print("projected target squared length:", (e_@e_))
 
                         t_gs = from_canonical_scaled( G,t,offset=sieve_dim,scale_fact=gh )
                         t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
@@ -139,7 +127,7 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
                         slicer.set_max_slicer_interations(max_slicer_interations)
                         slicer.set_Nt(1)
                         slicer.set_saturation_scalar(saturation_scalar)
-                        slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], True)
+                        slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False) # last argument - verbosity
 
                         iterator = slicer.itervalues_cdb_t()
                         succ = False
@@ -153,20 +141,18 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
                             # - - - Check - - - -
                             e_ = np.array(e_)
                             out_gs_reduced = np.array( out_gs_reduced )
-                            recovered_nrm = (out_gs_reduced@out_gs_reduced)**0.5
-                            sought_nrm = (e_@e_)**0.5
-                            if verbose: print(f"|out_gs_reduced|: {recovered_nrm} vs {sought_nrm}")
+
                             out = to_canonical_scaled( G,np.concatenate( [(G.d-sieve_dim)*[0], out_gs_reduced] ), scale_fact=gh_sub )
                             bab_01 = np.array( G.babai( np.array(t)-out ) )
 
                             succ = all(c==bab_01)
                             if succ:
                                 break
-                        if verbose: print(f"Slic Succsess: {succ} after {attemptcntr} attempts")
-                        if not ( succ ) and verbose:
-                            print(f"FAIL after slicer: {(err@err)}")
-                        else:
+
+                        if succ:
                             nsucc_slic += 1
+
+
                     except Exception as excpt: #if slicer fails for some reason,
                         #then prey, this is not a devastating segfault
                         print(excpt)
@@ -174,7 +160,8 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
 
             D[(n,approx_fact)] = (0, 1.0*nsucc_slic / ntests, 1.0*nsucc_bab / ntests, 1.0*nsucc_slic_apprcvp / ntests)
             Ds.append(D)
-            if verbose: print( f"Experiments for nrand_param={nrand_param} done..." )
+            if verbose: print( f"Experiments for approx_fact={approx_fact} done...", flush=True)
+        if verbose: print( f"Experiments for nrand_param={nrand_param} done...", flush=True)
         aggregated_data.append([nrand_param, Ds]) 
     return aggregated_data
 
@@ -193,8 +180,7 @@ if __name__=="__main__":
     bits = 11.705
     betamax = 55
     approx_facts = [ 0.9 + 0.02*i for i in range(6) ]
-    nrand_params = [ 1.0,3.0,5.0 ] # Add 10?
-    poison_dbt = False
+    nrand_params = [ 1.0,5.0,10.0 ]
     verbose = False
 
     to_be_computed = []
@@ -203,11 +189,9 @@ if __name__=="__main__":
     for cntr in range(nlats):
         try:
             Siever.restore_from_file(f"cvppg6k_n{n}_{cntr}_test.pkl")
-            if verbose: print(f"g6k={cntr} loaded")
         except FileNotFoundError:
             load_succ = False
             to_be_computed.append( (cntr,n,betamax,None,bits) )
-            if verbose: print(f"g6k={cntr} is yet to be processed")
 
     tasks = []
     output = []
