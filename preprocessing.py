@@ -151,7 +151,7 @@ if __name__=="__main__":
     # params = [(140, 12, 48), (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     #params = [(140, 12, 48)]#, (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     # params = [(135+i*3, 6, 53+3*i) for i in range(2)]
-    params = [ (144,6,51) ]
+    params = [ (160,1,51) ]
     # params = [(180, 6, 93)]
     # params = [(190, 7, 99)]
     # params = [(200, 7, 108)]
@@ -163,7 +163,7 @@ if __name__=="__main__":
     lats_per_dim = 2
     inst_per_lat = 10 #how many instances per A, q
     # dist, dist_param = "ternary", 1/6.
-    dist, dist_param = "binomial", 2
+    dist, dist_param = "binomial", 3
     q = 3329
     output = []
     pool = Pool(processes = nworkers )
@@ -171,7 +171,7 @@ if __name__=="__main__":
     for param in params:
         for latnum in range(lats_per_dim):
             kappa = param[1]
-            params ={
+            params_inp ={
                     "n": param[0], #n
                     "q": q, #q
                     "dist": dist,
@@ -185,7 +185,7 @@ if __name__=="__main__":
                     "nthreads": nthreads, #nthreads
                 }
             tasks.append( pool.apply_async(
-                run_preprocessing, (params,)
+                run_preprocessing, (params_inp,)
             ) )
 
     for t in tasks:
