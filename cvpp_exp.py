@@ -172,16 +172,16 @@ if __name__=="__main__":
     # [60, 53], [70, 60], [80, 70], [90, 80], [100, 85]
     ###
     nthreads = 1
-    nworkers = 5
+    nworkers = 2
     max_slicer_interations = 300
-    ntests = 20
-    nlats = 10
-    n = 60
+    ntests = 2
+    nlats = 2
+    n = 50
     bits = 11.705
-    betamax = 55
+    betamax = 44
     approx_facts = [ 0.9 + 0.02*i for i in range(6) ]
     nrand_params = [ 1.0,5.0,10.0 ]
-    verbose = False
+    verbose = True
 
     to_be_computed = []
     g6ks = []
