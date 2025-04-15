@@ -211,7 +211,7 @@ if __name__=="__main__":
     pool = Pool( processes = nworkers )
     for cntr in range(nlats):
         tasks.append( pool.apply_async(
-            run_exp, (n,cntr,ntests,approx_facts,max_slicer_interations, nthreads, nrand_params, poison_dbt, verbose)
+            run_exp, (n,cntr,ntests,approx_facts,max_slicer_interations, nthreads, nrand_params, verbose)
             ) )
         print(cntr)
 
