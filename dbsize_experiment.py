@@ -46,7 +46,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
         param_sieve['otf_lift'] = False
         g6k.params = param_sieve
         nothing_to_load = False
-        if verbose: print(f"Load succeeded...")
+        #if verbose: print(f"Load succeeded...")
     except Exception as excpt:
         print(excpt)
         pass
@@ -54,7 +54,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
     # - - - Make all fpylll objects - - -
     if nothing_to_load:
-        if verbose: print(f"Nothing to load. Computing")
+        #if verbose: print(f"Nothing to load. Computing")
         B = IntegerMatrix(n,n)
         B.randomize("qary", k=n//2, bits=11.705)
         G = GSO.Mat(B, float_type=ft)
@@ -67,12 +67,12 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
         lll()
 
         bkz = LatticeReduction(B)
+        then = time.perf_counter()
         for beta in range(5,betamax+1):
-            then_round=time.perf_counter()
             bkz.BKZ(beta,tours=5)
-            round_time = time.perf_counter()-then_round
-            if verbose: print(f"BKZ-{beta} done in {round_time}")
-            sys.stdout.flush()
+        round_time = time.perf_counter()-then
+        if verbose: print(f"BKZ-{betamax} done in {round_time}")
+        sys.stdout.flush()
 
         int_type = bkz.gso.B.int_type
         G = GSO.Mat( bkz.gso.B, U=IntegerMatrix.identity(n,int_type=int_type), UinvT=IntegerMatrix.identity(n,int_type=int_type), float_type=ft )
@@ -88,7 +88,6 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
         g6k.initialize_local(n-sieve_dim,n-sieve_dim,n)
         g6k(alg="bdgl2")
         g6k.M.update_gso()
-        # filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
         g6k.dump_on_disk( filename )
     # - - - end Make all fpylll objects - - -
     # make Siver object
