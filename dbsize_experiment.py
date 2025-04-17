@@ -192,6 +192,9 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
                     print(f" - - - {e} - - -")
                     raise e
 
+        if shrink_factor*g6k.db_size()<3*n:
+            print("cannot shrink further, break...")
+            break
         g6k.shrink_db(shrink_factor*g6k.db_size())
 
     print(f"Lattice-{lat_id} processed...")
