@@ -93,7 +93,7 @@ def run_exp(n,index,A,t,myparams,tracer=None):
 
 # - - -
 rngs = (55, 66, 5)
-tours = 2
+tours = 10
 myparams = {
     "max_slicer_interations": 100,
     "proj_err_bound": 0.7,

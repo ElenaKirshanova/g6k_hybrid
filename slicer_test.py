@@ -4,8 +4,9 @@ from g6k.siever import Siever
 from g6k.utils.stats import dummy_tracer
 from g6k.siever_params import SieverParams
 # from g6k.algorithms.pro_randslicer import pro_randslicer
+from g6k.algorithms.pump import pump
 from math import sqrt
-from g6k.utils.util_chi import load_cvp_instance
+from g6k.utils.util_pump import load_cvp_instance
 from copy import deepcopy
 # from DistEstColattice import DistEstDistEstColattice
 from math import log, ceil
@@ -14,7 +15,7 @@ from fpylll.algorithms.bkz2 import BKZReduction
 import time
 
 FPLLL.set_random_seed(0x1337)
-from g6k.siever import Siever
+from g6k.siever import SaturationError
 from g6k.siever_params import SieverParams
 from g6k.slicer import RandomizedSlicer
 
@@ -65,9 +66,37 @@ def cvp_test(A,t, params, myparams):
             #randomlized slicer
             # params = SieverParams(threads = 1,saturation_ratio = 1.)
             T0 = time.time()
+            params["threads"] = myparams["nthreads_sieve"]
+            params["sieve"] = "bdgl2"
+            params["saturation_ratio"] = 0.95
+            params["saturation_radius"] = 4/3.
+            params["dbsize_factor"] = 5.
+            A = IntegerMatrix.from_matrix(A,int_type="mpz")
             g6k = Siever(A,params)
-            g6k.initialize_local(0,0,A.nrows)
-            g6k(alg="bdgl2")
+            d = g6k.full_n
+            g6k.lll(0, d)
+            g6k.initialize_local(0,0,d)
+            g6k.update_gso(0, d)
+            # g6k.initialize_local(0,max(0,A.nrows-50),A.nrows)
+            
+            """
+            def pump(g6k, tracer, kappa, blocksize, dim4free, down_sieve=False,                                 # Main parameters
+                     goal_r0=None, max_up_time=None, down_stop=None, start_up_n=30, saturation_error="weaken",  # Flow control of the pump
+                     increasing_insert_index=True, prefer_left_insert=1.04,                                     # Insertion policy
+                     verbose=False,                                                                             # Misc
+                    ):
+            """
+            f = 0
+            print(f"g6k.r: {g6k.r}")
+            pump(g6k, dummy_tracer, 0, g6k.r, f, saturation_error="ignore", verbose=False)
+            print( f"context: {g6k.ll, g6k.l, g6k.r}" )
+            g6k.extend_left()
+            print(f"lolpre: {len(g6k)}")
+            for i in range(1):
+                g6k.grow_db(ceil(1.5*len(g6k)))
+                g6k()
+            print(f"lolppost: {len(g6k)}")
+            
             T_sieve = time.time() - T0
 
             T0 = time.time()
@@ -176,13 +205,14 @@ def run_exp(n,index,A,t,myparams,tracer=None):
 rngs = (55, 66, 5)
 tours = 10
 myparams = {
-    "max_slicer_interations": 100,
+    "max_slicer_interations": 150,
     "proj_err_bound": 0.7,
     "saturation_scalar": 1.0,
-    "nrand_fact": 10,
-    "nthreads": 5
+    "nrand_fact": 100,
+    "nthreads": 1,
+    "nthreads_sieve": 5,
 }
-pool = Pool(processes = 2)
+pool = Pool(processes = 10)
 
 filename = f"prec_cvp_chal_{rngs}_{tours}.pkl"
 loaded = False
