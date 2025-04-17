@@ -1,6 +1,3 @@
-#ifndef G6K_STATISTICS_SLICER_HPP
-#define G6K_STATISTICS_SLICER_HPP
-
 #include "compat.hpp"
 #include <atomic>
 #include <string>
