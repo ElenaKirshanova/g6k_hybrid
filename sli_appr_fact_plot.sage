@@ -1,7 +1,7 @@
 import pickle
 import numpy as np
 
-n = 70
+n = 80
 sieve_dim = n
 filename = f"slicsucc_{n}.pkl"
 with open(filename,"rb") as file:

@@ -195,6 +195,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
         if shrink_factor*g6k.db_size()<3*n:
             print("cannot shrink further, break...")
             break
+        print("g6k.db_size():", g6k.db_size())
         g6k.shrink_db(shrink_factor*g6k.db_size())
 
     print(f"Lattice-{lat_id} processed...")
@@ -218,8 +219,8 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
 if __name__ == '__main__':
 
-    Nexperiments = 50
-    Nlats = 100
+    Nexperiments = 20
+    Nlats = 2
     path = "saved_lattices/"
     isExist = os.path.exists(path)
     if not isExist:
@@ -232,13 +233,13 @@ if __name__ == '__main__':
     FPLLL.set_precision(200)
 
     n, betamax, sieve_dim = 50, 48, 50
-    verbose = False
+    verbose = True
 
     nthreads = 1
     nworkers = 1 # number of workers
     nrand_param = 1.
-    shrink_factor = 0.7071 # ~ 1/sqrt(2)
-    n_shrinkings = 5
+    shrink_factor = 1./2 # ~ 1/sqrt(2)
+    n_shrinkings = 3
     pool = Pool(processes = nworkers )
     tasks = []
 

@@ -19,14 +19,14 @@ if __name__ == "__main__":
     norm_slack = 1.01      #terminate slicer if norm_slack*||e_projected|| is found
     approx_factor = 0.93
     nrand_param = 10
-    nthreads = 3
-    nexp = 5
+    nthreads = 2
+    nexp = 1
     verbose = True
     slicer_verbosity = True
 
 
     FPLLL.set_precision(200)
-    n, betamax, sieve_dim = 62, 53, 62
+    n, betamax, sieve_dim = 60, 45, 60
     ft = "ld" if n<90 else ( "dd" if config.have_qd else "mpfr")
     # - - - try load a lattice - - -
     filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"

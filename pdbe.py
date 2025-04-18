@@ -4,9 +4,10 @@ from hybrid_estimator.batchCVP import batchCVPP_cost
 import matplotlib.pyplot as plt
 import pickle
 
-nbs = [(50+i*10,48) for i in range(1)]
+nbs = [(50+i*10) for i in range(1)]
+beta = 48
 Ddata = {}
-for n, beta in nbs:
+for n in nbs:
     filename = f"dbsize_{n}_{beta}_exp.pkl"
     with open(filename,"rb") as file:
         D = pickle.load(file)

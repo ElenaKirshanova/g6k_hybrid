@@ -364,7 +364,7 @@ MAKE_GETTER(NAME, NONTRIVIAL) \
 MAKE_SETTER(NAME, NONTRIVIAL)
 
 public:
-    static constexpr int collect_statistics_level = COLLECT_STATISTICS;
+    static constexpr int collect_statistics_level = COLLECT_STATISTICS_SLICER;
 
     static constexpr bool collect_statistics_xorpopcnt  = (COLLECT_STATISTICS_XORPOPCNT_SLICER >= 1);
     MAKE_GETTER_AND_INCREMENTER(xorpopcnt_r, COLLECT_STATISTICS_XORPOPCNT_SLICER)
@@ -465,7 +465,7 @@ public:
 
     void print_statistics(std::ostream &os = std::cout)
     {   
-                #ifdef COLLECT_STATISTICS
+                #ifdef COLLECT_STATISTICS_SLICER
                 std::cout << " - - - <STATISTIC> - - -" << std::endl;
                 #endif
 
@@ -534,7 +534,7 @@ public:
                     os << "iterations: " << get_stats_itercount_slicer();
                     os << "\n";
                 }
-                #ifdef COLLECT_STATISTICS
+                #ifdef COLLECT_STATISTICS_SLICER
                 std::cout << " - - - <END STATISTIC> - - -" << std::endl;
                 #endif
     }

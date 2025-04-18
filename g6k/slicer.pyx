@@ -45,9 +45,9 @@ cdef class RandomizedSlicer(object):
        self._core.set_filename_cdbt(filename)
 
 
-    def bdgl_like_sieve(self, size_t nr_buckets, size_t blocks, size_t multi_hash, verbose):
+    def bdgl_like_sieve(self, size_t nr_buckets, size_t blocks, size_t multi_hash, verbose, showstats=False):
         sig_on()
-        self._core.bdgl_like_sieve(nr_buckets, blocks, multi_hash, verbose)
+        self._core.bdgl_like_sieve(nr_buckets, blocks, multi_hash, verbose, showstats)
         sig_off()
 
     @property

@@ -66,9 +66,7 @@ void RandomizedSlicer::parallel_sort_cdb() {
               cdb_t_tmp_copy.begin(), compare_CE(), threadpool);
     cdb_t.swap(cdb_t_tmp_copy);
     sorted_until = cdb_t.size();
-    //for(unsigned int i = 0; i<cdb_t.size(); i++)
-    //    std::cout << cdb_t[i].len << " ";
-    //std::cout << std::endl;
+
     assert(std::is_sorted(cdb_t.cbegin(), cdb_t.cend(), compare_CE()));
     return;
 }
@@ -379,14 +377,16 @@ void RandomizedSlicer::slicer_bucketing(const size_t blocks, const size_t multi_
     for( size_t i = 0; i < nr_buckets; ++i ) {
         // bucket overflow
         if( buckets_index[i].val > bsize ) {
+            buckets_index[i].val = bsize;
+
             statistics.inc_stats_buck_over_num();
             unsigned long maxbsize =  statistics.get_stats_buck_over_max();
-            // std::cout << maxbsize << " vs " << buckets_index[i].val << std::endl;
+            std::cout << maxbsize << " vs " << buckets_index[i].val << std::endl;
             if(maxbsize<buckets_index[i].val){
                 statistics.set_stats_buck_over_max((unsigned long)(buckets_index[i].val));
                 // std::cout << "slicer: bucket overflow! setting " << buckets_index[i].val << std::endl;
             }
-            buckets_index[i].val = bsize;
+
         }
     }
     //exit(1);
@@ -507,9 +507,8 @@ void RandomizedSlicer::slicer_process_buckets_task(const size_t t_id,
 }
 
 
-bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t multi_hash, bool verbose){
+bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t multi_hash, bool verbose, bool showstats){
 
-    //std::cout << "nr_buckets_aim:" << nr_buckets_aim << " blocks: " << blocks << " multi_hash: " <<multi_hash <<  std::endl;
     parallel_sort_cdb();
 
     std::vector<std::vector<Entry_t>> transaction_db(threads, std::vector<Entry_t>());
@@ -525,8 +524,7 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
             if(verbose) {
                 std::cout << "Saturated on:" << it  << "-th iteration"  << std::endl;
             }
-            if(verbose) statistics.print_statistics();
-            // std::cout << "stats printed" << std::endl;
+            if(showstats) statistics.print_statistics();
             return true;
         }
 
@@ -550,7 +548,7 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
         statistics.inc_stats_itercount_slicer();
         it++;
     }
-    if(verbose) statistics.print_statistics();
+    if(showstats) statistics.print_statistics();
     if(verbose) std::cerr << "Couldn't find a close vector after " << MAX_SLICER_ITERS << " iterations" << std::endl;
     return false;
 }
@@ -566,6 +564,6 @@ bool RandomizedSlicer::dump_cdb_t(const char* filename_prefix, size_t it){
         cdbt_output_file.close();
         return true;
     }
-    //else std::cout << "Unable to open file" << std::endl;
+    else std::cerr << "Unable to open file" << std::endl;
     return false;
 }
