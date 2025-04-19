@@ -1,6 +1,5 @@
 #include <iostream>
 #include <fstream>
-#include <cstring>
 
 #include "siever.h"
 #include "slicer.h"
@@ -227,7 +226,6 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
         this->sieve.addsub_vec(new_yr,  this->sieve.db[i2].yr, static_cast<ZT>(sign));
         UidType new_uid = uid_hash_table_t.compute_uid_t(new_yr);
 
-        statistics.inc_stats_xorpopcnt_r();
         if( !uid_hash_table_t.check_uid_unsafe(new_uid) && uid_hash_table_t.insert_uid(new_uid) )
         {
             int64_t index = write_index--; // atomic and signed!
@@ -237,7 +235,6 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
                 new_entry.i = db_t[i1].i;
                 recompute_data_for_entry_t<RandomizedSlicer::RecomputeSlicer::recompute_all>(new_entry);
 
-                // statistics.inc_stats_replacements();
                 return 1;
             }
             std::cout << "transaction_db full" << std::endl;
@@ -381,7 +378,7 @@ void RandomizedSlicer::slicer_bucketing(const size_t blocks, const size_t multi_
 
             statistics.inc_stats_buck_over_num();
             unsigned long maxbsize =  statistics.get_stats_buck_over_max();
-            std::cout << maxbsize << " vs " << buckets_index[i].val << std::endl;
+            //std::cout << maxbsize << " vs " << buckets_index[i].val << std::endl;
             if(maxbsize<buckets_index[i].val){
                 statistics.set_stats_buck_over_max((unsigned long)(buckets_index[i].val));
                 // std::cout << "slicer: bucket overflow! setting " << buckets_index[i].val << std::endl;

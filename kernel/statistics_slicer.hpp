@@ -10,9 +10,9 @@
 #endif
 
 #ifndef COLLECT_STATISTICS_SLICER
-    #if defined ENABLE_EXTENDED_STATS
+    #if defined ENABLE_EXTENDED_STATS_SLICER
         #define COLLECT_STATISTICS_SLICER 2
-    #elif defined ENABLE_STATS
+    #elif defined ENABLE_STATS_SLICER
         #define COLLECT_STATISTICS_SLICER 1
     #else
         #define COLLECT_STATISTICS_SLICER 0
@@ -461,7 +461,7 @@ public:
     }
 
     void print_statistics(std::ostream &os = std::cout)
-    {   
+    {
                 #ifdef COLLECT_STATISTICS_SLICER
                 std::cout << " - - - <STATISTIC> - - -" << std::endl;
                 #endif

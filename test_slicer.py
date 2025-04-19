@@ -211,7 +211,7 @@ if __name__ == "__main__":
             # slicer.set_filename_cdbt(filename)
 
             then = time.perf_counter()
-            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], True) #slicer_verbosity
+            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], True, True)
             endtime = time.perf_counter()-then
             if verbose: print(f"slicer w. nthreads: {nthreads} done in {endtime}")
             runtimes.append( endtime )
@@ -249,9 +249,9 @@ if __name__ == "__main__":
                 nsli_succ+=1
             if verbose: print(f"both succeeded: {succ and succbab}", flush=True)
 
-            print(f"- - - STATS - - -")
-            print(slicer.stats)
-            print(f"- - - STATS - - -")
+            # print(f"- - - STATS - - -")
+            # print(slicer.stats)          #TODO: FIX
+            # print(f"- - - STATS - - -")
 
         if verbose: print(f"es_: {sorted(es_)}")
         if verbose: print(f"MEAN: {np.mean(runtimes)}")
