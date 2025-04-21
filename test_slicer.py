@@ -19,7 +19,7 @@ if __name__ == "__main__":
     norm_slack = 1.01      #terminate slicer if norm_slack*||e_projected|| is found
     approx_factor = 0.93
     nrand_param = 10
-    nthreads = 2
+    nthreads = 1
     nexp = 1
     verbose = True
     slicer_verbosity = True

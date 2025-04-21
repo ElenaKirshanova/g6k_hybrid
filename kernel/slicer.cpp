@@ -46,6 +46,7 @@ inline void RandomizedSlicer::recompute_data_for_entry_t(Entry_t &e)
 //First element is from the list of targets, the second is from the siever db
 std::pair<LFT, int8_t> RandomizedSlicer::reduce_to_QEntry_t(CompressedEntry *ce1, CompressedEntry *ce2)
 {
+    statistics.inc_stats_fullscprods_r();
     LFT inner = std::inner_product(db_t[ce1->i].yr.begin(), db_t[ce1->i].yr.begin()+n, this->sieve.db[ce2->i].yr.begin(),  static_cast<LFT>(0.));
     LFT new_l = ce1->len + ce2->len - 2 * std::abs(inner);
     int8_t sign = (inner < 0 ) ? 1 : -1;
@@ -141,8 +142,6 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
     statistics.inc_stats_fullscprods_r();
     recompute_data_for_entry_t<RandomizedSlicer::RecomputeSlicer::recompute_all>(input_t);
 
-
-    //std::cout << "length: " << input_t.len << " uid: " <<input_t.uid << std::endl;
 
     unsigned long const start = db_t.size();
     unsigned long const N = start+n_per_target;
@@ -352,7 +351,7 @@ void RandomizedSlicer::slicer_queue(std::vector<std::vector<QEntry>> &t_queues, 
 void RandomizedSlicer::slicer_bucketing(const size_t blocks, const size_t multi_hash, const size_t nr_buckets_aim,
                             std::vector<uint32_t> &buckets, std::vector<atomic_size_t_wrapper> &buckets_index)
 {
-    // init hash
+    // init hash with the same seed as for sieving
     ProductLSH lsh(n, blocks, nr_buckets_aim, multi_hash, this->sieve.lsh_seed);
 
     const size_t nr_buckets = lsh.codesize;
@@ -374,16 +373,16 @@ void RandomizedSlicer::slicer_bucketing(const size_t blocks, const size_t multi_
     for( size_t i = 0; i < nr_buckets; ++i ) {
         // bucket overflow
         if( buckets_index[i].val > bsize ) {
-            buckets_index[i].val = bsize;
 
             statistics.inc_stats_buck_over_num();
-            unsigned long maxbsize =  statistics.get_stats_buck_over_max();
-            //std::cout << maxbsize << " vs " << buckets_index[i].val << std::endl;
-            if(maxbsize<buckets_index[i].val){
-                statistics.set_stats_buck_over_max((unsigned long)(buckets_index[i].val));
-                // std::cout << "slicer: bucket overflow! setting " << buckets_index[i].val << std::endl;
-            }
-
+            #ifdef COLLECT_STATISTICS_SLICER
+                unsigned long maxbsize =  statistics.get_stats_buck_over_max();
+                if(maxbsize<buckets_index[i].val){
+                    statistics.set_stats_buck_over_max((unsigned long)(buckets_index[i].val));
+                    // std::cout << "slicer: bucket overflow! setting " << buckets_index[i].val << std::endl;
+                }
+            #endif
+            buckets_index[i].val = bsize;
         }
     }
     //exit(1);
@@ -405,8 +404,6 @@ void RandomizedSlicer::slicer_bucketing_task(const size_t t_id, std::vector<uint
     for (uint32_t i = i_start; i < S; i += threads)
     {
         auto db_index = fast_cdb[i].i;
-        //for (size_t ii =0; ii<n; ii++) std::cout << db_t[db_index].yr[ii] << " " ;
-        //std::cout << std::endl;
         lsh.hash( db_t[db_index].yr.data() , res);
         for( size_t j = 0; j < multi_hash; j++ ) {
             uint32_t b = res[j];
@@ -440,8 +437,8 @@ void RandomizedSlicer::slicer_process_buckets_task(const size_t t_id,
     const size_t nr_buckets = buckets_index.size();
     const size_t bsize = buckets.size() / nr_buckets;
 
-    const uint32_t* const fast_buckets_t = buckets.data();
-    const uint32_t* const fast_buckets = this->sieve.buckets.data();
+    const uint32_t* const fast_buckets_t = buckets.data();              // targets
+    const uint32_t* const fast_buckets = this->sieve.buckets.data();    // lattice-vectors
 
     CompressedEntry* const fast_cdb_t = cdb_t.data();
     CompressedEntry* const fast_cdb = this->sieve.cdb.data();
