@@ -257,4 +257,5 @@ if __name__ == "__main__":
         if verbose: print(f"MEAN: {np.mean(runtimes)}")
         if verbose: print(runtimes)
         print(slicer.stats)
+        print(slicer._stat_get_buck_over_num)
     print(f"nbab_succ, nsli_succ: {nbab_succ,nsli_succ+nbab_succ} out of {nexp}")

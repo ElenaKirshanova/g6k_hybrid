@@ -116,7 +116,7 @@ cdef class RandomizedSlicer(object):
     
     @property
     def _stat_get_buck_over_max(self):
-        return self._core.statistics.get_stats_bucknum()
+        return self._core.statistics.get_stats_buck_over_max()
 
     @property
     def _stat_c_buck_over_max(self):
