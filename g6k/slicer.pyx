@@ -131,7 +131,7 @@ cdef class RandomizedSlicer(object):
         return self._core.statistics.collect_statistics_buck_over_num
     
     @property
-    def _stat_get_itercount(self):
+    def _stat_get_itercount_slicer(self):
         return self._core.statistics.get_stats_itercount_slicer()
 
     @property

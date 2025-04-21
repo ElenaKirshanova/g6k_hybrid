@@ -256,4 +256,5 @@ if __name__ == "__main__":
         if verbose: print(f"es_: {sorted(es_)}")
         if verbose: print(f"MEAN: {np.mean(runtimes)}")
         if verbose: print(runtimes)
+        print(slicer.stats)
     print(f"nbab_succ, nsli_succ: {nbab_succ,nsli_succ+nbab_succ} out of {nexp}")

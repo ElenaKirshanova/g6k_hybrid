@@ -10,9 +10,9 @@
 #endif
 
 #ifndef COLLECT_STATISTICS_SLICER
-    #if defined ENABLE_EXTENDED_STATS_SLICER
-        #define COLLECT_STATISTICS_SLICER 2
-    #elif defined ENABLE_STATS_SLICER
+    // #if defined ENABLE_EXTENDED_STATS_SLICER
+    //     #define COLLECT_STATISTICS_SLICER 2
+    #if defined ENABLE_STATS_SLICER
         #define COLLECT_STATISTICS_SLICER 1
     #else
         #define COLLECT_STATISTICS_SLICER 0

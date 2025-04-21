@@ -234,6 +234,8 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
                 new_entry.i = db_t[i1].i;
                 recompute_data_for_entry_t<RandomizedSlicer::RecomputeSlicer::recompute_all>(new_entry);
 
+                statistics.inc_stats_redsucc_s();
+
                 return 1;
             }
             std::cout << "transaction_db full" << std::endl;
