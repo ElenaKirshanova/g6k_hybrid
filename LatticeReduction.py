@@ -1,5 +1,7 @@
 from fpylll import BKZ as BKZ_FPYLLL, GSO, IntegerMatrix, FPLLL, config
 from fpylll.algorithms.bkz2 import BKZReduction
+from fpylll.util import ReductionError
+import pickle
 FPLLL.set_precision(240)
 
 try:
@@ -62,4 +64,13 @@ class LatticeReduction:
       self.__bkz(par) #bkz-enum is faster this way
     else:
         for t in range(tours): #pnj-bkz is oblivious to ntours
-            pump_n_jump_bkz_tour(self.__g6k, dummy_tracer, beta)
+            try:
+                pump_n_jump_bkz_tour(self.__g6k, dummy_tracer, beta)
+            except ReductionError as err:
+                print(f"Red. err. @beta={beta} tour:{t}")
+                with open(f"badlat_{self.basis.nrows}_{beta}.pkl", "wb") as file:
+                    pickle.dump( self.basis, file )
+                for i in range(40,48):
+                    self.BKZ(i, tours)
+                pump_n_jump_bkz_tour(self.__g6k, dummy_tracer, beta)
+

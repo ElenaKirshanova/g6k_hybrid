@@ -17,7 +17,7 @@ G.update_gso()
 
 lpre = [ G.r() ]
 
-"""
+""""""
 then = time.perf_counter()
 lll = LLL.Reduction( G )
 lll()
@@ -39,15 +39,15 @@ for beta in range(30,53,1):
     print(f"BKZ-{beta} done in: {time.perf_counter()-then}")
 B = G.B
 
-"""
+""""""
 
 LR = LatticeReduction( B, threads_bkz=10 )
 print(f"Starting bkz...", flush=True)
 
 bkz_start = time.perf_counter()
-for beta in range(91,92):
+for beta in range(70,72):
     then_round=time.perf_counter()
-    LR.BKZ(beta)
+    LR.BKZ(beta, tours=2)
     round_time = time.perf_counter()-then_round
     print(f"BKZ-{beta} done in {round_time}")
     sys.stdout.flush()
