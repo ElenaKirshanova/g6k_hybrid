@@ -95,7 +95,6 @@ def cvp_test(A,t, params, myparams):
             for i in range(1):
                 g6k.grow_db(ceil(1.5*len(g6k)))
                 g6k()
-            print(f"lolppost: {len(g6k)}")
             
             T_sieve = time.time() - T0
 
