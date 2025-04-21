@@ -246,11 +246,11 @@ private:
     static constexpr unsigned long stats_reds_during_randomization = 0;
 #endif
 
-#if COLLECT_STATISTICS_BUCKETS_SLICER
-    std::atomic_ulong   stats_bucknum;
-#else 
-    static constexpr unsigned long stats_bucknum = 0;
-#endif
+// #if COLLECT_STATISTICS_BUCKETS_SLICER
+//     std::atomic_ulong   stats_bucknum;
+// #else 
+//     static constexpr unsigned long stats_bucknum = 0;
+// #endif
 
 #if COLLECT_STATISTICS_BUCKETS_OVERFLOW_MAX_SLICER
     std::atomic_ulong   stats_buck_over_max;
@@ -396,8 +396,8 @@ public:
     static constexpr bool collect_statistics_reds_during_randomization  = (COLLECT_STATISTICS_REDS_DURING_RANDOMIZATION >= 1);
     MAKE_GETTER_AND_INCREMENTER(reds_during_randomization, COLLECT_STATISTICS_REDS_DURING_RANDOMIZATION)
 
-    static constexpr bool collect_statistics_bucknum  = (COLLECT_STATISTICS_BUCKETS_SLICER >= 1);
-    MAKE_GETTER_AND_INCREMENTER(bucknum, COLLECT_STATISTICS_BUCKETS_SLICER)
+    // static constexpr bool collect_statistics_bucknum  = (COLLECT_STATISTICS_BUCKETS_SLICER >= 1);
+    // MAKE_GETTER_AND_INCREMENTER(bucknum, COLLECT_STATISTICS_BUCKETS_SLICER)
 
     static constexpr bool collect_statistics_buck_over_max  = (COLLECT_STATISTICS_BUCKETS_OVERFLOW_MAX_SLICER >= 1);
     MAKE_GETTER_SETTER_AND_INCREMENTER(buck_over_max, COLLECT_STATISTICS_BUCKETS_OVERFLOW_MAX_SLICER)
@@ -443,9 +443,9 @@ public:
         stats_reds_during_randomization = 0;
     #endif
 
-    #if COLLECT_STATISTICS_BUCKETS_SLICER
-        stats_bucknum = 0;
-    #endif
+    // #if COLLECT_STATISTICS_BUCKETS_SLICER
+    //     stats_bucknum = 0;
+    // #endif
 
     #if COLLECT_STATISTICS_BUCKETS_OVERFLOW_MAX_SLICER
         stats_buck_over_max = 0;
@@ -512,11 +512,11 @@ public:
                     os << "dbt reds_during_randomization: " << get_stats_reds_during_randomization();
                     os << "\n";
                 }
-                if(collect_statistics_bucknum)
-                {
-                    os << "dbt bucknum: " << get_stats_bucknum();
-                    os << "\n";
-                }
+                // if(collect_statistics_bucknum)
+                // {
+                //     os << "dbt bucknum: " << get_stats_bucknum();
+                //     os << "\n";
+                // }
                 if(collect_statistics_buck_over_max)
                 {
                     os << "dbt buck_over_max: " << get_stats_buck_over_max();

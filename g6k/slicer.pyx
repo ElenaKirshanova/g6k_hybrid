@@ -107,14 +107,6 @@ cdef class RandomizedSlicer(object):
         return self._core.statistics.collect_statistics_reds_during_randomization
     
     @property
-    def _stat_get_bucknum(self):
-        return self._core.statistics.get_stats_bucknum()
-
-    @property
-    def _stat_c_bucknum(self):
-        return self._core.statistics.collect_statistics_bucknum
-    
-    @property
     def _stat_get_buck_over_max(self):
         return self._core.statistics.get_stats_buck_over_max()
 
@@ -157,7 +149,6 @@ cdef class RandomizedSlicer(object):
         "replacements"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],
         "collisions"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],
         "reds_during_randomization"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],
-        "bucknum"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],
         "buck_over_max"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],  
         "buck_over_num"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}], 
         "itercount_slicer"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                            {"bdgl2"}], 
