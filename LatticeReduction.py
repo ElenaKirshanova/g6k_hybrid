@@ -68,6 +68,7 @@ class LatticeReduction:
                 pump_n_jump_bkz_tour(self.__g6k, dummy_tracer, beta)
             except ReductionError as err:
                 print(f"Red. err. @beta={beta} tour:{t}")
+                self = LatticeReduction(self.basis)
                 with open(f"badlat_{self.basis.nrows}_{beta}.pkl", "wb") as file:
                     pickle.dump( self.basis, file )
                 for i in range(40,48):

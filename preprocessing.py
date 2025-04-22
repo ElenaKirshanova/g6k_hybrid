@@ -6,6 +6,7 @@ from g6k.siever import Siever
 from g6k.siever_params import SieverParams
 from utils import *
 from LatticeReduction import LatticeReduction
+from copy import deepcopy
 
 try:
     from multiprocess import Pool  # you might need pip install multiprocess
@@ -106,7 +107,7 @@ def run_preprocessing(params):
         sys.stdout.flush()
         report["bkz_runtime"].append( time.perf_counter() - then_round )
 
-        H11 = LR.basis
+        H11 = deepcopy( LR.basis ) #precautinary measure -- g6k = Siever(G,param_sieve) may call LLL on H11 = LR.basis and alter LR.basis???
         #---------run sieving------------
         int_type = H11.int_type
         FPLLL.set_precision(210)
@@ -151,16 +152,16 @@ if __name__=="__main__":
     # params = [(140, 12, 48), (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     #params = [(140, 12, 48)]#, (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
     # params = [(135+i*3, 6, 53+3*i) for i in range(2)]
-    params = [ (160,1,51) ]
+    params = [ (170,3,90) ]
     # params = [(180, 6, 93)]
     # params = [(190, 7, 99)]
     # params = [(200, 7, 108)]
-    nworkers, nthreads =  2, N_SIEVE_THREADS #5 (to be changed for kyber 190, 200 !!!)
+    nworkers, nthreads =  10, N_SIEVE_THREADS #5 (to be changed for kyber 190, 200 !!!)
 
     beta_bkz_offset = 2 #bkz blocksize would surpass the predicted value by this offset
     sieve_dim_max_offset = 2 #the largest slicer will work on dim=prediceted beta + this offset
 
-    lats_per_dim = 2
+    lats_per_dim = 10
     inst_per_lat = 10 #how many instances per A, q
     # dist, dist_param = "ternary", 1/6.
     dist, dist_param = "binomial", 3
