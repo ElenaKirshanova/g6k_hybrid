@@ -145,8 +145,15 @@ def solve_cvp(B, t, params):
 
     return close_vector, nrand, Tpump, Tslice, len(g6k), gh
 
+def run_experiment(B,cb,myparams):
+    c, b = cb['c'], cb['b']
+    close_vector, nrand, Tpump, Tslice, db_size, gh = solve_cvp(B,cb['b'], myparams)
+    v = B.multiply_left( c )
+    dt = (sum([(b[i] - close_vector[i])**2 for i in range(len(b))]))
+    return [nrand, Tpump, Tslice, db_size, dt, gh]
+
 if __name__ == "__main__":
-    n, lat_num, inst_per_lat, betamax, appr_fact = 60, 2, 2, 50, 0.999
+    n, lat_num, inst_per_lat, betamax, appr_fact = 64, 2, 5, 50, 0.999
     n_workers = 2
     myparams = {
     "max_slicer_interations": 150,
@@ -172,14 +179,26 @@ if __name__ == "__main__":
             pickle.dump( L, file )
 
     # tasks = []
+    # results = []
+    # for B, cbs in L:
+    #     for cb in cbs: 
+    #         c, b = cb['c'], cb['b']
+    #         close_vector, nrand, Tpump, Tslice, db_size, gh = solve_cvp(B,cb['b'], myparams)
+    #         v = B.multiply_left( c )
+    #         dt = (sum([(b[i] - close_vector[i])**2 for i in range(len(b))]))
+    #         results.append( [nrand, Tpump, Tslice, db_size, dt, gh] )
+
+    pool = Pool(processes=n_workers)
+    tasks = []
     results = []
     for B, cbs in L:
         for cb in cbs: 
-            c, b = cb['c'], cb['b']
-            close_vector, nrand, Tpump, Tslice, db_size, gh = solve_cvp(B,cb['b'], myparams)
-            v = B.multiply_left( c )
-            dt = (sum([(b[i] - close_vector[i])**2 for i in range(len(b))]))
-            results.append( [nrand, Tpump, Tslice, db_size, dt, gh] )
+            tasks.append( pool.apply_async(
+                run_experiment, (B, cb, myparams)
+            ) )
+
+    for tsk in tasks:
+            results.append( tsk.get() )
 
     filename = f"cvp_comp_{n}_{lat_num}_{inst_per_lat}_{betamax}_{appr_fact:0.4f}.pkl"
     with open(filename,"wb") as file:
