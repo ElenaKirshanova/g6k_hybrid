@@ -40,6 +40,11 @@ def run_exp(n,cntr,ntests,saturation_scalars,max_slicer_interations=300, nthread
     param_sieve['otf_lift'] = False
     param_sieve["saturation_radius"] = 4/3.
     param_sieve["saturation_ratio"] = 0.4
+    G=GSO.Mat( B, float_type="dd",
+          U=IntegerMatrix.identity(B.nrows, int_type=B.int_type),
+          UinvT=IntegerMatrix.identity(B.nrows, int_type=B.int_type) )
+    g6k = Siever(G)
+    
     g6k.params = param_sieve
 
     g6k.lll(0, n)
