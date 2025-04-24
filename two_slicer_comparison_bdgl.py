@@ -198,7 +198,7 @@ if __name__ == "__main__":
     for B, cbs in L:
         for cb in cbs: 
             tasks.append( pool.apply_async(
-                run_experiment, (B, cb, myparams, expid)
+                run_experiment, (B, cb, myparams, [tmp for tmp in expid])
             ) )
             expid[1]+=1
         expid[0]+=1
