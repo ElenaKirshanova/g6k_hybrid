@@ -35,7 +35,6 @@ def run_exp(n,cntr,ntests,saturation_scalars,max_slicer_interations=300, nthread
     # saturation_scalar = SATURATION_SCALAR
     B = gen_lat( n, betamax=50, k=n//2+1, seed=cntr, threads=nthreads )
 
-    g6k = Siever.restore_from_file(f"cvppg6k_n{n}_{cntr}_test.pkl")
     param_sieve = SieverParams()
     param_sieve['threads'] = nthreads
     param_sieve['otf_lift'] = False
