@@ -145,9 +145,11 @@ def solve_cvp(B, t, params):
 
     return close_vector, nrand, Tpump, Tslice, len(g6k), gh
 
-def run_experiment(B,cb,myparams):
+def run_experiment(B,cb,myparams,expid):
     c, b = cb['c'], cb['b']
+    then = time.perf_counter()
     close_vector, nrand, Tpump, Tslice, db_size, gh = solve_cvp(B,cb['b'], myparams)
+    print(f"experiment {expid} is finished in {time.perf_counter()-then}", flush=True)
     v = B.multiply_left( c )
     dt = (sum([(b[i] - close_vector[i])**2 for i in range(len(b))]))
     return [nrand, Tpump, Tslice, db_size, dt, gh]
@@ -187,15 +189,21 @@ if __name__ == "__main__":
     #         v = B.multiply_left( c )
     #         dt = (sum([(b[i] - close_vector[i])**2 for i in range(len(b))]))
     #         results.append( [nrand, Tpump, Tslice, db_size, dt, gh] )
-
+    
+    print("Running experiments.", flush=True)
     pool = Pool(processes=n_workers)
     tasks = []
     results = []
+    expid = [0,0]
     for B, cbs in L:
         for cb in cbs: 
             tasks.append( pool.apply_async(
-                run_experiment, (B, cb, myparams)
+                run_experiment, (B, cb, myparams, expid)
             ) )
+            expid[1]+=1
+        expid[0]+=1
+        expid[1]=0
+
 
     for tsk in tasks:
             results.append( tsk.get() )
