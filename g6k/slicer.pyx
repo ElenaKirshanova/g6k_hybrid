@@ -45,9 +45,9 @@ cdef class RandomizedSlicer(object):
        self._core.set_filename_cdbt(filename)
 
 
-    def bdgl_like_sieve(self, size_t nr_buckets, size_t blocks, size_t multi_hash, verbose):
+    def bdgl_like_sieve(self, size_t nr_buckets, size_t blocks, size_t multi_hash, verbose, showstats=False):
         sig_on()
-        self._core.bdgl_like_sieve(nr_buckets, blocks, multi_hash, verbose)
+        self._core.bdgl_like_sieve(nr_buckets, blocks, multi_hash, verbose, showstats)
         sig_off()
 
     @property
@@ -107,16 +107,8 @@ cdef class RandomizedSlicer(object):
         return self._core.statistics.collect_statistics_reds_during_randomization
     
     @property
-    def _stat_get_bucknum(self):
-        return self._core.statistics.get_stats_bucknum()
-
-    @property
-    def _stat_c_bucknum(self):
-        return self._core.statistics.collect_statistics_bucknum
-    
-    @property
     def _stat_get_buck_over_max(self):
-        return self._core.statistics.get_stats_bucknum()
+        return self._core.statistics.get_stats_buck_over_max()
 
     @property
     def _stat_c_buck_over_max(self):
@@ -131,7 +123,7 @@ cdef class RandomizedSlicer(object):
         return self._core.statistics.collect_statistics_buck_over_num
     
     @property
-    def _stat_get_itercount(self):
+    def _stat_get_itercount_slicer(self):
         return self._core.statistics.get_stats_itercount_slicer()
 
     @property
@@ -157,10 +149,9 @@ cdef class RandomizedSlicer(object):
         "replacements"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],
         "collisions"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],
         "reds_during_randomization"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],
-        "bucknum"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],
         "buck_over_max"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}],  
-        "buck_over_max"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}], 
-        "buck_over_max"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                            {"bdgl2"}], 
+        "buck_over_num"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                                 {"bdgl2"}], 
+        "itercount_slicer"            : [10,  "XPC   :",  "total number of xorpopcnt calculations",                            {"bdgl2"}], 
      }
 
     @property

@@ -1,6 +1,3 @@
-#ifndef G6K_STATISTICS_SLICER_HPP
-#define G6K_STATISTICS_SLICER_HPP
-
 #include "compat.hpp"
 #include <atomic>
 #include <string>
@@ -13,9 +10,9 @@
 #endif
 
 #ifndef COLLECT_STATISTICS_SLICER
-    #if defined ENABLE_EXTENDED_STATS
-        #define COLLECT_STATISTICS_SLICER 2
-    #elif defined ENABLE_STATS
+    // #if defined ENABLE_EXTENDED_STATS_SLICER
+    //     #define COLLECT_STATISTICS_SLICER 2
+    #if defined ENABLE_STATS_SLICER
         #define COLLECT_STATISTICS_SLICER 1
     #else
         #define COLLECT_STATISTICS_SLICER 0
@@ -249,11 +246,11 @@ private:
     static constexpr unsigned long stats_reds_during_randomization = 0;
 #endif
 
-#if COLLECT_STATISTICS_BUCKETS_SLICER
-    std::atomic_ulong   stats_bucknum;
-#else 
-    static constexpr unsigned long stats_bucknum = 0;
-#endif
+// #if COLLECT_STATISTICS_BUCKETS_SLICER
+//     std::atomic_ulong   stats_bucknum;
+// #else 
+//     static constexpr unsigned long stats_bucknum = 0;
+// #endif
 
 #if COLLECT_STATISTICS_BUCKETS_OVERFLOW_MAX_SLICER
     std::atomic_ulong   stats_buck_over_max;
@@ -364,7 +361,7 @@ MAKE_GETTER(NAME, NONTRIVIAL) \
 MAKE_SETTER(NAME, NONTRIVIAL)
 
 public:
-    static constexpr int collect_statistics_level = COLLECT_STATISTICS;
+    static constexpr int collect_statistics_level = COLLECT_STATISTICS_SLICER;
 
     static constexpr bool collect_statistics_xorpopcnt  = (COLLECT_STATISTICS_XORPOPCNT_SLICER >= 1);
     MAKE_GETTER_AND_INCREMENTER(xorpopcnt_r, COLLECT_STATISTICS_XORPOPCNT_SLICER)
@@ -399,8 +396,8 @@ public:
     static constexpr bool collect_statistics_reds_during_randomization  = (COLLECT_STATISTICS_REDS_DURING_RANDOMIZATION >= 1);
     MAKE_GETTER_AND_INCREMENTER(reds_during_randomization, COLLECT_STATISTICS_REDS_DURING_RANDOMIZATION)
 
-    static constexpr bool collect_statistics_bucknum  = (COLLECT_STATISTICS_BUCKETS_SLICER >= 1);
-    MAKE_GETTER_AND_INCREMENTER(bucknum, COLLECT_STATISTICS_BUCKETS_SLICER)
+    // static constexpr bool collect_statistics_bucknum  = (COLLECT_STATISTICS_BUCKETS_SLICER >= 1);
+    // MAKE_GETTER_AND_INCREMENTER(bucknum, COLLECT_STATISTICS_BUCKETS_SLICER)
 
     static constexpr bool collect_statistics_buck_over_max  = (COLLECT_STATISTICS_BUCKETS_OVERFLOW_MAX_SLICER >= 1);
     MAKE_GETTER_SETTER_AND_INCREMENTER(buck_over_max, COLLECT_STATISTICS_BUCKETS_OVERFLOW_MAX_SLICER)
@@ -446,9 +443,9 @@ public:
         stats_reds_during_randomization = 0;
     #endif
 
-    #if COLLECT_STATISTICS_BUCKETS_SLICER
-        stats_bucknum = 0;
-    #endif
+    // #if COLLECT_STATISTICS_BUCKETS_SLICER
+    //     stats_bucknum = 0;
+    // #endif
 
     #if COLLECT_STATISTICS_BUCKETS_OVERFLOW_MAX_SLICER
         stats_buck_over_max = 0;
@@ -464,8 +461,8 @@ public:
     }
 
     void print_statistics(std::ostream &os = std::cout)
-    {   
-                #ifdef COLLECT_STATISTICS
+    {
+                #ifdef COLLECT_STATISTICS_SLICER
                 std::cout << " - - - <STATISTIC> - - -" << std::endl;
                 #endif
 
@@ -515,11 +512,11 @@ public:
                     os << "dbt reds_during_randomization: " << get_stats_reds_during_randomization();
                     os << "\n";
                 }
-                if(collect_statistics_bucknum)
-                {
-                    os << "dbt bucknum: " << get_stats_bucknum();
-                    os << "\n";
-                }
+                // if(collect_statistics_bucknum)
+                // {
+                //     os << "dbt bucknum: " << get_stats_bucknum();
+                //     os << "\n";
+                // }
                 if(collect_statistics_buck_over_max)
                 {
                     os << "dbt buck_over_max: " << get_stats_buck_over_max();
@@ -534,10 +531,9 @@ public:
                     os << "iterations: " << get_stats_itercount_slicer();
                     os << "\n";
                 }
-                #ifdef COLLECT_STATISTICS
+                #ifdef COLLECT_STATISTICS_SLICER
                 std::cout << " - - - <END STATISTIC> - - -" << std::endl;
                 #endif
     }
 
 };
-#endif

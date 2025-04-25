@@ -1,8 +1,6 @@
 import sys, os
 import glob #for automated search in subfolders
 import numpy as np
-from experiments.lwe_gen import generateLWEInstance, binomial_vec, uniform_vec
-from LatticeReduction import LatticeReduction
 import time
 from time import perf_counter
 from fpylll import *
@@ -27,6 +25,67 @@ except ModuleNotFoundError:
 from global_consts import DTYPE
 
 save_folder = "./saved_lattices/"
+inp_path = "lwe_instances/saved_lattices/"
+out_path = "lwe_instances/reduced_lattices/"
+
+def get_filename(which_file,params):
+    """
+    f"lwe_instance_ternary_{n}_{q}_{dist_param:.04f}_{seed}"
+    f"kyb_preprimal_{n}_{q}_ternary_{dist_param:.04f}_{seed[0]}_{betapre}.pkl"
+    f"report_pre_{n}_{q}_ternary_{dist_param:.04f}_{seed[0]}_{betapre}.pkl"
+    f"exp{nks}_{q}_ternary_{dist_param:.04f}.pkl"
+    f'g6kdump_{n}_{q}_ternary_{dist_param:.04f}_{seed[0]}_{kappa}_{g6k.n}.pkl'
+    f"report_prehyb_{n}_{q}_ternary_{dist_param:.04f}_{k}_{seed[0]}_{kappa}_{sieve_dim_min}_{sieve_dim_max}.pkl"
+    f"tha_{n}_{q}_ternary_{dist_param:.04f}_{n_guess_coord}_{n_slicer_coord}.pkl"
+
+    f"lwe_instance_binomial_{n}_{q}_{dist_param}_{seed}"
+    f"kyb_preprimal_{n}_{q}_binomial_{dist_param}_{seed[0]}_{betapre}.pkl"
+    f"report_pre_{n}_{q}_binomial_{dist_param}_{seed[0]}_{betapre}.pkl"
+    f"exp{nks}_{q}_binomial_{dist_param}.pkl"
+    f'g6kdump_{n}_{q}_binomial_{dist_param}_{seed[0]}_{kappa}_{g6k.n}.pkl'
+    f"report_prehyb_{n}_{q}_binomial_{dist_param}_{k}_{seed[0]}_{kappa}_{sieve_dim_min}_{sieve_dim_max}.pkl"
+    f"tha_{n}_{q}_binomial_{dist_param}_{n_guess_coord}_{n_slicer_coord}.pkl"
+    """
+    dp = params["dist_param"]
+    if params["dist"] == "ternary":
+        dpstr = f"{dp:.04f}"
+    elif params["dist"] == "binomial":
+        dpstr = f"{dp}"
+    else: raise ValueError("dist should be either \"ternary\" or \"binomial\" ")
+    # params.update( {"dpstr": dpstr} )
+
+    if "lwe_instance" == which_file:
+        # raise NotImplementedError
+        n, q, seed, dist = params["n"], params["q"], params["seed"], params["dist"]
+        return f"lwe_instance_{dist}_{n}_{q}_{dpstr}_{seed[0]}.pkl"
+    
+    elif "kyb_preprimal" == which_file:
+        # raise NotImplementedError
+        n, q, seed, betapre, dist = params["n"], params["q"], params["seed"], params["betapre"], params["dist"]
+        return f"kyb_preprimal_{n}_{q}_{dist}_{dpstr}_{seed[0]}_{betapre}.pkl"
+    
+    elif "report_pre" == which_file:
+        # raise NotImplementedError
+        n, q, seed, betapre, dist = params["n"], params["q"], params["seed"], params["betapre"], params["dist"]
+        return f"kyb_preprimal_{n}_{q}_{dist}_{dpstr}_{seed[0]}_{betapre}.pkl"
+    
+    elif "exp" == which_file:
+        raise NotImplementedError
+    
+    elif "g6kdump" == which_file:
+        # raise NotImplementedError
+        n, q, seed, dist, kappa, n_sli_coord, bkz_beta = params["n"], params["q"], params["seed"], params["dist"], params["kappa"], params["n_sli_coord"], params["bkz_beta"]
+        return f'g6kdump_{n}_{q}_{dist}_{dpstr}_{seed[0]}_{kappa}_{n_sli_coord}_{bkz_beta}.pkl'
+    
+    elif "report_prehyb" == which_file:
+        # raise NotImplementedError dist["
+        n, q, dist, seed, kappa, sieve_dim_min, sieve_dim_max = dist["n"], dist["q"], dist["dist"], dist["seed"], dist["kappa"], dist["sieve_dim_min"], dist["sieve_dim_max"]
+        return f"report_prehyb_{n}_{q}_{dist}_{dpstr}_{seed[0]}_{kappa}_{sieve_dim_min}_{sieve_dim_max}.pkl"
+    
+    elif "tha" == which_file:
+        raise NotImplementedError
+
+    return 0
 
 def gsomat_copy(M):
     n,m,int_type,float_type = M.B.nrows,M.B.ncols,M.int_type,M.float_type
@@ -189,10 +248,10 @@ def uniform_in_ball(num_points, dimension, radius=1):
     # Return the list of random (direction & length) points.
     return radius * (random_directions * random_radii).T
 
-def test_vect_proj( G, n_slicer_coord, n_tests, eta=3 ):
+def test_vect_proj( G, n_slicer_coord, n_tests, dist ):
     # Gives norms of n_tests projected and scaled vectors ~Bin(eta). The projection is onto
     # the last n_slicer_coord dimensional projective lattice.
-    dist = centeredBinomial(eta)
+    # dist = centeredBinomial(eta)
 
     gh_sub = gaussian_heuristic( G.r()[-n_slicer_coord:] )
     lens = []

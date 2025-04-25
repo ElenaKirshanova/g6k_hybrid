@@ -8,7 +8,7 @@ import sys
 from time import perf_counter
 from experiments.lwe_gen import *
 
-from hyb_att_on_kyber import alg_3, alg_2_batched
+from hyb_att_on_kyber import alg_2_batched
 from sample import *
 
 from g6k.siever import SaturationError
@@ -21,9 +21,7 @@ except ModuleNotFoundError:
     from multiprocessing import Pool
 
 from global_consts import *
-
-from signal import signal, SIGPIPE, SIG_DFL
-signal(SIGPIPE,SIG_DFL)
+from copy import copy
 
 inp_path = "lwe_instances/saved_lattices/"
 out_path = "lwe_instances/reduced_lattices/"
@@ -73,7 +71,7 @@ def batch_babai( g6k,target_candidates, dist_sq_bnd ):
     print(f"best_cb: {best_cb}")
     return best_cb
 
-def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
+def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, dist, dist_param, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
     # Emulates batch CVPP with guessing.
     # - - - prepare targets - - -
     then_start = perf_counter()
@@ -82,7 +80,11 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
     print(f"dim: {dim}")
 
     t1, t2 = target[:-n_guess_coord], target[-n_guess_coord:]
-    distrib = centeredBinomial(eta)
+    if dist=="binomial":
+        distrib = centeredBinomial(dist_param)
+    elif dist=="ternary":
+         print(f"dist_param: {dist_param}")
+         distrib = ternaryDist(dist_param)
     #TODO: make/(check if is) practical
     nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord ) )
     print(f"nsampl: {nsampl}")
@@ -206,7 +208,7 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthr
     # - - - END CORRECT GUESS - - -
 
 
-def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
+def alg_3_debug(g6k,H11,B,target,n_guess_coord, distrib, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
     # Emulates batch CVPP with guessing.
     # - - - prepare targets - - -
     then_start = perf_counter()
@@ -215,7 +217,7 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
     print(f"dim: {dim}")
 
     t1, t2 = target[:-n_guess_coord], target[-n_guess_coord:]
-    distrib = centeredBinomial(eta)
+    # distrib = centeredBinomial(eta)
     #TODO: make/(check if is) practical
     nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord ) )
     print(f"nsampl: {nsampl}")
@@ -275,33 +277,44 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, eta, s, dist_sq_bnd=1.0, nthread
         cntr+=1
     return argminv
 
-def run_experiment(lat_index, params, stats_dict, tracer=None):
+def run_experiment(params, stats_dict, tracer=None):
     nthreads = params["nthreads"]
-    n, k, q, eta = params["n"], params["k"], params["q"], params["eta"]
+    n, q, dist, dist_param = params["n"], params["q"], params["dist"], params["dist_param"]
     n_guess_coord, n_slicer_coord = params["n_guess_coord"], params["n_slicer_coord"]
+    beta_pre = params["beta_pre"]
+    seed = params["seed"]
+    lat_index = seed[0]
 
-    ft = "ld" if 2*k*n<140 else ( "dd" if config.have_qd else "mpfr")
+    # if dist == "binomial":
+    #     distrib = centeredBinomial(dist_param)
+    # elif dist=="ternary":
+    #     distrib = ternaryDist(dist_param)
+    # else:
+    #      raise ValueError(f"distrib: expected \"binomial\" or \"ternary\", got {distrib}")
+
+    ft = "ld" if 2*n<140 else ( "dd" if config.have_qd else "mpfr")
     FPLLL.set_precision(210)
-    dim = 2*k*n
+    dim = 2*n
 
     print(f"float_type: {ft}")
     succ_cntr = 0
     ex_cntr = 0
 
-    filename_g6kdump = f"g6kdump_{n}_{q}_{eta}_{k}_{lat_index}_{n_guess_coord}_{n_slicer_coord}.pkl"
-    A, _, _, _, bse = load_lwe(n,q,eta,k,lat_index)
+    #n,q,dist,dist_param,lat_index
+    A, q, bse = load_lwe(params)
 
     # we don't store the whole lattice basis Binit since it is fairly large for github
-    Binit = [ [int(0) for i in range(2*k*n)] for j in range(2*k*n) ]
-    for i in range( k*n ):
+    Binit = [ [int(0) for i in range(2*n)] for j in range(2*n) ]
+    for i in range( n ):
         Binit[i][i] = int( q )
-    for i in range(k*n, 2*k*n):
+    for i in range(n, 2*n):
         Binit[i][i] = 1
-    for i in range(k*n, 2*k*n):
-        for j in range(k*n):
-            Binit[i][j] = int( A[i-k*n,j] )
+    for i in range(n, 2*n):
+        for j in range(n):
+            Binit[i][j] = int( A[i-n,j] )
 
     then = perf_counter()
+    filename_g6kdump = f'g6kdump_{n}_{q}_{dist}_{dist_param:.04f}_{lat_index}_{n_guess_coord}_{n_slicer_coord}_{beta_pre}.pkl'
     #restore precomputed g6k and initialize it
     g6k = Siever.restore_from_file( out_path + filename_g6kdump )
     # Needed to ensure that all locals are correct.
@@ -332,6 +345,7 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
         e_ = np.concatenate([e,-s])[:-n_guess_coord]
         # project the error vector onto the last n_sieve_dim GS-vectors.
         e_ = from_canonical_scaled( G,e_,offset=n_slicer_coord,scale_fact=gh_sub )
+        # print(f"hyb e_: {e_}")
 
         #deduce the projected error norm
         dist_sq_bnd = e_@e_
@@ -348,7 +362,9 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
 
         # project the error vector onto the last n_sieve_dim GS-vectors.
         tracer = {}
-        iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
+        with open("hybHvar","wb") as file:
+            pickle.dump(pickle.dump([n_slicer_coord,t,e,s,EPS2 * dist_sq_bnd, g6k.M.r(), gh_sub], file), file)
+        iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, dist, dist_param, s, dist_sq_bnd=EPS2 * dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
         guess_cntr = 0
         sli_succ = False
         for v in iter_v:
@@ -361,17 +377,18 @@ def run_experiment(lat_index, params, stats_dict, tracer=None):
 
             v2 = v
 
-            sli_succ = all( answer==v2 )
+            sli_succ = all(answer==v2)
             # print(f"slicer:\n {sli_succ}")
             if (sli_succ):
                 succ_cntr+=1
                 print(f"Success in experiment! @{guess_cntr} guess")
                 break
+
         fail_reason = "other" if guess_cntr<1 else "parasites"
         a0, a1 = tracer["wrong_guess_time_alg3"] , tracer["wrong_guess_time_alg2"]
         print(f"a0, a1: {a0,a1}")
         walltime, walltime_observed = tracer["wrong_guess_time_alg3"] + tracer["wrong_guess_time_alg2"], perf_counter() - ex_timer
-        stats_dict[(n,lat_index, n_slicer_coord, n_guess_coord, ex_cntr)] = {
+        stats_dict[(n, lat_index, n_slicer_coord, n_guess_coord, ex_cntr)] = {
             "walltime": walltime,
             "dist_bnd": dist_bnd,
             "succ": (sli_succ),
@@ -396,17 +413,21 @@ if __name__=="__main__":
     preprocessing.py (preprocess the data) and then run this file.
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
-    n, k = 115, 1
+    n = 135
     q, eta = 3329, 3
-    n_guess_coord, n_slicer_coord = 4, 46
+    # dist, dist_param = "ternary", 1/6.
+    dist, dist_param = "binomial", 2
+    n_guess_coord, n_slicer_coord = 6, 53
+    beta_pre = 52
     nthreads = 5
-    nworkers = 2
+    nworkers = 1
     latnum = 2
 
     params={}
     params["nthreads"] = nthreads
-    params["n"], params["k"], params["q"], params["eta"] = n, k, q, eta
+    params["n"], params["dist"], params["dist_param"], params["q"] = n, dist, dist_param, q
     params["n_guess_coord"], params["n_slicer_coord"] = n_guess_coord, n_slicer_coord
+    params["beta_pre"] = beta_pre
 
     succ_cntr = 0
     ex_cntr = 0
@@ -416,8 +437,9 @@ if __name__=="__main__":
     tasks = []
     for lat_index in range(latnum):
         output.append({})
+        params["seed"] = (lat_index,0)
         tasks.append( pool.apply_async(
-            run_experiment, (lat_index, params, output[lat_index])
+            run_experiment, (copy(params), output[lat_index])
             ) )
 
     stats_dict_agr = {}
@@ -425,8 +447,10 @@ if __name__=="__main__":
             stats_dict_agr.update(t.get())
 
     print(stats_dict_agr)
-    filename = f"tha_{n}_{n_guess_coord}_{n_slicer_coord}.pkl"
+    #filename = f"tha_{n}_{n_guess_coord}_{n_slicer_coord}.pkl"
+    filename = f"tha_{n}_{n_guess_coord}_{n_slicer_coord}_{beta_pre}.pkl"
     print(f"Saving to {filename}")
     with open(filename, "wb") as file:
         pickle.dump( stats_dict_agr, file )
     pool.close()
+    print( stats_dict_agr )

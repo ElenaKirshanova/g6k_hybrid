@@ -152,7 +152,7 @@ fi
 enable_stats_slicer=0
 
 AC_ARG_WITH(stats_slicer,
-    AC_HELP_STRING([--with-stats-slicer@<:@=STATS@:>@], [enable statistics_slicer [supported=0,1,2; default=0]]),
+    AC_HELP_STRING([--with-stats-slicer@<:@=STATS@:>@], [enable statistics_slicer [supported=0,1; default=0]]),
     [enable_stats_slicer=$withval],
     [enable_stats_slicer=0]
 )

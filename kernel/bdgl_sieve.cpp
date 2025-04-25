@@ -243,8 +243,6 @@ void Siever::bdgl_process_buckets_task(const size_t t_id,
                         if (kk < .1 * S) break;
                         kk -= params.threads;
 
-                        statistics.inc_stats_2redsuccess_outer();
-
                         t_queue.push_back({ pce1->i, fast_cdb[bj].i, len_and_sign.first, (int8_t)len_and_sign.second});
                     } else if( params.otf_lift and len_and_sign.first < params.lift_radius ) {
                         bdgl_lift( pce1->i, fast_cdb[bj].i, len_and_sign.first, len_and_sign.second );

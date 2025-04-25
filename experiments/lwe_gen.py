@@ -1,13 +1,38 @@
-from random import randrange
+from random import randrange, choices
 import numpy as np
 import json
 
-def generateLWEInstance(n):
-  A,s,e,q = kyberGen(n)
+# def generateLWEInstance(n):
+#   A,s,e,q = kyberGen(n)
   
-  b = (s.dot(A) + e) % q
+#   b = (s.dot(A) + e) % q
 
-  return A,b,q,s,e
+#   return A,b,q,s,e
+
+def generateLWEInstances(n,q,dist,dist_param,ntar):
+    A = []
+    for _ in range(n):
+       a = np.array([ randrange(q) for _ in range(n) ])
+       A.append(a)
+    A = np.array(A)
+
+    bse = []
+
+    for _ in range(ntar):
+        if dist=="binomial":
+            s = binomial_vec(n, dist_param)
+            e = binomial_vec(n, dist_param)
+        elif dist=="ternary":
+           s = ternary_vec(n, dist_param)
+           e = ternary_vec(n, dist_param)
+        else:
+           raise NotImplementedError("Distribution %s not implemented." % dist)
+        
+        b = (s.dot(A) + e) % q
+
+        bse.append((b,s,e))
+    
+    return A,q,bse
 
 
 """
@@ -29,6 +54,17 @@ def binomial_vec(n, eta):
   for i in range(n):
     v[i] = binomial_dist(2*eta) - eta
   return v
+
+"""
+    For 0 <= w <= 1/2, returns an n-dimensional vector where each coordinates is
+        1 with probability w,
+        -1 with probability w,
+        0 with probabiltiy 1-2*w.
+"""
+def ternary_vec(n,w):
+   population = [1,-1,0]
+   weights = [w,w,1-2*w]
+   return np.array(choices(population,weights, k=n))
 
 """
   Returns an n-dimensional vector,
@@ -99,23 +135,3 @@ def binomialLWEGen(n,m,q,eta):
   e = binomial_vec(m, eta)
   
   return A,s,e
-  
-"""
-  Returns A,s,e, as in Kyber.
-"""
-def kyberGen(n):
-  q = 3329
-  
-  k = 1
-  eta = 3
-  
-  s = binomial_vec(k*n, eta)
-  e = binomial_vec(k*n, eta)
-  
-  polys = []
-  for i in range(k*k):
-    polys.append( uniform_vec(n,0,q) )
-  
-  A = module(polys, k, k)
-  
-  return A,s,e,q

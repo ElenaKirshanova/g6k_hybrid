@@ -1,6 +1,5 @@
 #include <iostream>
 #include <fstream>
-#include <cstring>
 
 #include "siever.h"
 #include "slicer.h"
@@ -47,6 +46,7 @@ inline void RandomizedSlicer::recompute_data_for_entry_t(Entry_t &e)
 //First element is from the list of targets, the second is from the siever db
 std::pair<LFT, int8_t> RandomizedSlicer::reduce_to_QEntry_t(CompressedEntry *ce1, CompressedEntry *ce2)
 {
+    statistics.inc_stats_fullscprods_r();
     LFT inner = std::inner_product(db_t[ce1->i].yr.begin(), db_t[ce1->i].yr.begin()+n, this->sieve.db[ce2->i].yr.begin(),  static_cast<LFT>(0.));
     LFT new_l = ce1->len + ce2->len - 2 * std::abs(inner);
     int8_t sign = (inner < 0 ) ? 1 : -1;
@@ -66,9 +66,7 @@ void RandomizedSlicer::parallel_sort_cdb() {
               cdb_t_tmp_copy.begin(), compare_CE(), threadpool);
     cdb_t.swap(cdb_t_tmp_copy);
     sorted_until = cdb_t.size();
-    //for(unsigned int i = 0; i<cdb_t.size(); i++)
-    //    std::cout << cdb_t[i].len << " ";
-    //std::cout << std::endl;
+
     assert(std::is_sorted(cdb_t.cbegin(), cdb_t.cend(), compare_CE()));
     return;
 }
@@ -144,8 +142,6 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
     statistics.inc_stats_fullscprods_r();
     recompute_data_for_entry_t<RandomizedSlicer::RecomputeSlicer::recompute_all>(input_t);
 
-
-    //std::cout << "length: " << input_t.len << " uid: " <<input_t.uid << std::endl;
 
     unsigned long const start = db_t.size();
     unsigned long const N = start+n_per_target;
@@ -229,7 +225,6 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
         this->sieve.addsub_vec(new_yr,  this->sieve.db[i2].yr, static_cast<ZT>(sign));
         UidType new_uid = uid_hash_table_t.compute_uid_t(new_yr);
 
-        statistics.inc_stats_xorpopcnt_r();
         if( !uid_hash_table_t.check_uid_unsafe(new_uid) && uid_hash_table_t.insert_uid(new_uid) )
         {
             int64_t index = write_index--; // atomic and signed!
@@ -239,7 +234,8 @@ inline int RandomizedSlicer::slicer_reduce_with_delayed_replace(const size_t i1,
                 new_entry.i = db_t[i1].i;
                 recompute_data_for_entry_t<RandomizedSlicer::RecomputeSlicer::recompute_all>(new_entry);
 
-                // statistics.inc_stats_replacements();
+                statistics.inc_stats_redsucc_s();
+
                 return 1;
             }
             std::cout << "transaction_db full" << std::endl;
@@ -357,7 +353,7 @@ void RandomizedSlicer::slicer_queue(std::vector<std::vector<QEntry>> &t_queues, 
 void RandomizedSlicer::slicer_bucketing(const size_t blocks, const size_t multi_hash, const size_t nr_buckets_aim,
                             std::vector<uint32_t> &buckets, std::vector<atomic_size_t_wrapper> &buckets_index)
 {
-    // init hash
+    // init hash with the same seed as for sieving
     ProductLSH lsh(n, blocks, nr_buckets_aim, multi_hash, this->sieve.lsh_seed);
 
     const size_t nr_buckets = lsh.codesize;
@@ -379,13 +375,15 @@ void RandomizedSlicer::slicer_bucketing(const size_t blocks, const size_t multi_
     for( size_t i = 0; i < nr_buckets; ++i ) {
         // bucket overflow
         if( buckets_index[i].val > bsize ) {
+
             statistics.inc_stats_buck_over_num();
-            unsigned long maxbsize =  statistics.get_stats_buck_over_max();
-            // std::cout << maxbsize << " vs " << buckets_index[i].val << std::endl;
-            if(maxbsize<buckets_index[i].val){
-                statistics.set_stats_buck_over_max((unsigned long)(buckets_index[i].val));
-                // std::cout << "slicer: bucket overflow! setting " << buckets_index[i].val << std::endl;
-            }
+            #ifdef COLLECT_STATISTICS_SLICER
+                unsigned long maxbsize =  statistics.get_stats_buck_over_max();
+                if(maxbsize<buckets_index[i].val){
+                    statistics.set_stats_buck_over_max((unsigned long)(buckets_index[i].val));
+                    // std::cout << "slicer: bucket overflow! setting " << buckets_index[i].val << std::endl;
+                }
+            #endif
             buckets_index[i].val = bsize;
         }
     }
@@ -408,8 +406,6 @@ void RandomizedSlicer::slicer_bucketing_task(const size_t t_id, std::vector<uint
     for (uint32_t i = i_start; i < S; i += threads)
     {
         auto db_index = fast_cdb[i].i;
-        //for (size_t ii =0; ii<n; ii++) std::cout << db_t[db_index].yr[ii] << " " ;
-        //std::cout << std::endl;
         lsh.hash( db_t[db_index].yr.data() , res);
         for( size_t j = 0; j < multi_hash; j++ ) {
             uint32_t b = res[j];
@@ -443,8 +439,8 @@ void RandomizedSlicer::slicer_process_buckets_task(const size_t t_id,
     const size_t nr_buckets = buckets_index.size();
     const size_t bsize = buckets.size() / nr_buckets;
 
-    const uint32_t* const fast_buckets_t = buckets.data();
-    const uint32_t* const fast_buckets = this->sieve.buckets.data();
+    const uint32_t* const fast_buckets_t = buckets.data();              // targets
+    const uint32_t* const fast_buckets = this->sieve.buckets.data();    // lattice-vectors
 
     CompressedEntry* const fast_cdb_t = cdb_t.data();
     CompressedEntry* const fast_cdb = this->sieve.cdb.data();
@@ -507,9 +503,8 @@ void RandomizedSlicer::slicer_process_buckets_task(const size_t t_id,
 }
 
 
-bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t multi_hash, bool verbose){
+bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t blocks, const size_t multi_hash, bool verbose, bool showstats){
 
-    //std::cout << "nr_buckets_aim:" << nr_buckets_aim << " blocks: " << blocks << " multi_hash: " <<multi_hash <<  std::endl;
     parallel_sort_cdb();
 
     std::vector<std::vector<Entry_t>> transaction_db(threads, std::vector<Entry_t>());
@@ -525,6 +520,7 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
             if(verbose) {
                 std::cout << "Saturated on:" << it  << "-th iteration"  << std::endl;
             }
+            if(showstats) statistics.print_statistics();
             return true;
         }
 
@@ -541,13 +537,14 @@ bool RandomizedSlicer::bdgl_like_sieve(size_t nr_buckets_aim, const size_t block
         parallel_sort_cdb();
         //std::cout << "parallel_sort_cdb finished" << std::endl;
 
-        if( (it%100==0) && verbose) {
-            std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << " cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
-        }
+        // if( (it<10) || (it%100==0) ) {
+        //     //std::cout << "iteration " << it <<  " cdb_t[0].len " << cdb_t[0].len << " cdb_t[-1].len" << cdb_t[cdb_t.size()-1].len  << std::endl;
+        //     dump_cdb_t(filename_cdbt, it);
+        // }
         statistics.inc_stats_itercount_slicer();
         it++;
     }
-    if(verbose) statistics.print_statistics();
+    if(showstats) statistics.print_statistics();
     if(verbose) std::cerr << "Couldn't find a close vector after " << MAX_SLICER_ITERS << " iterations" << std::endl;
     return false;
 }
@@ -563,6 +560,6 @@ bool RandomizedSlicer::dump_cdb_t(const char* filename_prefix, size_t it){
         cdbt_output_file.close();
         return true;
     }
-    else std::cout << "Unable to open file" << std::endl;
+    else std::cerr << "Unable to open file" << std::endl;
     return false;
 }

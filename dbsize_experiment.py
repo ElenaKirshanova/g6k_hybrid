@@ -4,14 +4,12 @@ from fpylll.util import gaussian_heuristic
 from g6k.siever import Siever
 from g6k.siever_params import SieverParams
 from g6k.slicer import RandomizedSlicer
-from utils import save_folder, random_on_sphere, uniform_in_ball, from_canonical_scaled, to_canonical_scaled, reduce_to_fund_par_proj #*
-import numpy as np
-import argparse
-import sys, os
+from utils import  random_on_sphere, from_canonical_scaled, to_canonical_scaled, reduce_to_fund_par_proj #*
+
 from hybrid_estimator.batchCVP import batchCVPP_cost
-from random import shuffle, randrange
+from random import randrange
 import numpy as np
-from math import sqrt, ceil, floor, log, exp
+from math import ceil
 import time
 import pickle
 
@@ -24,13 +22,13 @@ except ModuleNotFoundError:
 
 import sys, os
 
-def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperiments, nthreads, nrand_param=1.):
+def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperiments, nthreads, nrand_param=1., verbose=False):
     slicer_interations = 250
     norm_slack = 1.01      #terminate slicer if norm_slack*||e_projected|| is found
     approx_factor = 0.95
 
     ft = "ld" if n<50 else ( "dd" if config.have_qd else "mpfr")
-    print(f"launching n, betamax, sieve_dim = {n, betamax, sieve_dim}")
+    if verbose: print(f"launching n, betamax, sieve_dim = {n, betamax, sieve_dim}")
 
     #stats
     slicer_suc = [0]*n_shrinkings
@@ -48,7 +46,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
         param_sieve['otf_lift'] = False
         g6k.params = param_sieve
         nothing_to_load = False
-        print(f"Load succeeded...")
+        #if verbose: print(f"Load succeeded...")
     except Exception as excpt:
         print(excpt)
         pass
@@ -56,7 +54,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
     # - - - Make all fpylll objects - - -
     if nothing_to_load:
-        print(f"Nothing to load. Computing")
+        #if verbose: print(f"Nothing to load. Computing")
         B = IntegerMatrix(n,n)
         B.randomize("qary", k=n//2, bits=11.705)
         G = GSO.Mat(B, float_type=ft)
@@ -69,12 +67,12 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
         lll()
 
         bkz = LatticeReduction(B)
+        then = time.perf_counter()
         for beta in range(5,betamax+1):
-            then_round=time.perf_counter()
             bkz.BKZ(beta,tours=5)
-            round_time = time.perf_counter()-then_round
-            print(f"BKZ-{beta} done in {round_time}")
-            sys.stdout.flush()
+        round_time = time.perf_counter()-then
+        if verbose: print(f"BKZ-{betamax} done in {round_time}")
+        sys.stdout.flush()
 
         int_type = bkz.gso.B.int_type
         G = GSO.Mat( bkz.gso.B, U=IntegerMatrix.identity(n,int_type=int_type), UinvT=IntegerMatrix.identity(n,int_type=int_type), float_type=ft )
@@ -88,21 +86,17 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
         param_sieve['otf_lift'] = False
         g6k.params = param_sieve
         g6k.initialize_local(n-sieve_dim,n-sieve_dim,n)
-        print("Running bdgl2...")
         g6k(alg="bdgl2")
         g6k.M.update_gso()
-        # filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
         g6k.dump_on_disk( filename )
     # - - - end Make all fpylll objects - - -
     # make Siver object
     gh = gaussian_heuristic(G.r())
     gh_sub = gaussian_heuristic(G.r()[-sieve_dim:])
 
-    print("db_dize:", g6k.db_size())
     dbsize_start = g6k.db_size()
     nrand_, _ = batchCVPP_cost(sieve_dim,100,dbsize_start**(1./sieve_dim),1) #100 can be any constant >1
-    n_per_target = ceil( nrand_param*(1./nrand_)**sieve_dim )
-    #print(f"nrerand = {n_per_target}")
+
 
     blocks = 2 # should be the same as in siever
     blocks = min(3, max(1, blocks))
@@ -113,8 +107,6 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
     buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
     buckets = max(buckets, 2**(blocks-1))
 
-
-    #print("nrand:", (1./nrand_)**sieve_dim)
 
     cs = []
     es = []
@@ -140,30 +132,16 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
 
     for j in range(n_shrinkings):
-        print("Running experiment ", j, "out of ", n_shrinkings)
+        if verbose: print("Running experiment ", j, "out of ", n_shrinkings)
 
         for i in range(Nexperiments):
-            if i%50 == 0:
+            if i%50 == 0 and verbose:
                 print(f"{i} out of {Nexperiments} done...", flush=True)
             c = cs[i] #[ randrange(-10,10) for k in range(n) ]
             e = es[i] #np.array( random_on_sphere(n, 0.95 * gh) ) #error vector
-            #print(f"gauss: {gh**0.5} vs r_00: {G.get_r(0,0)**0.5} vs ||err||: {(e@e)**0.5}")
             e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim,scale_fact=gh_sub) )
             t = ts[i]
             t_gs_reduced = t_gs_reduced_s[i]
-            # b = bs[i] #G.B.multiply_left( c )
-            # b_ = np.array(b,dtype=np.int64)
-            # t_ = e+b_
-            # t = [ int(tt) for tt in t_ ]
-            #
-            # #project onto the last projective lattice and babai reduce
-            # t_gs_non_scaled = G.from_canonical(t)[-sieve_dim:]
-            # shift_babai_c = G.babai((n-sieve_dim)*[0] + list(t_gs_non_scaled), start=n-sieve_dim,gso=True)
-            # shift_babai = G.B.multiply_left( (n-sieve_dim)*[0] + list( shift_babai_c ) )
-            # t_gs_reduced = from_canonical_scaled( G,np.array(t)-shift_babai,offset=sieve_dim,scale_fact=gh_sub ) #this is the actual reduced target
-
-            #print("projected reduced target squared length:", (t_gs_reduced@t_gs_reduced))
-            #print("projected error squared length:", (e_@e_))
 
 
             # - - - Babai check - - -
@@ -172,7 +150,6 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
             N.update_gso()
             bab_1 = G.babai(t-np.array(out),start=n-sieve_dim) #last sieve_dim coordinates of s
             succ = all( np.array( c[G.d-sieve_dim:] )==bab_1 )
-            #print(f"Babai Success: {succ}", flush=True)
 
             if succ:
                 babai_suc[j]+=1
@@ -202,14 +179,10 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
                     # - - - Check - - - -
 
-
                     if (all(c==bab_01)):
-                        #print(f"SUCCESS")
                         succeeded = True
                     else:
-                        #slicer_fail[j] += 1
                         succeeded = False
-                        #print(f"FAIL")
                     if succeeded:
                         slicer_suc[j] += 1
                     else:
@@ -219,6 +192,10 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
                     print(f" - - - {e} - - -")
                     raise e
 
+        if shrink_factor*g6k.db_size()<3*n:
+            print("cannot shrink further, break...")
+            break
+        print("g6k.db_size():", g6k.db_size())
         g6k.shrink_db(shrink_factor*g6k.db_size())
 
     print(f"Lattice-{lat_id} processed...")
@@ -233,13 +210,17 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
         density_plot.append( (s,slicer_suc[cntr]+babai_suc[cntr]) )
         cntr+=1
         s *= shrink_factor
-    return density_plot
+    return density_plot, dbsize_start
 
+###
+# [n, beta_max]
+# [60, 53], [70, 60], [80, 70], [90, 80], [100, 85]
+###
 
 if __name__ == '__main__':
 
-    Nexperiments = 50
-    Nlats = 20
+    Nexperiments = 20
+    Nlats = 2
     path = "saved_lattices/"
     isExist = os.path.exists(path)
     if not isExist:
@@ -251,28 +232,32 @@ if __name__ == '__main__':
 
     FPLLL.set_precision(200)
 
-    n, betamax, sieve_dim = 50, 45, 50
+    n, betamax, sieve_dim = 50, 48, 50
+    verbose = True
 
-    nthreads = 2
-    nworkers = 10 # number of workers
+    nthreads = 1
+    nworkers = 1 # number of workers
     nrand_param = 1.
-    shrink_factor = 0.7071 # ~ 1/sqrt(2)
-    n_shrinkings = 8
+    shrink_factor = 1./2 # ~ 1/sqrt(2)
+    n_shrinkings = 3
     pool = Pool(processes = nworkers )
     tasks = []
 
     density_plots = []
     for lat_id in range(Nlats):
         tasks.append( pool.apply_async(
-            run_exp, (lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperiments, nthreads, nrand_param)
+            run_exp, (lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperiments, nthreads, nrand_param, verbose)
         ) )
 
     for t in tasks:
-        density_plots.append( t.get() )
+        density_plot, dbsize_start = t.get()
+        density_plots.append( density_plot )
 
-
-    with open(f"dbsize_{n}_exp.pkl", "wb") as file:
-        pickle.dump( density_plots, file )
+    pool.close()
+    filename = f"dbsize_{n}_{betamax}_exp.pkl"
+    with open(filename, "wb") as file:
+        pickle.dump( {"density_plots":density_plots, "Nexperiments": Nexperiments, "nrand_param": nrand_param, "Nlats": Nlats, "dbsize_start": dbsize_start}, file )
 
     print(density_plots)
+    print(f"Saved to {filename}")
     sys.stdout.flush()

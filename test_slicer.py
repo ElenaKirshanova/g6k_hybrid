@@ -7,6 +7,8 @@ from hybrid_estimator.batchCVP import batchCVPP_cost
 from utils import *
 import sys
 
+from LatticeReduction import LatticeReduction
+
 import numpy as np
 
 import time
@@ -15,7 +17,7 @@ if __name__ == "__main__":
 
     slicer_interations = 140
     norm_slack = 1.01      #terminate slicer if norm_slack*||e_projected|| is found
-    approx_factor = 0.9
+    approx_factor = 0.93
     nrand_param = 10
     nthreads = 1
     nexp = 1
@@ -24,7 +26,7 @@ if __name__ == "__main__":
 
 
     FPLLL.set_precision(200)
-    n, betamax, sieve_dim = 60, 53, 60
+    n, betamax, sieve_dim = 60, 45, 60
     ft = "ld" if n<90 else ( "dd" if config.have_qd else "mpfr")
     # - - - try load a lattice - - -
     filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
@@ -209,7 +211,7 @@ if __name__ == "__main__":
             # slicer.set_filename_cdbt(filename)
 
             then = time.perf_counter()
-            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], True) #slicer_verbosity
+            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], True, True)
             endtime = time.perf_counter()-then
             if verbose: print(f"slicer w. nthreads: {nthreads} done in {endtime}")
             runtimes.append( endtime )
@@ -247,11 +249,13 @@ if __name__ == "__main__":
                 nsli_succ+=1
             if verbose: print(f"both succeeded: {succ and succbab}", flush=True)
 
-            print(f"- - - STATS - - -")
-            print(slicer.stats)
-            print(f"- - - STATS - - -")
+            # print(f"- - - STATS - - -")
+            # print(slicer.stats)          #TODO: FIX
+            # print(f"- - - STATS - - -")
 
         if verbose: print(f"es_: {sorted(es_)}")
         if verbose: print(f"MEAN: {np.mean(runtimes)}")
         if verbose: print(runtimes)
+        print(slicer.stats)
+        print(slicer._stat_get_buck_over_num)
     print(f"nbab_succ, nsli_succ: {nbab_succ,nsli_succ+nbab_succ} out of {nexp}")

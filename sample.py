@@ -43,8 +43,10 @@ def centeredBinomial(eta):
     # print(D)
     return Distribution(D)
 
-kappa = 5
-dist = centeredBinomial(3)
-
-for _ in range( ceil( 2 ** ( dist.entropy * kappa ) ) ):
-    e_2 = dist.sample(kappa)
+def ternaryDist(w):
+    D = {
+        -1: w,
+        0 : 1-2*w,
+        1 : w
+    }
+    return Distribution(D)
