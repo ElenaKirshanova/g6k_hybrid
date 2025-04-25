@@ -24,13 +24,7 @@ does_exist = os.path.exists(inp_path)
 if not does_exist:
     sys.exit('cannot find path for input lattices')
 
-does_exist = os.path.exists(out_path)
-if not does_exist:
-    try:
-        os.makedirs(out_path)
-    except:
-        pass #TODO: why pass?
-
+os.makedirs(out_path,exist_ok =True)
 
 def load_lwe(params):
     # n,q,dist,dist_param,seed=0
@@ -44,7 +38,7 @@ def load_lwe(params):
     filename = get_filename( "lwe_instance", params )
     with open(inp_path + filename, "rb") as fl:
         D = pickle.load(fl)
-    # A_, q_, dist, dist_param, bse_ = D["A"], D["q"], D["dist"], D["dist_param"], D["bse"]
+
     A_, q_,  bse_ = D["A"], D["q"], D["bse"]
     return A_, q_, bse_
 
@@ -65,7 +59,7 @@ def run_preprocessing(params):
         "bkz_runtime": 0,
         "bdgl_runtime": [0]*(nsieves+1),
     }
-    # n,q,dist,dist_param,seed[0]
+    
     A, q, bse = load_lwe(params) #D["A"], D["q"], D["bse"]
 
     B = [ [int(0) for i in range(2*n)] for j in range(2*n) ]
@@ -107,7 +101,7 @@ def run_preprocessing(params):
         sys.stdout.flush()
         report["bkz_runtime"].append( time.perf_counter() - then_round )
 
-        H11 = deepcopy( LR.basis ) #precautinary measure -- g6k = Siever(G,param_sieve) may call LLL on H11 = LR.basis and alter LR.basis???
+        H11 = deepcopy( LR.basis ) #precautionary measure -- g6k = Siever(G,param_sieve) may call LLL on H11 = LR.basis and alter LR.basis???
         #---------run sieving------------
         int_type = H11.int_type
         FPLLL.set_precision(210)

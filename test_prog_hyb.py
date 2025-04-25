@@ -40,9 +40,6 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
     print(f"float_type: {ft}")
     succ_cntr = 0
     ex_cntr = 0
-
-    
-    # A, _, _, _, bse = load_lwe(n,q,eta,k,lat_index)
     A, q, bse = load_lwe(params)
 
     # we don't store the whole lattice basis Binit since it is fairly large for github
@@ -68,8 +65,6 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
 
     G = g6k.M
     G.update_gso()
-    # bkz_performed = False
-    # LR = LatticeReduction( G.B, threads_bkz=nthreads )
     if dist=="binomial":
         distrib = centeredBinomial(dist_param)
     elif dist=="ternary":
@@ -88,7 +83,6 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
     overhead_tsieve = time.perf_counter()
     assert n_slicer_coord <= G.d, f"Too many slicer coords: {n_slicer_coord}>{G.d}"
 
-    # G = GSO.Mat( G.B, U=IntegerMatrix.identity(g6k.M.d,int_type="mpz"), UinvT=IntegerMatrix.identity(g6k.M.d,int_type="mpz"), float_type=ft )
     G = g6k.M
     g6k = Siever(G,param_sieve)
     print(g6k.M.d-delta)
@@ -104,14 +98,11 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
     n_slicer_coord = delta
     print(f"n_slic_c: {n_slicer_coord}")
 
-    # assert n_slicer_coord == g6k.r-g6k.l-1, f"No | n_slicer_coord: {n_slicer_coord} l:{g6k.l} r:{g6k.r} g6k.r-g6k.l-1: {g6k.r-g6k.l-1}"
-
     # Gaussian heuristic for the last sieve_dim dimensioal projective lattice of G.
     # ALL {from/to}_canonical_scaled calls must use scale_fact=gh_sub, or things go out of hand.
     gh_sub = gaussian_heuristic(G.r()[-n_slicer_coord:])
 
     print(f"Sieving-1 done in {perf_counter() - then}")
-    # lambda1 = (b0@b0)**0.5
 
     print(f"r / r = {(g6k.M.r()[-n_slicer_coord] / g6k.M.r()[-1])**0.5}")
     for (b, s, e) in bse:
@@ -129,8 +120,6 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
         e_ = np.concatenate([e,-s])[:-n_guess_coord]
         # project the error vector onto the last n_sieve_dim GS-vectors.
         e_ = from_canonical_scaled( G,e_,offset=n_slicer_coord,scale_fact=gh_sub )
-
-        # print(f"prog e_: {e_}")
 
         #deduce the projected error norm
         dist_sq_bnd = e_@e_
@@ -198,7 +187,7 @@ if __name__=="__main__":
     preprocessing.py (preprocess the data) and then run this file.
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
-    n = 144
+    n = 135
     q = 3329
     # dist, dist_param = "ternary", 1/6.
     dist, dist_param = "binomial", 2

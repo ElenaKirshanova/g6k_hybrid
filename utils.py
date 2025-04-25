@@ -52,20 +52,16 @@ def get_filename(which_file,params):
     elif params["dist"] == "binomial":
         dpstr = f"{dp}"
     else: raise ValueError("dist should be either \"ternary\" or \"binomial\" ")
-    # params.update( {"dpstr": dpstr} )
 
     if "lwe_instance" == which_file:
-        # raise NotImplementedError
         n, q, seed, dist = params["n"], params["q"], params["seed"], params["dist"]
         return f"lwe_instance_{dist}_{n}_{q}_{dpstr}_{seed[0]}.pkl"
     
     elif "kyb_preprimal" == which_file:
-        # raise NotImplementedError
         n, q, seed, betapre, dist = params["n"], params["q"], params["seed"], params["betapre"], params["dist"]
         return f"kyb_preprimal_{n}_{q}_{dist}_{dpstr}_{seed[0]}_{betapre}.pkl"
     
     elif "report_pre" == which_file:
-        # raise NotImplementedError
         n, q, seed, betapre, dist = params["n"], params["q"], params["seed"], params["betapre"], params["dist"]
         return f"kyb_preprimal_{n}_{q}_{dist}_{dpstr}_{seed[0]}_{betapre}.pkl"
     
@@ -73,12 +69,10 @@ def get_filename(which_file,params):
         raise NotImplementedError
     
     elif "g6kdump" == which_file:
-        # raise NotImplementedError
         n, q, seed, dist, kappa, n_sli_coord, bkz_beta = params["n"], params["q"], params["seed"], params["dist"], params["kappa"], params["n_sli_coord"], params["bkz_beta"]
         return f'g6kdump_{n}_{q}_{dist}_{dpstr}_{seed[0]}_{kappa}_{n_sli_coord}_{bkz_beta}.pkl'
     
     elif "report_prehyb" == which_file:
-        # raise NotImplementedError dist["
         n, q, dist, seed, kappa, sieve_dim_min, sieve_dim_max = dist["n"], dist["q"], dist["dist"], dist["seed"], dist["kappa"], dist["sieve_dim_min"], dist["sieve_dim_max"]
         return f"report_prehyb_{n}_{q}_{dist}_{dpstr}_{seed[0]}_{kappa}_{sieve_dim_min}_{sieve_dim_max}.pkl"
     
@@ -200,7 +194,6 @@ def gen_and_pickle_lattice(n, k=None, bits=None, betamax=None, seed=None):
 def reduce_to_fund_par_proj(B_gs,t_gs,dim):
     t_gs_save = deepcopy( t_gs )
     c = [0 for i in range(dim)]
-    # for i in range(dim):
     for j in range(dim-1,-1,-1):
         mu = round( t_gs[j] / B_gs[j][j] )
         t_gs -= B_gs[j] * mu
@@ -214,7 +207,6 @@ def load_lattices(n):
     # An iterator through n-dimensional lattices
     # Each instance requires an exponential amount of memory, so we
     # don't store it all simoultaniously.
-    # lats = []
     for filename in glob.glob(f'{save_folder}siever_{n}*.pkl'):
         with open(os.path.join(os.getcwd(), filename), 'rb') as f: # open in readonly mode
             g6k_obj = Siever.restore_from_file(filename)
@@ -273,14 +265,22 @@ def dist_babai(G, t):
 def find_vect_in_list(v,l,tolerance=1.0e-6):
     assert len(v) == len(l[0]), f"Shapes do not allign! {len(v)} vs. {len(l[0])}"
     mindiff = float("inf")
-    # print(f"debug v: {v}")
     for i in range(len(l)):
-        # print(f"debug ti: {l[i]}")
         tmp = np.abs( np.array(v)-np.array(l[i]) )
-        # print(f"tmp: {tmp}")
         mindiff = min( mindiff, max(tmp) )
         if (mindiff<tolerance):
-            # print(f"mindiff: {mindiff}")
             return i
     print(f"FAIL mindiff: {mindiff}")
     return None
+
+def init_slicer_params(sieve_dim, blocks=2):
+    #blocks should be the same as in siever
+    blocks = min(3, max(1, blocks))
+    blocks = min(int(sieve_dim / 28), blocks)
+    sp = SieverParams()
+    N = sp["db_size_factor"] * sp["db_size_base"] ** sieve_dim
+    buckets = sp["bdgl_bucket_size_factor"]* 2.**((blocks-1.)/(blocks+1.)) * sp["bdgl_multi_hash"]**((2.*blocks)/(blocks+1.)) * (N ** (blocks/(1.0+blocks)))
+    buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
+    buckets = max(buckets, 2**(blocks-1))
+
+    return sp, buckets

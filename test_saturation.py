@@ -113,15 +113,9 @@ def run_exp(n,cntr,ntests,saturation_scalars,max_slicer_interations=300, nthread
                     nrand = ceil(nrand_param*(1./nrand_)**sieve_dim)
                     slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
 
+                    blocks = 2
+                    sp, buckets = init_slicer_params(sieve_dim,blocks)
 
-                    blocks = 2 # should be the same as in siever
-                    blocks = min(3, max(1, blocks))
-                    blocks = min(int(sieve_dim / 28), blocks)
-                    sp = SieverParams()
-                    N = sp["db_size_factor"] * sp["db_size_base"] ** sieve_dim
-                    buckets = sp["bdgl_bucket_size_factor"]* 2.**((blocks-1.)/(blocks+1.)) * sp["bdgl_multi_hash"]**((2.*blocks)/(blocks+1.)) * (N ** (blocks/(1.0+blocks)))
-                    buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
-                    buckets = max(buckets, 2**(blocks-1))
 
                     slicer.set_proj_error_bound(1.01*(e_@e_))
                     slicer.set_max_slicer_interations(max_slicer_interations)

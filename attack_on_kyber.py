@@ -14,7 +14,7 @@ except ModuleNotFoundError:
     from multiprocessing import Pool
 
 try:
-  from g6k import Siever, SieverParams
+  from g6k import SieverParams
   from g6k.algorithms.bkz import pump_n_jump_bkz_tour
   from g6k.utils.stats import dummy_tracer
 except ImportError:
@@ -37,7 +37,6 @@ def flatter_interface( fpylllB ):
     flatter_is_installed = os.system( "flatter -h > /dev/null" ) == 0
 
     if flatter_is_installed:
-        basis = '[' + fpylllB.__str__() + ']'
         seed = randrange(2**32)
         filename = f"lat{seed}.txt"
         filename_out = f"redlat{seed}.txt"
@@ -55,7 +54,6 @@ def flatter_interface( fpylllB ):
     return B
 
 def gen_and_dump_lwe(params):
-    # n, q, dist, dist_param,  ntar, seed=0
     n = params["n"]
     q = params["q"]
     ntar = params["ntar"]
@@ -65,13 +63,11 @@ def gen_and_dump_lwe(params):
     print(f"- - - n,seed={n,seed} - - - gen")
     A,q,bse= generateLWEInstances(n, q, dist, dist_param, ntar)
 
-    # filename = f"lwe_instance_{dist}_{n}_{q}_{dist_param:.04f}_{seed}"
     filename = get_filename( "lwe_instance", params )
     with open(inp_path + filename, "wb") as fl:
         pickle.dump({"A": A, "q": q, "dist": dist, "dist_param":dist_param,  "bse": bse}, fl)
 
 def load_lwe(params):
-    # n,q,dist,dist_param,seed=0
     n = params["n"]
     q = params["q"]
     dist = params["dist"]
@@ -86,7 +82,6 @@ def load_lwe(params):
     return A_, q_, bse_
 
 def prepare_kyber(params): #for debug purposes
-    # n,q,dist,dist_param,betapre,seed=[0,0], nthreads=5
     n = params["n"]
     q = params["q"]
     dist = params["dist"]
@@ -106,11 +101,11 @@ def prepare_kyber(params): #for debug purposes
     }
 
     try: #try load lwe instance
-        A, q, bse = load_lwe(params) #D["A"], D["q"], D["bse"]
+        A, q, bse = load_lwe(params)
     except FileNotFoundError: #if no such, create one
         print(f"No kyber instance found... generating.")
         gen_and_dump_lwe(params) #ntar = 5
-        A, q, bse = load_lwe(params) #D["A"], D["q"], D["bse"]
+        A, q, bse = load_lwe(params)
     #try load reduced kyber
     try:
         with open(out_path + f"kyb_preprimal_{n}_{q}_{dist}_{dist_param:.04f}_{seed[0]}_{betapre}.pkl", "rb") as file:
@@ -127,7 +122,7 @@ def prepare_kyber(params): #for debug purposes
                 B[i][j] = int( A[i-n,j] )
 
         B = IntegerMatrix.from_matrix( B )
-        #nthreads=5 by default since preprocessing operates with small blocksizes
+        
         LR = LatticeReduction( B,threads_bkz=nthreads )
         for beta in range(4,betapre+1):
             then = time.perf_counter()
@@ -155,7 +150,7 @@ def attack_on_kyber(params):
     seed = params["seed"]
     nthreads = params["nthreads"]
     print( f"launching {n,q,dist,dist_param,seed}" )
-    # n,q,dist,dist_param,betapre,seed, nthreads=5
+    
     B, A, q, dist, dist_param, bse = prepare_kyber(params)
     dim = B.nrows+1 #dimension of Kannan
 
@@ -218,7 +213,6 @@ def attack_on_kyber(params):
         bkz(par)
         round_time = time.perf_counter()-then_round
         curnrm = np.array( bkz.M.B[0] ).dot( np.array( bkz.M.B[0] ) )**(0.5)
-        # print(f"BKZ-{beta} done in {round_time} | {curnrm}")
         slope = basis_quality(bkz.M)["/"]
         print(f"Enum beta: {beta:}, done in: {round_time : 0.4f}, slope: {slope}  log r00: {log( bkz.M.get_r(0,0),2 )/2 : 0.5f} task_id = {seed}", flush=True)
         report["time"] += round_time
@@ -233,30 +227,14 @@ def attack_on_kyber(params):
         param_sieve = SieverParams()
         param_sieve['threads'] = nthreads #10
         param_sieve['default_sieve'] = "bgj1" #"bgj1" "bdgl2"
-        # g6k = Siever(M, param_sieve)
 
-        #we do not use LatticeReduction here since we do not neccesarily
-        #want to run all the tours and can interupt after any given one.
         LR = LatticeReduction( M.B, threads_bkz=nthreads )
         for beta in range(max(BKZ_SIEVING_CROSSOVER,betapre-1),betamax+1):
             then_round=time.perf_counter()
-            LR.BKZ(beta,tours=5)
+            LR.BKZ(beta,tours=BKZ_MAX_LOOPS)
             round_time = time.perf_counter()-then_round
             slope = basis_quality(M)["/"]
             print(f"beta: {beta:}, done in: {round_time : 0.4f}, slope: {slope : 0.6f}, log r00: {log( M.get_r(0,0),2 )/2 : 0.5f} task_id = {seed}", flush=True)
-            """
-            for cntr0 in range(BKZ_MAX_LOOPS):
-                then_round=time.perf_counter()
-                pump_n_jump_bkz_tour(g6kdummy_tracer, beta, jump=1,
-                 dim4free_fun="default_dim4free_fun",
-                 extra_dim4free=0,
-                 pump_params={'down_sieve': False},)
-                round_time = time.perf_counter()-then_round
-                slope = basis_quality(M)["/"]
-                print(f"Sieve tour: {cntr0}, beta: {beta:}, done in: {round_time : 0.4f}, slope: {slope : 0.6f}, log r00: {log( g6k.M.get_r(0,0),2 )/2 : 0.5f} task_id = {seed}", flush=True)
-                sys.stdout.flush()  #flush after the BKZ call
-
-            """
             report["time"] += round_time
             
             M = LR.gso
@@ -273,13 +251,7 @@ def attack_on_kyber(params):
     return report
 
 if __name__ == "__main__":
-    # path = "exp_folder/"
-    isExist = os.path.exists(out_path)
-    if not isExist:
-        try:
-            os.makedirs(out_path)
-        except:
-            pass    #still in docker if isExists==False, for some reason folder can exist and this will throw an exception.
+    os.makedirs(out_path,exist_ok =True)
 
     nthreads = 5
     nworkers = 2
@@ -311,9 +283,7 @@ if __name__ == "__main__":
                     "seed": [latnum,0],
                     "nthreads": nthreads
                 }
-                # n, q, dist, dist_param, ntar=inst_per_lat, seed=latnum
                 gen_and_dump_lwe(params)
-                # prepare_kyber(params)
 
     if RECOMPUTE_KYBER or RECOMPUTE_INSTANCE:
         pretasks = []
@@ -353,7 +323,6 @@ if __name__ == "__main__":
                 tasks.append( pool.apply_async(
                     attack_on_kyber, ( params, )
                     ) )
-                # attack_on_kyber, (n,q,dist,dist_param,betapre,betamax,5,[latnum,tstnum],nthreads)
 
 
     for t in tasks:

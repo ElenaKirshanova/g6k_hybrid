@@ -126,7 +126,6 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, dist, dist_param, s, dist_sq_
     #TODO: deduce what is the betamax
     # def of alg_2_batched is in hyb_att_on_kyber.py
     print(f"- - - alg 2 on incorrect guess - - -")
-    # ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg2_wrong )
     it = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg2_wrong )
     ctilde1 = np.zeros( dim-n_guess_coord )
     for ctilde1 in it: #what's returned is not quite relevant. The guess is wrong by design.

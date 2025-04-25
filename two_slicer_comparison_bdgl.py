@@ -24,7 +24,6 @@ from multiprocessing import Pool
 
 from cvpp_exp import gen_cvpp_g6k
 from LatticeReduction import LatticeReduction
-# def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705,seed=0,threads=1,verbose=False):
 
 verbose = True
 
@@ -90,7 +89,6 @@ def solve_cvp(B, t, params):
     g6k.update_gso(0, n)
     f=0
     pump(g6k, dummy_tracer, 0, g6k.r, f, saturation_error="ignore", verbose=False)
-    # print( f"context: {g6k.ll, g6k.l, g6k.r}" )
     while not g6k.l==0:
         g6k.extend_left()
         g6k()
@@ -114,15 +112,11 @@ def solve_cvp(B, t, params):
     
     nrand_, _ = batchCVPP_cost(g6k.M.d,1,len(g6k)**(1./g6k.M.d),1)
     nrand = ceil(nrand_fact*(1./nrand_)**sieve_dim)
+
+
     slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
     blocks = 2 # should be the same as in siever
-    blocks = min(3, max(1, blocks))
-    blocks = min(int(sieve_dim / 28), blocks)
-    sp = SieverParams()
-    N = sp["db_size_factor"] * sp["db_size_base"] ** sieve_dim
-    buckets = sp["bdgl_bucket_size_factor"]* 2.**((blocks-1.)/(blocks+1.)) * sp["bdgl_multi_hash"]**((2.*blocks)/(blocks+1.)) * (N ** (blocks/(1.0+blocks)))
-    buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
-    buckets = max(buckets, 2**(blocks-1))
+    sp, buckets = init_slicer_params(sieve_dim,blocks)
 
     slicer.set_proj_error_bound(params["proj_err_bound"])
     slicer.set_max_slicer_interations(params["max_slicer_interations"])
@@ -155,7 +149,7 @@ def run_experiment(B,cb,myparams,expid):
     return [nrand, Tpump, Tslice, db_size, dt, gh]
 
 if __name__ == "__main__":
-    n, lat_num, inst_per_lat, betamax, appr_fact = 64, 2, 5, 50, 0.999
+    n, lat_num, inst_per_lat, betamax, appr_fact = 64, 2, 2, 50, 0.999
     n_workers = 2
     myparams = {
     "max_slicer_interations": 150,
@@ -179,16 +173,6 @@ if __name__ == "__main__":
             L.append( [B,cb] )
         with open(filename,"wb") as file:
             pickle.dump( L, file )
-
-    # tasks = []
-    # results = []
-    # for B, cbs in L:
-    #     for cb in cbs: 
-    #         c, b = cb['c'], cb['b']
-    #         close_vector, nrand, Tpump, Tslice, db_size, gh = solve_cvp(B,cb['b'], myparams)
-    #         v = B.multiply_left( c )
-    #         dt = (sum([(b[i] - close_vector[i])**2 for i in range(len(b))]))
-    #         results.append( [nrand, Tpump, Tslice, db_size, dt, gh] )
     
     print("Running experiments.", flush=True)
     pool = Pool(processes=n_workers)
