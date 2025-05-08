@@ -488,9 +488,33 @@ void Siever::set_lift_bounds()
 // Babai Lift and return the best vector for insertion at each index i in [0 ... r-1]
 // (relatively to the full basis). the outputted vector will be expressed in the full gso basis.
 
-void Siever::best_lifts(long* vecs, double* lens)
+// void Siever::best_lifts(long* vecs, double* lens)
+// {
+//     std::fill(vecs, &vecs[(l+1) * r], 0);
+//     std::fill(lens, &lens[l+1], 0.);
+//     if (!params.otf_lift)
+//     {
+//         apply_to_all_entries([this](Entry &e) {
+//             lift_and_compare(e);
+//         }); 
+//     }
+//     for (size_t i = 0; i < l+1; ++i)
+//     {
+//         if (best_lifts_so_far[i].len==0.) continue;
+//         // if (best_lifts_so_far[i].len > delta * full_rr[i]) continue;
+//         for (size_t j = 0; j < r; ++j)
+//         {
+//             vecs[i * r + j] = best_lifts_so_far[i].x[j];
+//         }
+//         lens[i] = best_lifts_so_far[i].len;
+//     }
+// }
+
+// - - - from WXG - - -
+void Siever::best_lifts(long* vecs, double* lens, double* yrs)
 {
     std::fill(vecs, &vecs[(l+1) * r], 0);
+    std::fill(yrs, &yrs[(l+1) * r], 0.);
     std::fill(lens, &lens[l+1], 0.);
     if (!params.otf_lift)
     {
@@ -505,10 +529,16 @@ void Siever::best_lifts(long* vecs, double* lens)
         for (size_t j = 0; j < r; ++j)
         {
             vecs[i * r + j] = best_lifts_so_far[i].x[j];
+
+            if(j<i)
+                yrs[i * r + j] = 0.;
+            else
+                yrs[i * r + j] = std::inner_product(best_lifts_so_far[i].x.cbegin() + j, best_lifts_so_far[i].x.cbegin() + r, full_muT[j].cbegin()+j, static_cast<FT>(0.));
         }
         lens[i] = best_lifts_so_far[i].len;
     }
 }
+// - - -
 
 // sorts cdb and only keeps the best N vectors.
 void Siever::shrink_db(unsigned long N)

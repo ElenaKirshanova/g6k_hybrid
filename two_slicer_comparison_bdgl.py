@@ -155,6 +155,10 @@ def run_experiment(B,cb,myparams,expid):
     return [nrand, Tpump, Tslice, db_size, dt, gh]
 
 if __name__ == "__main__":
+    directory="./saved_lattices"
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
     n, lat_num, inst_per_lat, betamax, appr_fact = 64, 2, 5, 50, 0.999
     n_workers = 2
     myparams = {

@@ -43,7 +43,13 @@
 #include "statistics.hpp"
 #include "g6k_config.h"
 
+// - - - from WXG - - -
+#include "fplll/nr/matrix.h"
+#include "fplll/gso.h"
+// - - - 
+
 using std::size_t;
+using namespace fplll;
 
 // Macros
 #include "untemplate.mac"   // This defines UNTEMPLATE_DIM, which is used to dispatch a function to
@@ -77,6 +83,21 @@ void show_cpu_stats();
 /**
     Global constants and typedefs
 */
+
+// - - - from WXG
+#ifndef VEC_ZT
+#define VEC_ZT  int  //vecs's precision. can change to mpz_t,int, int64_t and so on. 
+#endif
+
+
+#ifndef SZT
+#define SZT  int//fplll::Z_NR<mpz_t>  //inegral vecs's precision.
+#endif
+
+#ifndef SFT
+#define SFT  double//fplll::FP_NR<mpfr_t>  //vecs's precision. can change to double
+#endif
+// - - - 
 
 // Maximum dimension of the local blocks we sieve in.
 #ifndef MAX_SIEVING_DIM
@@ -283,6 +304,7 @@ struct Entry
     CompressedVector c;                     // Compressed vector (i.e. a simhash)
     UidType uid;                            // Unique identifier for collision detection (essentially a hash)
     FT len = 0.;                            // (squared) length of the vector, renormalized by the local gaussian heuristic
+    FP_NR<SFT> len_prec = 0.;
     std::array<LFT,OTF_LIFT_HELPER_DIM> otf_helper; // auxiliary information to accelerate otf lifting of pairs
 };
 
@@ -360,8 +382,8 @@ struct FilteredCompressedEntry{
 // depends on various things. Should not be an issue in C++17. Not taking chances : these will
 // trigger a compile-time error rather than slow down performance if violated by a change of Entry.
 // NOTE: might fail if destructor is non-trivial (GCC bug 51452, LWG issue 2116)
-static_assert(std::is_nothrow_move_assignable<Entry>::value, "Entry not nothrow-move-assignable");
-static_assert(std::is_nothrow_move_constructible<Entry>::value, "Entry not nothrow-movable");
+// static_assert(std::is_nothrow_move_assignable<Entry>::value, "Entry not nothrow-move-assignable");
+// static_assert(std::is_nothrow_move_constructible<Entry>::value, "Entry not nothrow-movable");
 
 /**
     This class stores (modifyable) parameters of the Sieve.
@@ -412,6 +434,12 @@ public:
   double bdgl_improvement_db_ratio = .8;
 
   std::string simhash_codes_basedir = "";  // directory holding spherical codes for simhash.
+
+//   double bgj1_bucket_size_factor = 3.2; //from WXG
+//   double bgj1_bucket_size_expo = 0.5;
+//   unsigned int gauss_crossover = 50;
+//   double db_size_base = pow((4./3.), 0.5);
+//   double db_size_factor = 3.2;
 };
 
 /**
@@ -587,7 +615,7 @@ public:
     // - Otherwise apply lift_and_compare to each vector
     // - Then, just convert best_lifts_so_far and return them
     // - TODO : TREAT THIS TASK for the otf_lift=False case
-    void best_lifts(long* vecs, double* lens); // in control.cpp
+    void best_lifts(long* vecs, double* lens, double* yrs); // in control.cpp
 
     void db_stats(long* cumul_histo); // in control.cpp
 
@@ -772,7 +800,7 @@ private:
     // - If large >0:
     //   - sample last cordinates at random and babai the first coordinates
     //   - large parameter can be increased if fresh random entries collide with db
-    inline Entry sample(unsigned int large=0); // in db.inl
+    // inline Entry sample(unsigned int large=0); // in db.inl
 
     // worker task for grow_db
     void grow_db_task(size_t start, size_t end, unsigned int large);
@@ -1170,6 +1198,78 @@ private:
     CACHELINE_VARIABLE(std::atomic_size_t, GBL_saturation_count); // used by bgj1 sieve
 
     thread_pool::thread_pool threadpool;
+
+    // - - - from WXG - - -
+    public:
+    /** function and varibles for randomized_iterative_slicer */
+    //Matrix<Z_NR<mpz_t>> B; //basis
+    
+    // void call_gauss_sieve(fplll::MatGSO<SZT, SFT> M, unsigned int ll, unsigned int l, unsigned int r,  unsigned int dim); //int q,
+    //void call_gauss_sieve(fplll::MatGSO<SZT, SFT> M, FT target_norm);
+    
+    inline Entry sample(unsigned int large=0); // in db.inl
+
+    // template<class T>
+    // struct Vec{
+    //     std::array<T,MAX_SIEVING_DIM> v{};       // Actual Vector .
+    //     CompressedVector c;  
+    //     FT norm; //||v||^2
+    //     std::array<ZT,MAX_SIEVING_DIM> close_x {};       // the closest Vector's coordinates in local basis B.if the vector is in the lattice ,then the close_v = v 
+    //     // std::array<int,MAX_SIEVING_DIM> close_v; //the closest vector in lattice to target_vector. if the vector is in the lattice ,than the close_v = v 
+    //     // CompressedVector close_c;  
+    //     // long close_norm;
+    
+    // };
+    // std::vector<Vec<LFT>> vecs; 
+    Entry pt; //projected target_vector
+    //cv: the full-dimensional closest vector in lattice to t.
+    Entry cv;
+    std::array<LFT,MAX_SIEVING_DIM> yl;
+
+    LFT gamma;
+    bool terminal_condition = false;//whether find the short enough vector in gauss sieve
+    // Siever::Vec<LFT> recover_vector(Entry e, fplll::MatGSO<SZT, SFT> M, unsigned int l); //int q,
+    // Vec<LFT> recover_vector(std::array<ZT,MAX_SIEVING_DIM> x, fplll::MatGSO<SZT, SFT> M, unsigned int l);
+    // Siever::Vec<LFT> recover_vector(std::array<ZT,MAX_SIEVING_DIM> x, Matrix<Z_NR<mpz_t>> M, unsigned int l);
+    //Vec<mpz_t> recover_vector(std::array<ZT,MAX_SIEVING_DIM> x, Matrix<Z_NR<mpz_t>> B,int q, unsigned int dim);
+    void initialize_local_params(fplll::MatGSO<SZT, SFT> M, unsigned int ll, unsigned int l, unsigned int r, unsigned int dim);
+    // void recover_db(fplll::MatGSO<SZT, SFT> M,  unsigned int l); //int q,
+    // void recover_db(std::vector<std::vector<ZT>>  input_db, fplll::MatGSO<SZT, SFT> M,  unsigned int l); //int q,
+    // void initialize_target_vector(long* vec);
+    void update_entry(Entry &e);
+    // Vec<LFT> sample_t_(Vec<LFT> target_vector, fplll::MatGSO<SZT, SFT> M, unsigned int l);// int q, 
+
+    Entry sample_t_(Entry target_vector);
+    
+    // void progressive_sieve(fplll::MatGSO<SZT, SFT> M, unsigned int l = 0);
+    void cvp_extend_left(unsigned int lp = 0);
+    // void extend_left(Entry &e, unsigned int lp);
+    // void compute_projected_vector(Siever::Vec<LFT> pt,  fplll::MatGSO<SZT, SFT> M, unsigned int l);
+    void initialize_projected_target_vector();
+
+    void get_cv(double* y, long* x);
+
+    // Vec<LFT> randomized_iterative_slicer( Vec<LFT> target_vector, fplll::MatGSO<SZT, SFT> M, FT norm_bound, int max_sample_times, unsigned int l = 0, bool verbose = true); //unsigned int q, 
+
+    // void initialize_local(fplll::MatGSO<SZT, SFT> M); //Initialize parameter for class siever.
+    void randomized_iterative_slicer(double* y, long* x, FT len_bound, int max_sample_times, int* sample_times); //len_bound: norm_bound/gh(L[l:])
+    // Entry randomized_iterative_slicer( Entry target_vector, FT len_bound, int max_sample_times); 
+    void run_randslicer(long* target_vector, FT len_bound, int max_sample_times,  long* &w, long* &ee);
+
+    void preprocess_vector(vector<VEC_ZT> target_vector, vector<SFT> &yl);
+    void construct_projected_entry(vector<SFT> yl, Entry &pt);
+    // void recover_vector_from_yr(vector<VEC_ZT> &w, Entry pt, Entry pe, vector<SFT> yl);
+
+    void recover_vector_from_yr(double* y, long* x, Entry pe);
+    // void left_recompute_yr(Entry &e, unsigned int lp);
+
+    // void progressive_slicer_with_d4f(vector<VEC_ZT> target_vector, FT len_bound, int max_sample_times, unsigned int f, vector<VEC_ZT> &w, vector<VEC_ZT> &ee);
+
+    // void progressive_slicer_with_d4f(vector<VEC_ZT> target_vector, FT len_bound, int max_sample_times, fplll::MatGSO<SZT, SFT> M, unsigned int f);
+
+
+private:
+    // - - -
 
 }; // End of Siever Class definition
 

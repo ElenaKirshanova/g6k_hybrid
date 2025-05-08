@@ -116,6 +116,7 @@ cdef class Siever(object):
 
         self.lll(0, M.d)
         self.initialized = False
+        self.t_initialized = False
 
     @classmethod
     def MatGSO(cls, A, float_type="d"):
@@ -1630,6 +1631,70 @@ cdef class Siever(object):
         new_l = self.l + 1
         new_n = self.n - 1
 
+
+        self.split_lll(self.ll, new_l, self.r)
+
+        cdef np.ndarray T = zeros((new_n, self.n), dtype=int64, order='C')
+
+        if not self.params.dual_mode:
+            for i in range(new_n):
+                for j in range(self.n):
+                    T[i][j] = self.M.UinvT[new_l + i][self.l + j]
+        else:
+            for i in range(new_n):
+                for j in range(self.n):
+                    T[i][j] = self.M.U[m-1-(new_l + i)][m-1-(self.l + j)]
+
+        # update the basis (GSO or integral) of the lattice after insert
+        sig_on()
+        self._core.gso_update_postprocessing(new_l, self._core.r, <long*>T.data)
+        sig_off()
+
+    def insert_cvp(self, kappa, v):
+        """
+        Insert a vector in the GSO basis, and update the siever accordingly (l++, n--, r fixed, db is updated)
+
+        :param kappa: position at which to insert improved vector
+        :param v: Improved vector expressed in base B[0 … r-1]
+        """
+        assert(self.initialized)
+        assert(len(v) == self.r)
+        m = self.full_n
+
+        full_j = where(abs(v) == 1)[0][-1]
+
+        if full_j < self.l:
+            print full_j, self.l
+            print v
+            raise NotImplementedError('Can only handle vectors with +/- 1 in sieving context (have you deactivated param.unitary_only ?)')
+
+        assert kappa <= self.l
+
+        if v[full_j] == -1:
+            v *= -1
+
+        self.M.UinvT.gen_identity()
+        self.M.U.gen_identity()
+
+        if not self.params.dual_mode:
+            with self.M.row_ops(0, self.r):
+                for i in range(0, self.r):
+                    if i != full_j:
+                        self.M.row_addmul(full_j, i, v[i])
+                self.M.move_row(full_j, kappa)
+        else:
+            with self.M.row_ops(m-self.r, m-kappa):
+                # perform the dual operations to insert in the dual
+                for i in range(kappa, self.r):
+                    if i != full_j:
+                        self.M.row_addmul(m-1-i, m-1-full_j, -v[i])
+                self.M.move_row(m-1-full_j, m-1-kappa)
+
+
+        new_l = self.l + 1
+        new_n = self.n - 1
+
+
         self.split_lll(self.ll, new_l, self.r)
 
         cdef np.ndarray T = zeros((new_n, self.n), dtype=int64, order='C')
@@ -1763,11 +1828,13 @@ cdef class Siever(object):
 
         cdef np.ndarray vecs = zeros((self.l+1, self.r), dtype=int64)
         cdef np.ndarray lens = zeros((self.l+1), dtype=float64)
-        self._core.best_lifts(<long *>vecs.data, <double*>lens.data)  # // , unitary_only)
+        # self._core.best_lifts(<long *>vecs.data, <double*>lens.data)  # // , unitary_only)
+        cdef np.ndarray yrs = zeros((self.l+1, self.r), dtype=float64) # from WXG
         L = []
         for i in range(self.l+1):
             if lens[i] > 0.:
-                L.append((i, lens[i], vecs[i]))
+                # L.append((i, lens[i], vecs[i]))
+                L.append((i, lens[i], vecs[i], yrs[i])) #from WXG
         return L
 
 
@@ -1802,14 +1869,16 @@ cdef class Siever(object):
         """
         if scoring==None:
           scoring = lambda index, nlen, olen, aux: True
+
         assert(self.initialized)
 
         L = self.best_lifts()
         if len(L) == 0:
             return None
 
-        score_list = [(scoring(index, nlen, self.M.get_r(index, index), aux), -index, v) for (index, nlen, v) in L]
+        score_list = [(scoring(index, nlen, self.M.get_r(index, index), aux), -index, v) for (index, nlen, v, yr) in L]
         score_list = [(a, b, c) for (a,b,c) in score_list if a]
+
 
         # print [("%.3f"%a, b) for (a,b,c) in score_list]
         # print
@@ -1844,6 +1913,139 @@ cdef class Siever(object):
             return [(tmp_histo[i]) for i in range(self._core.size_of_histo)]
         else:
             return [(2 * tmp_histo[i] / (1+i*(1./self._core.size_of_histo))**(self.n/2.)) for i in range(self._core.size_of_histo)]
+
+    #initialized target_vector for cvp solver.
+    def initialize_target_vector(self,target_vector):
+        """input target vector for cvp solver
+             - target_vector in tuple type.
+        """
+        assert(self.initialized)
+        yl = self.M.from_canonical(target_vector)
+        for i in range(self._core.full_n):
+            self._core.yl[i] = yl[i]
+
+        pt_yl = [0]*self._core.full_n
+        for i in range(self._core.ll, self._core.r):
+            pt_yl[i] = yl[i]
+        pt = self.M.to_canonical(tuple(pt_yl))
+        self.t_initialized = True
+
+        return pt
+
+
+    def cvp_extend_left(self, offset=1):
+        """
+        Extend the projected vector to the left:
+
+            - change the context
+
+            - refresh the close vector with parameters ``babai_index=l_index=offset``
+
+        This function, changes the context, i.e. the left index is reduced::
+
+            >>> g6k.l, g6k.r
+            (1, 5)
+
+            >>> g6k.cvp_extend_left(); g6k.l, g6k.r
+            (0, 5)
+
+        """
+        # TODO the documentation needs fixing
+        assert(self.initialized)
+        assert(self.t_initialized)
+        assert(self.l-offset>=0)
+        if(self.l - self.ll < offset):
+            self.initialize_local(self.l-offset, self.l, self.r)
+        sig_on()
+        self._core.cvp_extend_left(offset)
+        sig_off()
+
+    def get_cv(self):
+        #obtain the close vector to t.
+        cdef np.ndarray cv = zeros((self.full_n), dtype=float64); #approx closest vector to projected t.
+        cdef np.ndarray x = zeros((self.full_n), dtype=int64);
+
+        self._core.get_cv(<double*>cv.data,<long*>x.data)
+        print(x)
+        mat_x = IntegerMatrix(1,self.full_n)
+        for i in range(self.full_n):
+            mat_x[0,i] = int(x[i])
+
+        res =  mat_x * self.M.B
+
+        #print("B[0]:")
+        #print(self.M.B[0])
+
+        w = []
+        for i in range(self.full_n):
+            w.append(int(res[0,i]))
+        print(w)
+        return [_ for _ in self.M.to_canonical(cv)],  w, [int(x[i]) for i in range(self.full_n)]
+
+    #function about randomized iterative slicer
+    def randslicer(self, len_bound = 1, max_sample_times = 1000):
+        """
+        Call Randomized Slicer Algorithm to find the closest vector.
+
+            - len_bound: ||v-t||<= len_bound * gh
+
+            - max_sample_times: maximal sample times for randomized iterative slicer.
+
+        We illustrate the behavior of this function with a small example.  We start by setting up our instance.
+
+            >>> from fpylll import IntegerMatrix, LLL, FPLLL
+            >>> FPLLL.set_random_seed(0x1337)
+            >>> from g6k import Siever
+            >>> A = LLL.reduction(IntegerMatrix.random(30, "qary", k=25, bits=10))
+            >>> g6k = Siever(A)
+            >>> g6k.initialize_local(0, 1, 5)
+            >>> g6k()
+
+        This function, changes the context, i.e. the left index is reduced::
+
+            >>> g6k.randslicer((1,5,1,0))
+            (1, 5, 1, 1)
+        """
+        assert(self.initialized)
+        assert(self.t_initialized)
+        cdef np.ndarray cv = zeros((self.full_n), dtype=float64); #approx closest vector to projected t.
+        cdef np.ndarray x = zeros((self.full_n), dtype=int64);
+        cdef np.ndarray sample_times = zeros(1, dtype=int64);
+
+        sig_on()
+        self._core.initialize_projected_target_vector()
+        self._core.randomized_iterative_slicer(<double*>cv.data, <long*>x.data, len_bound, max_sample_times, <int*> sample_times.data)
+        sig_off()
+        #print(reduced_t)
+
+        #for i in range(self.full_n):
+        #    if(x[i]!=int(x[i])):
+        #        print("wrong: x[i]=", x[i],", int(x[i])=",int(x[i]))
+        #print("(long)x:")
+        #print(x)
+
+        #compute the approximate vector on full-dim with coefficients x on lattice basis.
+        mat_x = IntegerMatrix(1,self.full_n)
+        for i in range(self.full_n):
+            mat_x[0,i] = int(x[i])
+
+
+        res =  mat_x * self.M.B
+
+        #print("B[0]:")
+        #print(self.M.B[0])
+
+        w = [int(res[0,i]) for i in range(res.ncols)]
+
+
+        #x_w = [_ for _ in list(npp.linalg.solve((npp.array(list(self.M.B))).T,npp.array(w)))]
+
+        #print("x_w:", x_w)
+
+        #assert(x_w == x)
+
+        return [_ for _ in self.M.to_canonical(cv)],  w, [int(x[i]) for i in range(self.full_n)], sample_times[0]
+        #return [round(_) for _ in self.M.to_canonical(reduced_t)]
 
 
 # For backward compatibility with old pickles

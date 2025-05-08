@@ -276,6 +276,7 @@ cdef extern from "../kernel/siever.h" nogil:
         # Local setup methods:
         void initialize_local(unsigned int ll_, unsigned int l_, unsigned int r_)
         void extend_left(unsigned int lp)
+        void cvp_extend_left(unsigned int lp)
         void shrink_left(unsigned int lp)
         void extend_right(unsigned int rp)
         void grow_db(unsigned long N, unsigned int large)
@@ -300,7 +301,8 @@ cdef extern from "../kernel/siever.h" nogil:
         # loading db from array item by item
         void append_db( ZT* x_arr )
 
-        void best_lifts(long* vecs, double* lens)
+        # void best_lifts(long* vecs, double* lens)
+        void best_lifts(long* vecs, double* lens, double* yrs) # from WXG
         void db_stats(long* cumul_histo)
 
         # statistics and histo:
@@ -326,6 +328,12 @@ cdef extern from "../kernel/siever.h" nogil:
 
         void gso_update_postprocessing(const unsigned int l_, const unsigned int r_, long* M)
 
+        # - - - from WXG
+        LFT* yl
+        void initialize_projected_target_vector()
+        void randomized_iterative_slicer(double* y, long* x, FT len_bound, int max_sample_times, int* sample_times)
+        void get_cv(double* y, long* x)
+        # - - -
 
         vector[vector[FT]] muT
         vector[FT] rr
