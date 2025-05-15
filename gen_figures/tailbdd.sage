@@ -23,4 +23,4 @@ Hs = histogram( lsucc, bins=20, color="green" )
 Hf = histogram( lfail, bins=20, color="red" )
 print(f"mean gamma: {np.mean([ll[0] for ll in l])}")
 
-(Hs+Hf).save_image( f"tbdd_histo_n{n}_b{b}.png", title=f"Tail-BDD n={n}, beta={beta}, {len(l)} instances" )
+(Hs+Hf).save_image( f"tbdd_histo_n{n}_b{beta}.png", title=f"Tail-BDD n={n}, beta={beta}, {len(l)} instances" )
