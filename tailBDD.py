@@ -2,6 +2,7 @@ from experiments.lwe_gen import *
 
 import sys,os
 import time
+import argparse
 from time import perf_counter
 from fpylll import *
 from fpylll.algorithms.bkz2 import BKZReduction
@@ -183,60 +184,64 @@ def run_experiment( lat_index, params, stats_dict, verbose=False ):
     
     return D
 
-# def get_parser():
-#     parser = argparse.ArgumentParser(
-#         description="CVPP experiments."
-#     )
-#     parser.add_argument(
-#     "--nthreads", default=1, type=int, help="Threads per slicer."
-#     )
-#     parser.add_argument(
-#     "--nworkers", default=1, type=int, help="Workers for experiments."
-#     )
-#     parser.add_argument(
-#     "--ntests", default=1, type=int, help="Number of tests per lattice."
-#     )
-#     parser.add_argument(
-#     "--Nlats", default=1, type=int, help="TNumber of lattices."
-#     )
-#     parser.add_argument(
-#     "--n", default=80, type=int, help="Lattice dimension"
-#     )
-#     parser.add_argument(
-#     "--beta", default=50, type=int, help="Lattice dimension"
-#     )
-#     parser.add_argument(
-#     "--approx_factor", default=0.43, type=float, help="Lattice dimension"
-#     )
-#     parser.add_argument(
-#     "--nrand_param", default=10., type=float, help="Lattice dimension"
-#     )
+def get_parser():
+    parser = argparse.ArgumentParser(
+        description="CVPP experiments."
+    )
+    parser.add_argument(
+    "--nthreads", default=1, type=int, help="Threads per slicer."
+    )
+    parser.add_argument(
+    "--nworkers", default=1, type=int, help="Workers for experiments."
+    )
+    parser.add_argument(
+    "--ntests", default=1, type=int, help="Number of tests per lattice."
+    )
+    parser.add_argument(
+    "--Nlats", default=1, type=int, help="TNumber of lattices."
+    )
+    parser.add_argument(
+    "--n", default=80, type=int, help="Lattice dimension"
+    )
+    parser.add_argument(
+    "--beta", default=50, type=int, help="Lattice dimension"
+    )
+    parser.add_argument(
+    "--approx_factor", default=0.43, type=float, help="Lattice dimension"
+    )
+    parser.add_argument(
+    "--nrand_param", default=10., type=float, help="Lattice dimension"
+    )
+    parser.add_argument(
+    "--n_uniq_targets", default=5, type=int, help="Lattice dimension"
+    )
+    return parser
 
 if __name__ == '__main__':
     verbose = True
     parser = get_parser()
-    params = parser.parse_args()
+    args = parser.parse_args()
 
-    n,beta = 120, 55
-    nworkers = 2 # number of workers
-    Nlats = 5
+    # n,beta = 120, 55
+    nworkers = args.nworkers # number of workers
+    # Nlats = 5
 
     params = {
-        "n": n,
-        "beta": beta,
-        "n_uniq_targets": 10,
-        "ntests": 5,
+        "n": args.n,
+        "beta": args.beta,
+        "n_uniq_targets": args.n_uniq_targets,
+        "ntests": args.ntests,
         "slicer_iterations": 100,
         "nrand_param": 10.,
-        "approx_factor": 0.43,
-        "nthreads": parser,
+        "approx_factor": args.approx_factor,
+        "nthreads": args.nthreads,
     }
 
     pool = Pool(processes = nworkers )
     tasks = []
 
     stats_dict = {}
-    for lat_index in range(Nlats):
+    for lat_index in range(args.Nlats):
         tasks.append( pool.apply_async(
             run_experiment, ( lat_index, params, stats_dict, verbose )
         ) )
@@ -248,6 +253,6 @@ if __name__ == '__main__':
 
     print(f"output: \n {output}")
 
-    filename=f"tail_bdd_n{n}_b{beta}.pkl"
+    filename=f"tail_bdd_n{args.n}_b{args.beta}.pkl"
     with open(filename,"wb") as file:
         pickle.dump(output,file)

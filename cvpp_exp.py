@@ -188,22 +188,24 @@ def get_parser():
     parser.add_argument(
     "--betamax", default=50, type=int, help="Lattice dimension"
     )
+    return parser
 
 if __name__=="__main__":
     parser = get_parser()
-    params = parser.parse_args()
+    args = parser.parse_args()
     
-    nthreads = parser.nthreads
-    nworkers = parser.nworkers
+    nthreads = args.nthreads
+    nworkers = args.nworkers
     max_slicer_interations = 300
-    ntests = parser.ntests
-    nlats = parser.nlats
-    n = parser.n
+    ntests = args.ntests
+    nlats = args.nlats
+    n = args.n
     bits = 11.705
-    betamax = parser.betamax
+    betamax = args.betamax
     approx_facts = [ 0.9 + 0.02*i for i in range(6) ]
     nrand_params = [ 1.0,5.0,10.0 ]
     verbose = True
+    
 
     to_be_computed = []
     g6ks = []
