@@ -4,10 +4,11 @@ import pickle
 
 L = {}
 
-filename = "./lwe_instances/reduced_lattices/tph_170_binomial_3.0000_1_91_97.pkl" #fig. 2 (left)
-# filename = "./lwe_instances/reduced_lattices/tph_170_binomial_3.0000_1_91_93.pkl" #fig. 2 (right)
+path = "./lwe_instances/reduced_lattices/"
+filename = "tph_170_binomial_3.0000_1_91_97.pkl" #fig. 2 (left)
+# filename = "tph_170_binomial_3.0000_1_91_93.pkl" #fig. 2 (right)
 n_guess_coords = [ int( filename.split("_")[4] ) ]
-with open(filename,"rb") as file:
+with open(path+filename,"rb") as file:
     L.update( pickle.load(file) )
     
 print(len(L))
