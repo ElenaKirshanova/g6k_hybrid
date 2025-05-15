@@ -5,6 +5,7 @@ FPLLL.set_random_seed(0x1337)
 from g6k.siever import Siever, SaturationError
 from g6k.siever_params import SieverParams
 from g6k.slicer import RandomizedSlicer
+import argparse
 
 from global_consts import *
 
@@ -165,20 +166,41 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
         aggregated_data.append([nrand_param, Ds]) 
     return aggregated_data
 
-if __name__=="__main__":
+def get_parser():
+    parser = argparse.ArgumentParser(
+        description="CVPP experiments."
+    )
+    parser.add_argument(
+    "--nthreads", default=1, type=int, help="Threads per slicer."
+    )
+    parser.add_argument(
+    "--nworkers", default=1, type=int, help="Workers for experiments."
+    )
+    parser.add_argument(
+    "--ntests", default=1, type=int, help="Number of tests per lattice."
+    )
+    parser.add_argument(
+    "--nlats", default=1, type=int, help="TNumber of lattices."
+    )
+    parser.add_argument(
+    "--n", default=80, type=int, help="Lattice dimension"
+    )
+    parser.add_argument(
+    "--betamax", default=50, type=int, help="Lattice dimension"
+    )
 
-    ###
-    # [n, beta_max]
-    # [60, 53], [70, 60], [80, 70], [90, 80], [100, 85]
-    ###
-    nthreads = 1
-    nworkers = 2
+if __name__=="__main__":
+    parser = get_parser()
+    params = parser.parse_args()
+    
+    nthreads = parser.nthreads
+    nworkers = parser.nworkers
     max_slicer_interations = 300
-    ntests = 2
-    nlats = 2
-    n = 50
+    ntests = parser.ntests
+    nlats = parser.nlats
+    n = parser.n
     bits = 11.705
-    betamax = 44
+    betamax = parser.betamax
     approx_facts = [ 0.9 + 0.02*i for i in range(6) ]
     nrand_params = [ 1.0,5.0,10.0 ]
     verbose = True

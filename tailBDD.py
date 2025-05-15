@@ -183,13 +183,43 @@ def run_experiment( lat_index, params, stats_dict, verbose=False ):
     
     return D
 
+# def get_parser():
+#     parser = argparse.ArgumentParser(
+#         description="CVPP experiments."
+#     )
+#     parser.add_argument(
+#     "--nthreads", default=1, type=int, help="Threads per slicer."
+#     )
+#     parser.add_argument(
+#     "--nworkers", default=1, type=int, help="Workers for experiments."
+#     )
+#     parser.add_argument(
+#     "--ntests", default=1, type=int, help="Number of tests per lattice."
+#     )
+#     parser.add_argument(
+#     "--Nlats", default=1, type=int, help="TNumber of lattices."
+#     )
+#     parser.add_argument(
+#     "--n", default=80, type=int, help="Lattice dimension"
+#     )
+#     parser.add_argument(
+#     "--beta", default=50, type=int, help="Lattice dimension"
+#     )
+#     parser.add_argument(
+#     "--approx_factor", default=0.43, type=float, help="Lattice dimension"
+#     )
+#     parser.add_argument(
+#     "--nrand_param", default=10., type=float, help="Lattice dimension"
+#     )
+
 if __name__ == '__main__':
     verbose = True
+    parser = get_parser()
+    params = parser.parse_args()
 
     n,beta = 120, 55
     nworkers = 2 # number of workers
     Nlats = 5
-    nrand_param = 15.
 
     params = {
         "n": n,
@@ -199,7 +229,7 @@ if __name__ == '__main__':
         "slicer_iterations": 100,
         "nrand_param": 10.,
         "approx_factor": 0.43,
-        "nthreads": 2,
+        "nthreads": parser,
     }
 
     pool = Pool(processes = nworkers )
