@@ -43,11 +43,27 @@ It outputs the number of successful CVP runs for Babai and for the Slicer.
 
 Running the Hybrid attack
 ==========================
-To run the hybrid attack on LWE with parameters ``n=TODO, q=TODO``  first execute preprocessing
+To run the hybrid attack on LWE with parameters ``n=130, q=3329`` and ``\kappa=4`` (the number of guessed coordinates)  first execute preprocessing
 
 .. code-block:: bash 
     
-    python prepocessing.py TODO
+    python prepocessing.py --params "[(130, 4, 46)]" --q 3329 --dist "ternary" --dist_param 0.8333
+
+The script terminates within a few minutes on a laptop. It creates report file ``lwe_instances/reduced_lattices/{n}_{q}_{dist}_{dist_param}_{seed[0]}_{kappa}_{sieve_dim_min}_{sieve_dim_max}_{beta_bkz}.pkl"``
+
+Optional parameters:
+
+* ``beta_bkz_offset`` TODO (default ``1``)
+* ``sieve_dim_max_offset`` TODO (default ``1``)
+
+
+
+Report file naming variables
+* ``sieve_dim_min`` is the minimal dimension for the last projective block (sieving dimension) (the third input in --params )
+* ``sieve_dim_max`` is the maximal dimension of progressive sieving
+* ``beta_bkz``
+
+
 
 The script generates XXX different LWE matrices and XXX different ``b``'s for each LWE matrix with secret and error distribution 
 
@@ -61,11 +77,11 @@ To run the attack on LWE with parameters ``n=130, q=3329``, ternary error and se
     
     python primal_kyber.py --ns "range(130,131,1)" --q 3329 --dist "ternary" --dist_param 0.833 --betamax 60
 
-The experiments will terminate in an hour with the output dumped in a file named ``lwe_instances/reduced_lattices/exp{[n]}_{q}_{dist}_{dist_param}.pkl``
+The experiments will terminate in an hour on a laptop with the output dumped in a file ``lwe_instances/reduced_lattices/exp{[n]}_{q}_{dist}_{dist_param}.pkl``
 
 The additional flag ``inst_per_lat X`` will generate ``X`` LWE ``b``'s for the same LWE matrix ``A``, the flag ``lats_per_dim Y``will generate ``Y`` difference LWE matrices ``A``. 
 
-To parallelize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``.
+To parallelize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``. For central binomial secrets and errors with parameter X use ``--dist "binomial" --dist_param X``.
 
 
 
