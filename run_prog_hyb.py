@@ -126,8 +126,6 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
         # project the error vector onto the last n_sieve_dim GS-vectors.
         e_ = from_canonical_scaled( G,e_,offset=n_slicer_coord,scale_fact=gh_sub )
 
-        # print(f"prog e_: {e_}")
-
         #deduce the projected error norm
         dist_sq_bnd = e_@e_
         dist_bnd = dist_sq_bnd**0.5
@@ -215,7 +213,7 @@ def get_parser():
     "--n_guess_coord", default=2, type=int, help="Number of guessing coordinates"
     )
     parser.add_argument(
-    "--n_slicer_coord", default=47, type=int, help="Minimal imension of slicer."
+    "--n_slicer_coord", default=47, type=int, help="Minimal dimension of slicer."
     )
     parser.add_argument(
     "--delta_slicer_coord", default=3, type=int, help="Maximal dimension of slicer will be n_slicer_coord+delta_slicer_coord."

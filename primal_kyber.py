@@ -221,7 +221,7 @@ def attack_on_kyber(params):
         report["time"] += round_time
 
         if bkz.M.get_r(0,0) <= tarnrmsq:
-            print(f"succsess! beta={beta}")
+            print(f"successes! beta={beta}")
             report["beta"] = beta
             return report
 
@@ -244,7 +244,7 @@ def attack_on_kyber(params):
             
             M = LR.gso
             if M.get_r(0,0) <= tarnrmsq:
-                print(f"succsess! beta={beta}")
+                print(f"successes! beta={beta}")
                 report["beta"] = beta
                 return report
 

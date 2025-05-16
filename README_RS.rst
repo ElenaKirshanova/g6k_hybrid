@@ -35,9 +35,9 @@ To test-run our randomized slicer, execute the script test_slicer.py.
 
 .. code-block:: bash 
     
-    python test_slicer.py TODO
+    python test_slicer.py -n 60 --betamax 55 --nexp 3 --approx_factor 0.99
 
-This example will generate an LWE instance of dim XXX, BKZ-reduce it with block size XXX, run siever on the full lattice (bdgl2 algorithm), generate XXX targets with approximation factor XXX, and execute Babai's algorithm from FPyLLL and the Randomized Slicer on the instance.
+This example will generate an LWE instance of dim 60, BKZ-reduce it with block size 55, run siever on the full lattice (bdgl2 algorithm), generate 3 targets with approximation factor 0.99, and execute Babai's algorithm from FPyLLL and the Randomized Slicer on the instance.
 It outputs the number of successful CVP runs for Babai and for the Slicer.
 
 
@@ -55,17 +55,17 @@ Running the Primal attack
 ==========================
 For the sake of comparison with the hybrid attack, we implemented the primal attack on Kyber (Kannan's embedding) in ``primal_kyber.py``
 
-To run the attack on LWE with parameters ``n=130, q=3329``, ternary error and secret distribution with spacity parameter 0.8333 and maximum BKZ blocksize parameter 60, execute
+To run the attack on LWE with parameters ``n=130, q=3329``, ternary error and secret distribution with sparsity parameter 0.8333 and maximum BKZ blocksize parameter 60, execute
 
 .. code-block:: bash 
     
     python primal_kyber.py --ns "range(130,131,1)" --q 3329 --dist "ternary" --dist_param 0.833 --betamax 60
 
-The experiments will terminate in several minutes with the output:
+The experiments will terminate in an hour with the output dumped in a file named ``lwe_instances/reduced_lattices/exp{[n]}_{q}_{dist}_{dist_param}.pkl``
 
 The additional flag ``inst_per_lat X`` will generate ``X`` LWE ``b``'s for the same LWE matrix ``A``, the flag ``lats_per_dim Y``will generate ``Y`` difference LWE matrices ``A``. 
 
-To parallellize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``.
+To parallelize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``.
 
 
 
@@ -127,8 +127,9 @@ Algorithms
 #. ``hyb_attack_on_kyber.py`` -- implementation of Batched-Tail-BDD;
 #. ``test_slicer `` -- script for showcasing slicer; 
 #. ``lattice_reduction.py`` -- implementation of pump'n'jump BKZ;
-#. ``benchmark_slicer_our.py`` -- runs a benchmark of our slicer;
+#. ``benchmark_slicer_our.py`` -- runs a benchmark on various lattices for our slicer;
 #. ``cvpp_exp.py`` -- investigates CVP success rate w.r.t. the approximation factor and the number of rerandomizations;
+#. ``tailBDD.sage`` -- investigates Batch-Tail-BDD success rate for our slicer; 
 #. ``primal_kyber.py`` -- primal attack on LWE;
 #. ``preprocessing.py`` -- preprocessing for the hybrid attack on LWE;
 #. ``run_prog_hybrid.py`` -- hybrid attack on LWE (won't launch without preprocessing stage).
