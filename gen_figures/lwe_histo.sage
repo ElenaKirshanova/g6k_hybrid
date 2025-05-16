@@ -81,4 +81,6 @@ for kappa in n_guess_coords:
         Histo += Hpara
     if len(lf_oth):
         Histo += Hpoth
-    Histo.save_image( f"h{n}_{kappa}.png" )
+    filename = f"apprf_histograms{n}_{kappa}.png"
+    Histo.save_image( filename )
+    print(f"Figure saved to {filename}")

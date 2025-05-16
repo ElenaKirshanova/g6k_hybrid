@@ -1,17 +1,51 @@
 
+"""
+BKZ-beta reduces nlats lattices. Performs ntests CVP tests on each lattice a given dimension n.
+Each test is performed for 11 approximation factors for each of 3 nrerands.
+
+python cvpp_exp.py --n 70 --betamax 60 --ntests 50 --nlats 50 --nthreads 5 --nworkers 5
+python cvpp_exp.py --n 80 --betamax 70 --ntests 50 --nlats 50 --nthreads 5 --nworkers 5
+"""
+
 from fpylll import FPLLL
 
 FPLLL.set_random_seed(0x1337)
 from g6k.siever import Siever, SaturationError
 from g6k.siever_params import SieverParams
 from g6k.slicer import RandomizedSlicer
+import argparse
 
 from global_consts import *
 
 
-from LatticeReduction import LatticeReduction
+from lattice_reduction import LatticeReduction
 from utils import * #random_on_sphere, reduce_to_fund_par_proj
 from hybrid_estimator.batchCVP import batchCVPP_cost
+
+def get_parser():
+    parser = argparse.ArgumentParser(
+        description="CVPP experiments."
+    )
+    parser.add_argument(
+    "--nthreads", default=1, type=int, help="Threads per slicer."
+    )
+    parser.add_argument(
+    "--nworkers", default=1, type=int, help="Number of workers for experiments."
+    )
+    parser.add_argument(
+    "--ntests", default=1, type=int, help="Number of CVP instances per lattice."
+    )
+    parser.add_argument(
+    "--nlats", default=1, type=int, help="TNumber of lattices."
+    )
+    parser.add_argument(
+    "--n", default=60, type=int, help="Lattice dimension"
+    )
+    parser.add_argument(
+    "--betamax", default=30, type=int, help="Lattice dimension"
+    )
+    parser.add_argument("--verbose", action="store_true", help="Increase output verbosity")
+    return parser
 
 def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705,seed=0,threads=1,verbose=False):
     #TODO: consider if we may load an already reduced basis and extend the context
@@ -134,7 +168,7 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
                         attemptcntr = 0
                         for tmp, _ in iterator:
                             attemptcntr += 1
-                            out_gs_reduced = np.array( tmp )  #cdb[0]
+                            out_gs_reduced = np.array( tmp ) 
                             if (out_gs_reduced@out_gs_reduced)>1.01*(e_@e_):
                                 break
 
@@ -154,7 +188,7 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
 
 
                     except Exception as excpt: #if slicer fails for some reason,
-                        #then prey, this is not a devastating segfault
+                        #then pray, this is not a devastating segfault
                         print(excpt)
                         raise excpt
 
@@ -166,22 +200,21 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
     return aggregated_data
 
 if __name__=="__main__":
-
-    ###
-    # [n, beta_max]
-    # [60, 53], [70, 60], [80, 70], [90, 80], [100, 85]
-    ###
-    nthreads = 1
-    nworkers = 2
+    parser = get_parser()
+    args = parser.parse_args()
+    
+    nthreads = args.nthreads
+    nworkers = args.nworkers
     max_slicer_interations = 300
-    ntests = 2
-    nlats = 2
-    n = 50
+    ntests = args.ntests
+    nlats = args.nlats
+    n = args.n
     bits = 11.705
-    betamax = 44
+    betamax = args.betamax
     approx_facts = [ 0.9 + 0.02*i for i in range(6) ]
     nrand_params = [ 1.0,5.0,10.0 ]
-    verbose = True
+    verbose = args.verbose
+    
 
     to_be_computed = []
     g6ks = []
@@ -218,10 +251,6 @@ if __name__=="__main__":
     for t in tasks:
         aggregated_data += [ t.get() ]
     pool.close()
-
-    for tmp in aggregated_data:
-        print(f"nrand_parameter: {aggregated_data[0]}")
-        print(aggregated_data[1])
 
     filename = f"slicsucc_{n}.pkl"
     with open(filename,"wb") as file:

@@ -1,12 +1,12 @@
 """
-This file requires LatticeReduction.py and generateLWEInstance.py files in the root of repo.
+This file requires lattice_reduction.py and generateLWEInstance.py files in the root of repo.
 """
 # from __future__ import absolute_import
 
 import sys
 import numpy as np
 from lwe_gen import generateLWEInstance
-from LatticeReduction import LatticeReduction
+from lattice_reduction import LatticeReduction
 import time
 from time import perf_counter
 from fpylll import *
@@ -89,7 +89,6 @@ def iterative_slicer(db,M,t_0,sieve_dim):
             t_cur = t_cur[0] + sign*L[ind_min][0], tmp_min #substract closest to t vector from L
             change_made = False
         else: #else, we're done
-            print(f"breaking!!!!!!!!!!!!!!!!!!!!!!!!!!!! {reductions}")
             break
     print(f"min nrm diff: {min_nrm_diff_sq**0.5}")
     return t_0[0] - t_cur[0], t_0[1] - t_cur[1]

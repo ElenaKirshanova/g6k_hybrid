@@ -1,11 +1,11 @@
 import sys,os
 import time
-from time import perf_counter
+import argparse
 from fpylll import *
 from g6k.siever import Siever
 from g6k.siever_params import SieverParams
 from utils import *
-from LatticeReduction import LatticeReduction
+from lattice_reduction import LatticeReduction
 from copy import deepcopy
 
 try:
@@ -19,21 +19,14 @@ from utils import get_filename
 
 inp_path = "lwe_instances/saved_lattices/"
 out_path = "lwe_instances/reduced_lattices/"
-#path = "saved_lattices/"
 does_exist = os.path.exists(inp_path)
 if not does_exist:
     sys.exit('cannot find path for input lattices')
 
-does_exist = os.path.exists(out_path)
-if not does_exist:
-    try:
-        os.makedirs(out_path)
-    except:
-        pass #TODO: why pass?
+os.makedirs(out_path,exist_ok=True)
 
 
 def load_lwe(params):
-    # n,q,dist,dist_param,seed=0
     n = params["n"]
     q = params["q"]
     dist = params["dist"]
@@ -44,13 +37,11 @@ def load_lwe(params):
     filename = get_filename( "lwe_instance", params )
     with open(inp_path + filename, "rb") as fl:
         D = pickle.load(fl)
-    # A_, q_, dist, dist_param, bse_ = D["A"], D["q"], D["dist"], D["dist_param"], D["bse"]
     A_, q_,  bse_ = D["A"], D["q"], D["bse"]
     return A_, q_, bse_
 
 
 def run_preprocessing(params):
-    # n,q,dist,dist_param,k,seed,beta_bkz,sieve_dim_max,nsieves, kappa,nthreads=N_SIEVE_THREADS,dump_bkz=True
     n, q, dist, dist_param = params["n"], params["q"], params["dist"], params["dist_param"]
     seed,beta_bkz,sieve_dim_max,nsieves,kappa = params["seed"],params["beta_bkz"],params["sieve_dim_max"],params["nsieves"],params["kappa"]
     beta_bkz_offset = params["beta_bkz_offset"]
@@ -65,7 +56,6 @@ def run_preprocessing(params):
         "bkz_runtime": 0,
         "bdgl_runtime": [0]*(nsieves+1),
     }
-    # n,q,dist,dist_param,seed[0]
     A, q, bse = load_lwe(params) #D["A"], D["q"], D["bse"]
 
     B = [ [int(0) for i in range(2*n)] for j in range(2*n) ]
@@ -147,25 +137,58 @@ def run_preprocessing(params):
     sys.stdout.flush()
     return report
 
+def get_parser():
+    parser = argparse.ArgumentParser(
+        description="Preprocessing for hybrid attack."
+    )
+    parser.add_argument(
+    "--nthreads", default=N_SIEVE_THREADS, type=int, help="Threads per slicer."
+    )
+    parser.add_argument(
+    "--nworkers", default=1, type=int, help="Workers for experiments."
+    )
+    parser.add_argument(
+    "--inst_per_lat", default=1, type=int, help="Number of instances per lattice."
+    )
+    parser.add_argument(
+    "--lats_per_dim", default=1, type=int, help="Number of lattices."
+    )
+    parser.add_argument(
+    "--params", default= "[ (125,2,46) ]", type=str, help="String that evaluattes to thhe list of triples (n, n_guess_coordinates, bkzbeta)."
+    )
+    parser.add_argument(
+    "--q", default=3329, type=int, help="LWE modulus"
+    )
+    parser.add_argument(
+    "--dist", default="binomial", type=str, help="LWE distribution"
+    )
+    parser.add_argument(
+    "--dist_param", default=2.0, type=float, help="LWE distribution's parameter (as float)"
+    )
+    parser.add_argument(
+    "--beta_bkz_offset", default=1, type=int, help="BKZ blocksize would surpass the predicted value by this offset."
+    )
+    parser.add_argument(
+    "--sieve_dim_max_offset", default=1, type=int, help="he largest slicer will work on dim=prediceted beta + this offset."
+    )
+    parser.add_argument("--verbose", action="store_true", help="Increase output verbosity")
+    return parser
+
 if __name__=="__main__":
     # (dimension, predicted kappa, predicted beta)
-    # params = [(140, 12, 48), (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
-    #params = [(140, 12, 48)]#, (150, 13, 57), (160, 13, 67), (170, 13, 76), (180, 14, 84)]
-    # params = [(135+i*3, 6, 53+3*i) for i in range(2)]
-    params = [ (170,3,90) ]
-    # params = [(180, 6, 93)]
-    # params = [(190, 7, 99)]
-    # params = [(200, 7, 108)]
-    nworkers, nthreads =  10, N_SIEVE_THREADS #5 (to be changed for kyber 190, 200 !!!)
+    parser = get_parser()
+    args = parser.parse_args()
 
-    beta_bkz_offset = 2 #bkz blocksize would surpass the predicted value by this offset
-    sieve_dim_max_offset = 2 #the largest slicer will work on dim=prediceted beta + this offset
+    params = [ i for i in eval(args.params) ]
+    nworkers, nthreads =  args.nworkers, args.nworkers #5 (to be changed for kyber 190, 200 !!!)
 
-    lats_per_dim = 10
-    inst_per_lat = 10 #how many instances per A, q
-    # dist, dist_param = "ternary", 1/6.
-    dist, dist_param = "binomial", 3
-    q = 3329
+    beta_bkz_offset = args.beta_bkz_offset #
+    sieve_dim_max_offset = args.sieve_dim_max_offset 
+
+    lats_per_dim = args.lats_per_dim
+    inst_per_lat = args.inst_per_lat #how many instances per A, q
+    dist, dist_param = args.dist, args.dist_param
+    q = args.q
     output = []
     pool = Pool(processes = nworkers )
     tasks = []

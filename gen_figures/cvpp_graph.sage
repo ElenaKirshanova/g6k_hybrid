@@ -10,7 +10,6 @@ with open(filename,"rb") as file:
 L = {}
 nlats = len(aggregated_data)
 for aggregated_data_ in aggregated_data:
-    print(aggregated_data_)
     for approx, Ds in aggregated_data_:
         if not approx in L.keys():
             L[approx] = []
@@ -69,8 +68,6 @@ for key in L.keys():
 for appfact in lbab.keys():
     lbab[appfact] = np.mean(lbab[appfact])
 
-print( f"nlats: {nlats}" )
-
 P = list_plot( lbab, color = "red", plotjoined=True, legend_label="Babai" ) +\
 list_plot( ls[1.], color = "blue", legend_label="Slicer", plotjoined = True ) +\
 list_plot( ls[5.], color = "darkcyan", legend_label="Slicer x5 rerand", plotjoined = True ) +\
@@ -85,4 +82,5 @@ P.set_legend_options(loc='lower left')
 P.save_image( f"cvp_graph_{n}.png", 
     title=f"dim={dim} $\\beta$ = 53 | nlats={nlats} | s_dim = {sieve_dim}", 
     axes_labels=['approx. fact', 'proba'], figsize=7.5 , xmin=0.9, xmax=1.0
+    print(f"Saved figure to cvp_graph_{n}.png")
 )

@@ -13,7 +13,7 @@ from math import ceil
 import time
 import pickle
 
-from LatticeReduction import LatticeReduction
+from lattice_reduction import LatticeReduction
 
 try:
     from multiprocess import Pool  # you might need pip install multiprocess
@@ -54,7 +54,7 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
 
     # - - - Make all fpylll objects - - -
     if nothing_to_load:
-        #if verbose: print(f"Nothing to load. Computing")
+        if verbose: print(f"Nothing to load. Computing")
         B = IntegerMatrix(n,n)
         B.randomize("qary", k=n//2, bits=11.705)
         G = GSO.Mat(B, float_type=ft)
@@ -119,7 +119,6 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
     for i in range(Nexperiments):
         c = [ randrange(-10,10) for _ in range(n) ]
         e = np.array( random_on_sphere(n, approx_factor * gh**0.5) ) #error vector
-        # e = uniform_in_ball( 1, n, 0.5 * gh )[0]
         b = G.B.multiply_left( c )
         cs.append( c )
         es.append( e )
@@ -137,8 +136,8 @@ def run_exp(lat_id, n, betamax, sieve_dim, shrink_factor, n_shrinkings, Nexperim
         for i in range(Nexperiments):
             if i%50 == 0 and verbose:
                 print(f"{i} out of {Nexperiments} done...", flush=True)
-            c = cs[i] #[ randrange(-10,10) for k in range(n) ]
-            e = es[i] #np.array( random_on_sphere(n, 0.95 * gh) ) #error vector
+            c = cs[i] 
+            e = es[i] #error vector
             e_ = np.array( from_canonical_scaled(G,e,offset=sieve_dim,scale_fact=gh_sub) )
             t = ts[i]
             t_gs_reduced = t_gs_reduced_s[i]

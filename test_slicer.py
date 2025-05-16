@@ -7,7 +7,7 @@ from hybrid_estimator.batchCVP import batchCVPP_cost
 from utils import *
 import sys
 
-from LatticeReduction import LatticeReduction
+from lattice_reduction import LatticeReduction
 
 import numpy as np
 
@@ -80,15 +80,11 @@ if __name__ == "__main__":
         then = time.perf_counter()
         g6k(alg="bdgl2")
         print(f"siever done in {time.perf_counter()-then}")
-        print(" - - - SIEVER STATS - - -")
-        sievestats = g6k.stats
-        print(sievestats)
         g6k.M.update_gso()
-        # filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
         g6k.dump_on_disk( filename )
     # - - - end Make all fpylll objects - - -
     gh = min( [G.r()[0], gaussian_heuristic(G.r())] )
-    gh_sub = gaussian_heuristic(G.r()[-sieve_dim:]) #min( [G.r()[-sieve_dim], gaussian_heuristic(G.r()[-sieve_dim:])] )
+    gh_sub = gaussian_heuristic(G.r()[-sieve_dim:]) 
     if verbose: print(f"gh: {gh**0.5}, gh_sub: {gh_sub**0.5}")
 
 
@@ -100,7 +96,6 @@ if __name__ == "__main__":
     es_ = []
     for ctr_experiment in range(nexp):
         c = [ randrange(-33,34) for j in range(n) ]
-        # e = np.array( [ randrange(-8,9) for j in range(n) ],dtype=np.int64 )
         e = np.array( random_on_sphere(n,approx_factor*gh**0.5) )
         e = np.round(e)
 
@@ -119,34 +114,12 @@ if __name__ == "__main__":
         t_ = e+b_
         t = [ int(tt) for tt in t_ ]
 
-        # param_sieve = SieverParams()
-        # param_sieve['threads'] = 4
-        # g6k = Siever(G,param_sieve)
-        # g6k.initialize_local(n-sieve_dim,n-sieve_dim,n)
-        # print("Running bdgl2...")
-        # g6k(alg="bdgl2")
-        # g6k.M.update_gso()
-        #
-        # print(f"dbsize: {len(g6k)}")
-
-        #assert(False)
-
         t_gs = from_canonical_scaled( G,t,offset=sieve_dim,scale_fact=gh_sub )
-        #print(f"t_gs: {t_gs} | norm: {(t_gs@t_gs)}")
         #retrieve the projective sublattice
         B_gs = [ np.array( from_canonical_scaled(G, G.B[i], offset=sieve_dim,scale_fact=gh_sub), dtype=np.float64 ) for i in range(G.d - sieve_dim, G.d) ]
         t_gs_reduced = reduce_to_fund_par_proj(B_gs,(t_gs),sieve_dim) #reduce the target w.r.t. B_gs
         t_gs_shift = t_gs-t_gs_reduced #find the shift to be applied after the slicer
 
-        # t_gs_non_scaled = G.from_canonical(t)[-sieve_dim:]
-        # shift_babai_c = G.babai((n-sieve_dim)*[0] + list(t_gs_non_scaled), start=n-sieve_dim,gso=True)
-        # shift_babai = G.B.multiply_left( (n-sieve_dim)*[0] + list( shift_babai_c ),scale_fact=gh_sub )
-        # t_gs_reduced = from_canonical_scaled( G,np.array(t)-shift_babai,offset=sieve_dim,scale_fact=gh_sub ) #this is the actual reduced target
-        # t_gs_shift = from_canonical_scaled( G,shift_babai,offset=sieve_dim,scale_fact=gh_sub )
-
-
-        # t_gs_reduced = t_gs
-        # t_gs_shift = t_gs-t_gs_reduced
         # - - - prelim check - - -
         out = to_canonical_scaled( G,t_gs_reduced,offset=sieve_dim,scale_fact=gh_sub )
 
@@ -170,16 +143,9 @@ if __name__ == "__main__":
         if succ:
             if verbose: print(f"t_gs_reduced: {t_gs_reduced}")
             nbab_succ+=1
-        # else:
-        #     print(c==bab_t)
         # - - - end extra check - - -
 
         if not succ:
-            # filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"
-            # g6k.dump_on_disk( filename )
-            #then = perf_counter()
-
-            #out_gs = g6k.randomized_iterative_slice([float(tt) for tt in t_gs],samples=1000)
             slicer = RandomizedSlicer(g6k)
             slicer.set_nthreads(2)
 
@@ -187,8 +153,7 @@ if __name__ == "__main__":
             if verbose: print("dbsize", g6k.db_size())
 
             nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
-            nrand = ceil(nrand_param*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
-            # nrand = 6000
+            nrand = ceil(nrand_param*(1./nrand_)**sieve_dim)
             print(f"nrand:{nrand}")
             slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
 
@@ -201,14 +166,12 @@ if __name__ == "__main__":
             buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
             buckets = max(buckets, 2**(blocks-1))
 
-            #print("blocks: ", blocks, " buckets: ", buckets )
 
             slicer.set_proj_error_bound(norm_slack*(e_@e_))
             slicer.set_max_slicer_interations(slicer_interations)
             slicer.set_Nt(1)
             slicer.set_saturation_scalar(1.05)
             filename = ("cdbt_dim_n"+str(n)+"_beta"+str(betamax)+"_sdim"+str(sieve_dim)+"_"+str(ctr_experiment)+"_").encode('utf-8')
-            # slicer.set_filename_cdbt(filename)
 
             then = time.perf_counter()
             slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], True, True)
@@ -222,21 +185,11 @@ if __name__ == "__main__":
                 out_gs_reduced = np.array(tmp)  #cdb[0]
                 break
             assert not( out_gs_reduced is None ), "itervalues_cdb_t is empty"
-            # out_gs = out_gs_reduced + t_gs_shift
-            # out = to_canonical_scaled( G,out_gs,offset=sieve_dim,scale_fact=gh_sub )
-            # N = GSO.Mat( G.B[:n-sieve_dim], float_type=ft )
-            # N.update_gso()
-            # bab_1 = G.babai(t-np.array(out),start=n-sieve_dim) #last sieve_dim coordinates of s
-            # tmp = t - np.array( G.B[-sieve_dim:].multiply_left(bab_1) )
-            # tmp = N.to_canonical( G.from_canonical( tmp, start=0, dimension=n-sieve_dim ) ) #project onto span(B[-sieve_dim:])
-            # bab_0 = N.babai(tmp)
-            # bab_01=np.array( bab_0+bab_1 )
 
             out = to_canonical_scaled( G,np.concatenate( [(G.d-sieve_dim)*[0], out_gs_reduced] ), scale_fact=gh_sub )
             bab_01 = np.array( G.babai( np.array(t)-out ) )
 
             # - - - Check - - - -
-            # print(f"e_: {e_}")
             if verbose: print(f"e_llr: {e_llr}")
             if verbose: print(f"out_gs_reduced-e_llr[-sieve_dim:]: {np.concatenate( [out_gs_reduced] ) - e_llr[-sieve_dim:]}")
             if verbose: print(f"|e_|: {(e_@e_)**0.5} vs. {G.get_r(n-sieve_dim, n-sieve_dim)**0.5/gh_sub}")
@@ -249,13 +202,7 @@ if __name__ == "__main__":
                 nsli_succ+=1
             if verbose: print(f"both succeeded: {succ and succbab}", flush=True)
 
-            # print(f"- - - STATS - - -")
-            # print(slicer.stats)          #TODO: FIX
-            # print(f"- - - STATS - - -")
-
         if verbose: print(f"es_: {sorted(es_)}")
         if verbose: print(f"MEAN: {np.mean(runtimes)}")
         if verbose: print(runtimes)
-        print(slicer.stats)
-        print(slicer._stat_get_buck_over_num)
     print(f"nbab_succ, nsli_succ: {nbab_succ,nsli_succ+nbab_succ} out of {nexp}")

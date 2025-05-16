@@ -20,13 +20,9 @@ from random import shuffle, randrange
 from global_consts import *
 
 import pickle
-# try:
-#     from multiprocess import Pool  # you might need pip install multiprocess
-# except ModuleNotFoundError:
-#     from multiprocessing import Pool
 from multiprocessing import Pool 
 
-from LatticeReduction import LatticeReduction
+from lattice_reduction import LatticeReduction
 from utils import * #random_on_sphere, reduce_to_fund_par_proj
 from hybrid_estimator.batchCVP import batchCVPP_cost
 
@@ -182,24 +178,11 @@ def run_exp(cntr,params):
                             break
                         attemptcntr += 1
                         
-                        # index = find_vect_in_list(tmp_0,t_gs_reduced_list)
-                        # print(index, end = ", ")
                         c, e, b, t = cebt_list_filtered[index]
                         out = to_canonical_scaled( G,np.concatenate( [(G.d-sieve_dim)*[0], out_gs_reduced] ), scale_fact=gh_sub )
                         bab_01 = np.array( G.babai( np.array(t)-out ) )
 
                         # - - - Check - - - -
-                        # out_gs = out_gs_reduced + t_gs_shift
-                        # e_ = np.array(e_)
-                        # out_gs_reduced = np.array( out_gs_reduced )
-                        # recovered_nrm = (out_gs_reduced@out_gs_reduced)**0.5
-                        # sought_nrm = (e_@e_)**0.5
-                        # print(f"|out_gs_reduced|: {recovered_nrm} vs {sought_nrm}")
-                        # out = to_canonical_scaled( G,out_gs,offset=sieve_dim,scale_fact=gh )
-
-                        # projerr = G.to_canonical( G.from_canonical(e,start=n-sieve_dim), start=n-sieve_dim)
-                        # out = to_canonical_scaled( G,np.concatenate( [(G.d-sieve_dim)*[0], out_gs_reduced] ), scale_fact=gh_sub )
-                        # bab_01 = np.array( G.babai( np.array(t)-out ) )
 
                         succ = all(c==bab_01)
                         if succ:
@@ -229,7 +212,6 @@ if __name__=="__main__":
     n = 45
     bits = 11.705
     betamax = 43
-    # approx_facts = [ 0.4 + 0.05*i for i in range(15) ] #
     approx_facts = [ 0.9 + 0.02*i for i in range(6) ]
     nrand_params = [ 1.0,5.0,10.0 ]
     print(approx_facts)

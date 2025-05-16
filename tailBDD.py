@@ -1,10 +1,14 @@
+"""
+BKZ-beta reduces Nlats lattice bases. Solves ntests Tail-Batch-BDD instances (with appr. factor approx_factor) each consisting of n_uniq_targets BDD instances.
+
+python tailBDD.py --n 120 --beta 55 --approx_factor 0.43 --Nlats 5  --ntests 5 --n_uniq_targets 10
+"""
 from experiments.lwe_gen import *
 
 import sys,os
-import time
+import argparse
 from time import perf_counter
 from fpylll import *
-from fpylll.algorithms.bkz2 import BKZReduction
 FPLLL.set_random_seed(0x1337)
 from g6k.siever import Siever, SaturationError
 from g6k.siever_params import SieverParams
@@ -23,7 +27,41 @@ from sample import *
 
 from preprocessing import load_lwe
 from hybrid_estimator.batchCVP import batchCVPP_cost
-from LatticeReduction import LatticeReduction
+from lattice_reduction import LatticeReduction
+
+def get_parser():
+    parser = argparse.ArgumentParser(
+        description="CVPP experiments."
+    )
+    parser.add_argument(
+    "--nthreads", default=1, type=int, help="Threads per slicer."
+    )
+    parser.add_argument(
+    "--nworkers", default=1, type=int, help="Workers for experiments."
+    )
+    parser.add_argument(
+    "--ntests", default=1, type=int, help="Number of tests per lattice."
+    )
+    parser.add_argument(
+    "--Nlats", default=1, type=int, help="TNumber of lattices."
+    )
+    parser.add_argument(
+    "--n", default=80, type=int, help="Lattice dimension"
+    )
+    parser.add_argument(
+    "--beta", default=50, type=int, help="Lattice dimension"
+    )
+    parser.add_argument(
+    "--approx_factor", default=0.43, type=float, help="Lattice dimension"
+    )
+    parser.add_argument(
+    "--nrand_param", default=10., type=float, help="Lattice dimension"
+    )
+    parser.add_argument(
+    "--n_uniq_targets", default=5, type=int, help="Lattice dimension"
+    )
+    parser.add_argument("--verbose", action="store_true", help="Increase output verbosity")
+    return parser
 
 def gen_cvpp_g6k(n,betamax=None,n_slicer_coord=None,k=None,bits=11.705,seed=0):
     betamax=n if betamax is None else betamax
@@ -82,7 +120,6 @@ def run_experiment( lat_index, params, stats_dict, verbose=False ):
         param_sieve['otf_lift'] = False
         g6k.params = param_sieve
         nothing_to_load = False
-        #if verbose: print(f"Load succeeded...")
     except Exception as excpt:
         print(excpt)
         gen_cvpp_g6k(n,betamax=beta,n_slicer_coord=beta,k=None,bits=11.705,seed=seed)
@@ -172,10 +209,8 @@ def run_experiment( lat_index, params, stats_dict, verbose=False ):
 
             t = np.array( Ts[indx], )
             bab_01 = np.array( G.babai(t-out_reduced) )
-            # solution_candidate = np.array( G.B.multiply_left( bab_01 ), dtype=DTYPE )
             c = Cs[indx]
             succ = all(c==bab_01)
-            # print(f"Slic Succsess: {succ}")
 
             if succ:
                 D[(n,beta,approx_factor)][tstnum*n_uniq_targets+indx][1] = True #batch no. tstnum*ntests+indx successfull
@@ -183,32 +218,33 @@ def run_experiment( lat_index, params, stats_dict, verbose=False ):
     
     return D
 
+
+
 if __name__ == '__main__':
     verbose = True
+    parser = get_parser()
+    args = parser.parse_args()
 
-    n,beta = 120, 55
-    nworkers = 2 # number of workers
-    Nlats = 5
-    nrand_param = 15.
+    nworkers = args.nworkers # number of workers
 
     params = {
-        "n": n,
-        "beta": beta,
-        "n_uniq_targets": 10,
-        "ntests": 5,
+        "n": args.n,
+        "beta": args.beta,
+        "n_uniq_targets": args.n_uniq_targets,
+        "ntests": args.ntests,
         "slicer_iterations": 100,
-        "nrand_param": 10.,
-        "approx_factor": 0.43,
-        "nthreads": 2,
+        "nrand_param": args.nrand_param,
+        "approx_factor": args.approx_factor,
+        "nthreads": args.nthreads,
     }
 
     pool = Pool(processes = nworkers )
     tasks = []
 
     stats_dict = {}
-    for lat_index in range(Nlats):
+    for lat_index in range(args.Nlats):
         tasks.append( pool.apply_async(
-            run_experiment, ( lat_index, params, stats_dict, verbose )
+            run_experiment, ( lat_index, params, stats_dict, args.verbose )
         ) )
 
     output = []
@@ -218,6 +254,6 @@ if __name__ == '__main__':
 
     print(f"output: \n {output}")
 
-    filename=f"tail_bdd_n{n}_b{beta}.pkl"
+    filename=f"tail_bdd_n{args.n}_b{args.beta}.pkl"
     with open(filename,"wb") as file:
         pickle.dump(output,file)
