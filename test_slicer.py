@@ -20,7 +20,7 @@ if __name__ == "__main__":
     approx_factor = 0.93
     nrand_param = 10
     nthreads = 1
-    nexp = 1
+    nexp = 2
     verbose = True
     slicer_verbosity = True
 

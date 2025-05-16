@@ -30,12 +30,18 @@ The number of parallel compilation jobs can be controlled with `-j #`.
 
 Running RandomizedSlicer
 ====================
-In order to test-run our randomized slicer, run the script test_slicer.py.
+To test-run our randomized slicer, execute the script test_slicer.py.
 
 .. code-block:: bash 
     python test_slicer.py TODO
 
+This example will generate a lattice of dim XXX, BKZ-reduce it with block size XXX, run siever on the full lattice (bdgl2 algorithm), generate XXX targets with approximation factor XXX, and execute Babai's algorithm from FPyLLL and the Randomized Slicer on the instance.
+It outputs the number of successful CVP runs for Babai and for the Slicer.
 
+
+Running the Hybrid attack
+====================
+To run the hybrid attack on 
 
 
 Reproducing the experiments from the paper
@@ -46,3 +52,7 @@ Reproducing the experiments from the paper
 # Reproducing Figure 2
 ...
 
+
+
+Helper scripts
+====================
