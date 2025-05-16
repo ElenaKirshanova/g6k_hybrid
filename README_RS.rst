@@ -35,9 +35,9 @@ To test-run our randomized slicer, execute the script test_slicer.py.
 
 .. code-block:: bash 
     
-    python test_slicer.py TODO
+    python test_slicer.py -n 60 --betamax 55 --nexp 3 --approx_factor 0.99
 
-This example will generate an LWE instance of dim XXX, BKZ-reduce it with block size XXX, run siever on the full lattice (bdgl2 algorithm), generate XXX targets with approximation factor XXX, and execute Babai's algorithm from FPyLLL and the Randomized Slicer on the instance.
+This example will generate an LWE instance of dim 60, BKZ-reduce it with block size 55, run siever on the full lattice (bdgl2 algorithm), generate 3 targets with approximation factor 0.99, and execute Babai's algorithm from FPyLLL and the Randomized Slicer on the instance.
 It outputs the number of successful CVP runs for Babai and for the Slicer.
 
 
