@@ -155,7 +155,7 @@ def get_parser():
     "--lats_per_dim", default=1, type=int, help="Number of lattices."
     )
     parser.add_argument(
-    "--params", default= "[ (125,2,46) ]", type=str, help="String that evaluattes to thhe list of triples (n, n_guess_coordinates, bkzbeta)."
+    "--params", default= "[ (125,2,46) ]", type=str, help="String that evaluates to the list of triples (n, n_guess_coordinates, bkzbeta)."
     )
     parser.add_argument(
     "--q", default=3329, type=int, help="LWE modulus"
@@ -170,7 +170,7 @@ def get_parser():
     "--beta_bkz_offset", default=1, type=int, help="BKZ blocksize would surpass the predicted value by this offset."
     )
     parser.add_argument(
-    "--sieve_dim_max_offset", default=1, type=int, help="he largest slicer will work on dim=prediceted beta + this offset."
+    "--sieve_dim_max_offset", default=1, type=int, help="he largest slicer will work on dim=predicted beta + this offset."
     )
     parser.add_argument("--recompute_instance", action="store_true", help="Recomputes instances. WARNING deletes previous instance irreversibly.")
     parser.add_argument("--verbose", action="store_true", help="Increase output verbosity")

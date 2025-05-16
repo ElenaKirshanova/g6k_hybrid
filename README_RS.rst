@@ -55,7 +55,7 @@ Running the Primal attack
 ==========================
 For the sake of comparison with the hybrid attack, we implemented the primal attack on Kyber (Kannan's embedding) in ``primal_kyber.py``
 
-To run the attack on LWE with parameters ``n=130, q=3329``, ternary error and secret distribution with spacity parameter 0.8333 and maximum BKZ blocksize parameter 60, execute
+To run the attack on LWE with parameters ``n=130, q=3329``, ternary error and secret distribution with sparsity parameter 0.8333 and maximum BKZ blocksize parameter 60, execute
 
 .. code-block:: bash 
     
@@ -65,7 +65,7 @@ The experiments will terminate in several minutes with the output:
 
 The additional flag ``inst_per_lat X`` will generate ``X`` LWE ``b``'s for the same LWE matrix ``A``, the flag ``lats_per_dim Y``will generate ``Y`` difference LWE matrices ``A``. 
 
-To parallellize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``.
+To parallelize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``.
 
 
 
@@ -127,8 +127,9 @@ Algorithms
 #. ``hyb_attack_on_kyber.py`` -- implementation of Batched-Tail-BDD;
 #. ``test_slicer `` -- script for showcasing slicer; 
 #. ``lattice_reduction.py`` -- implementation of pump'n'jump BKZ;
-#. ``benchmark_slicer_our.py`` -- runs a benchmark of our slicer;
+#. ``benchmark_slicer_our.py`` -- runs a benchmark on various lattices for our slicer;
 #. ``cvpp_exp.py`` -- investigates CVP success rate w.r.t. the approximation factor and the number of rerandomizations;
+#. ``tailBDD.sage`` -- investigates Batch-Tail-BDD success rate for our slicer; 
 #. ``primal_kyber.py`` -- primal attack on LWE;
 #. ``preprocessing.py`` -- preprocessing for the hybrid attack on LWE;
 #. ``run_prog_hybrid.py`` -- hybrid attack on LWE (won't launch without preprocessing stage).
