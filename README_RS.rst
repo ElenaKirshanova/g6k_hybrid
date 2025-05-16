@@ -49,7 +49,26 @@ To run the hybrid attack on LWE with parameters ``n=TODO, q=TODO``  first execut
     
     python prepocessing.py TODO
 
-The script generates XXX different LWE ``A``'s and XXX different ``b``'s for each ``A`` with secret and error distribution 
+The script generates XXX different LWE matrices and XXX different ``b``'s for each LWE matrix with secret and error distribution 
+
+Running the Primal attack
+==========================
+For the sake of comparison with the hybrid attack, we implemented the primal attack on Kyber (Kannan's embedding) in ``primal_kyber.py``
+
+To run the attack on LWE with parameters ``n=130, q=3329``, ternary error and secret distribution with spacity parameter 0.8333 and maximum BKZ blocksize parameter 60, execute
+
+.. code-block:: bash 
+    
+    python primal_kyber.py --ns "range(130,131,1)" --q 3329 --dist "ternary" --dist_param 0.833 --betamax 60
+
+The experiments will terminate in several minutes with the output:
+
+The additional flag ``inst_per_lat X`` will generate ``X`` LWE ``b``'s for the same LWE matrix ``A``, the flag ``lats_per_dim Y``will generate ``Y`` difference LWE matrices ``A``. 
+
+To parallellize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``.
+
+
+
 
 
 Reproducing the experiments from the paper
