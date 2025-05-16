@@ -61,7 +61,7 @@ To run the attack on LWE with parameters ``n=130, q=3329``, ternary error and se
     
     python primal_kyber.py --ns "range(130,131,1)" --q 3329 --dist "ternary" --dist_param 0.833 --betamax 60
 
-The experiments will terminate in several minutes with the output:
+The experiments will terminate in an hour with the output dumped in a file named ``lwe_instances/reduced_lattices/exp{[n]}_{q}_{dist}_{dist_param}.pkl``
 
 The additional flag ``inst_per_lat X`` will generate ``X`` LWE ``b``'s for the same LWE matrix ``A``, the flag ``lats_per_dim Y``will generate ``Y`` difference LWE matrices ``A``. 
 
