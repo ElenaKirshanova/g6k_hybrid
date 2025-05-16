@@ -24,9 +24,6 @@ On systems with co-existing python2 and 3, you can force a specific version inst
 The number of parallel compilation jobs can be controlled with `-j #`.
 
 
-Potential Solution to solve issues building on ARM-Macs (see `Issue #128 <https://github.com/fplll/g6k/issues/128>`_)
------------------------------------------------------------------------------------------------------------------
-
 
 
 Running RandomizedSlicer
@@ -185,3 +182,68 @@ Helper scripts
 #. ``global_consts.py`` -- global constants used in algorithms;
 #. ``sample.py`` -- various distributions and samplers;
 #. ``discrete_gaussian.py`` -- discrete Gaussian sampler
+
+
+-----------------------------------------------------------------------------------------------------------------
+
+A workaround to solve issues building on ARM-Macs (also see `Issue #128 <https://github.com/fplll/g6k/issues/128>`_)
+-----------------------------------------------------------------------------------------------------------------
+
+If you have  g++ compiler installed from homebrew you may have issues building the code. If your only compiler is the one provided by Apple, you should be able to skip some of the steps.
+
+1. Create conda environment
+
+.. code-block:: bash
+
+    conda create --name g6x
+    conda activate g6x
+
+2. Install required packages (see requirements.txt)
+
+.. code-block:: bash
+
+    conda install fpylll cython cysignals flake8 ipython numpy begins pytest requests scipy multiprocessing-logging matplotlib autoconf automake libtool
+
+3. Clone the g6x git repo
+
+.. code-block:: bash
+
+    git clone git@github.com:fplll/g6k.git
+
+4. Checkout arm-fixes branch
+
+.. code-block:: bash
+
+    git checkout --track origin/arm-fixes
+
+5. Add modifications to file g6x/siever.pyx.
+
+Change ``def insert_best_lift(self, scoring=(lambda index, nlen, olen, aux: True), aux=None):`` (line 1664)
+to  ``def insert_best_lift(self, scoring=None, aux=None):`` . And inside this function (right the Example is finished) add
+
+.. code-block:: bash
+
+    if scoring==None:
+          scoring = lambda index, nlen, olen, aux: True
+
+6. Attempt to build the code
+
+.. code-block:: bash
+
+    python setup.py build_ext --inplace
+
+7. In case a compiler other than Apple’s clang is used and building fails, use Apple’s clang. Otherwise, skip the following three steps and execute tests
+
+.. code-block:: bash
+    make clean
+    ./configure CXX=/usr/bin/g++
+    python setup.py build_ext --inplace
+
+8. Check is building succeeded by executing tests
+
+.. code-block:: bash
+
+    python -m pytest
+
+
+
