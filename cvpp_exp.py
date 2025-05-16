@@ -1,7 +1,8 @@
 
 """
 BKZ-beta reduces nlats lattices. Performs ntests CVP tests on each lattice a given dimension n.
- 
+Each test is performed for 11 approximation factors for each of 3 nrerands.
+
 python cvpp_exp.py --n 70 --betamax 60 --ntests 50 --nlats 50 --nthreads 5 --nworkers 5
 python cvpp_exp.py --n 80 --betamax 70 --ntests 50 --nlats 50 --nthreads 5 --nworkers 5
 """
@@ -35,14 +36,15 @@ def get_parser():
     "--ntests", default=1, type=int, help="Number of CVP instances per lattice."
     )
     parser.add_argument(
-    "--nlats", default=50, type=int, help="TNumber of lattices."
+    "--nlats", default=1, type=int, help="TNumber of lattices."
     )
     parser.add_argument(
-    "--n", default=80, type=int, help="Lattice dimension"
+    "--n", default=60, type=int, help="Lattice dimension"
     )
     parser.add_argument(
-    "--betamax", default=50, type=int, help="Lattice dimension"
+    "--betamax", default=30, type=int, help="Lattice dimension"
     )
+    parser.add_argument("--verbose", action="store_true", help="Increase output verbosity")
     return parser
 
 def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705,seed=0,threads=1,verbose=False):
@@ -211,7 +213,7 @@ if __name__=="__main__":
     betamax = args.betamax
     approx_facts = [ 0.9 + 0.02*i for i in range(6) ]
     nrand_params = [ 1.0,5.0,10.0 ]
-    verbose = True
+    verbose = args.verbose
     
 
     to_be_computed = []
@@ -249,10 +251,6 @@ if __name__=="__main__":
     for t in tasks:
         aggregated_data += [ t.get() ]
     pool.close()
-
-    for tmp in aggregated_data:
-        print(f"nrand_parameter: {aggregated_data[0]}")
-        print(aggregated_data[1])
 
     filename = f"slicsucc_{n}.pkl"
     with open(filename,"wb") as file:

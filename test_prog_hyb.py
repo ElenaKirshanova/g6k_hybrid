@@ -201,14 +201,10 @@ if __name__=="__main__":
     n = 144
     q = 3329
     # dist, dist_param = "ternary", 1/6.
-    dist, dist_param = "binomial", 2
-    latnum = 2
-    n_guess_coord, n_slicer_coord = 6, 53
-    beta_pre = 52
-    delta_slicer_coord = 5 #integer >=0, n_slicer_coord + delta_slicer_coord is the cap on slicer dimension
-    nthreads = 5
-    nworkers = 2
+    dist, 
+    
 
+    
     params={}
     params["nthreads"] = nthreads
     params["n"], params["dist"], params["dist_param"], params["q"] = n, dist, dist_param, q

@@ -6,11 +6,9 @@ python tailBDD.py --n 120 --beta 55 --approx_factor 0.43 --Nlats 5  --ntests 5 -
 from experiments.lwe_gen import *
 
 import sys,os
-import time
 import argparse
 from time import perf_counter
 from fpylll import *
-from fpylll.algorithms.bkz2 import BKZReduction
 FPLLL.set_random_seed(0x1337)
 from g6k.siever import Siever, SaturationError
 from g6k.siever_params import SieverParams
@@ -62,6 +60,7 @@ def get_parser():
     parser.add_argument(
     "--n_uniq_targets", default=5, type=int, help="Lattice dimension"
     )
+    parser.add_argument("--verbose", action="store_true", help="Increase output verbosity")
     return parser
 
 def gen_cvpp_g6k(n,betamax=None,n_slicer_coord=None,k=None,bits=11.705,seed=0):
@@ -250,7 +249,7 @@ if __name__ == '__main__':
     stats_dict = {}
     for lat_index in range(args.Nlats):
         tasks.append( pool.apply_async(
-            run_experiment, ( lat_index, params, stats_dict, verbose )
+            run_experiment, ( lat_index, params, stats_dict, args.verbose )
         ) )
 
     output = []
