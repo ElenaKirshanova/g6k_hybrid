@@ -81,6 +81,5 @@ P.set_legend_options(loc='lower left')
 # P.show( title=f"dim={dim} $\\beta$ = 53 | nlats={nlats}", axes_labels=['approx. fact', 'proba'], figsize=7.5 )
 P.save_image( f"cvp_graph_{n}.png", 
     title=f"dim={dim} $\\beta$ = 53 | nlats={nlats} | s_dim = {sieve_dim}", 
-    axes_labels=['approx. fact', 'proba'], figsize=7.5 , xmin=0.9, xmax=1.0
-    print(f"Saved figure to cvp_graph_{n}.png")
-)
+    axes_labels=['approx. fact', 'proba'], figsize=7.5 , xmin=0.9, xmax=1.0)
+print(f"Saved figure to cvp_graph_{n}.png")
