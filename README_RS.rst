@@ -56,8 +56,17 @@ Reproducing the experiments from the paper
 ====================
 
 
+Reproducing Figure 1
+---------------------
+
 
 Reproducing Figure 2
+---------------------
+
+Reproducing Figure 4
+---------------------
+
+Reproducing Figure 5
 ---------------------
 
 
