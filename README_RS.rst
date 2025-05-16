@@ -88,7 +88,7 @@ The script will tell the names XXX.png the resulting plots are stored under.
 
 Reproducing Figure 2
 ---------------------
-To get the necessary data for figure reproduction, first reproduce the Figure 1. Then copy ``gen_figures/lwe_histo.sage`` to the root folder of the repository. Then, execute:
+To get the necessary data for figure reproduction, first reproduce Figure 1. Then copy ``gen_figures/lwe_histo.sage`` to the root folder of the repository. Then, execute:
 
 .. code-block:: bash 
     
@@ -123,7 +123,7 @@ To get the necessary data for figure reproduction, run
     python tailBDD.py --n 120 --beta 55 --Nlats 5 --ntests 5 --n_uniq_targets 10  --approx_factor 0.43 
 
 This will BKZ reduce 5 dimension-120 lattices and solve 5 Batch-Tail-BDD instances each consisting of 10 BDD instances.
-To get the figure 5, run:
+To get Figure 5, run:
 
 .. code-block:: bash 
     
