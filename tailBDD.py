@@ -1,3 +1,8 @@
+"""
+BKZ-beta reduces Nlats lattice bases. Solves ntests Tail-Batch-BDD instances (with appr. factor approx_factor) each consisting of n_uniq_targets BDD instances.
+
+python tailBDD.py --n 120 --beta 55 --approx_factor 0.43 --Nlats 5  --ntests 5 --n_uniq_targets 10
+"""
 from experiments.lwe_gen import *
 
 import sys,os
@@ -25,6 +30,39 @@ from sample import *
 from preprocessing import load_lwe
 from hybrid_estimator.batchCVP import batchCVPP_cost
 from LatticeReduction import LatticeReduction
+
+def get_parser():
+    parser = argparse.ArgumentParser(
+        description="CVPP experiments."
+    )
+    parser.add_argument(
+    "--nthreads", default=1, type=int, help="Threads per slicer."
+    )
+    parser.add_argument(
+    "--nworkers", default=1, type=int, help="Workers for experiments."
+    )
+    parser.add_argument(
+    "--ntests", default=1, type=int, help="Number of tests per lattice."
+    )
+    parser.add_argument(
+    "--Nlats", default=1, type=int, help="TNumber of lattices."
+    )
+    parser.add_argument(
+    "--n", default=80, type=int, help="Lattice dimension"
+    )
+    parser.add_argument(
+    "--beta", default=50, type=int, help="Lattice dimension"
+    )
+    parser.add_argument(
+    "--approx_factor", default=0.43, type=float, help="Lattice dimension"
+    )
+    parser.add_argument(
+    "--nrand_param", default=10., type=float, help="Lattice dimension"
+    )
+    parser.add_argument(
+    "--n_uniq_targets", default=5, type=int, help="Lattice dimension"
+    )
+    return parser
 
 def gen_cvpp_g6k(n,betamax=None,n_slicer_coord=None,k=None,bits=11.705,seed=0):
     betamax=n if betamax is None else betamax
@@ -184,38 +222,7 @@ def run_experiment( lat_index, params, stats_dict, verbose=False ):
     
     return D
 
-def get_parser():
-    parser = argparse.ArgumentParser(
-        description="CVPP experiments."
-    )
-    parser.add_argument(
-    "--nthreads", default=1, type=int, help="Threads per slicer."
-    )
-    parser.add_argument(
-    "--nworkers", default=1, type=int, help="Workers for experiments."
-    )
-    parser.add_argument(
-    "--ntests", default=1, type=int, help="Number of tests per lattice."
-    )
-    parser.add_argument(
-    "--Nlats", default=1, type=int, help="TNumber of lattices."
-    )
-    parser.add_argument(
-    "--n", default=80, type=int, help="Lattice dimension"
-    )
-    parser.add_argument(
-    "--beta", default=50, type=int, help="Lattice dimension"
-    )
-    parser.add_argument(
-    "--approx_factor", default=0.43, type=float, help="Lattice dimension"
-    )
-    parser.add_argument(
-    "--nrand_param", default=10., type=float, help="Lattice dimension"
-    )
-    parser.add_argument(
-    "--n_uniq_targets", default=5, type=int, help="Lattice dimension"
-    )
-    return parser
+
 
 if __name__ == '__main__':
     verbose = True
@@ -232,7 +239,7 @@ if __name__ == '__main__':
         "n_uniq_targets": args.n_uniq_targets,
         "ntests": args.ntests,
         "slicer_iterations": 100,
-        "nrand_param": 10.,
+        "nrand_param": args.nrand_param,
         "approx_factor": args.approx_factor,
         "nthreads": args.nthreads,
     }

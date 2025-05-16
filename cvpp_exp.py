@@ -1,4 +1,11 @@
 
+"""
+BKZ-beta reduces nlats lattices. Performs ntests CVP tests on each lattice a given dimension n.
+ 
+python cvpp_exp.py --n 70 --betamax 60 --ntests 50 --nlats 50 --nthreads 5 --nworkers 5
+python cvpp_exp.py --n 80 --betamax 70 --ntests 50 --nlats 50 --nthreads 5 --nworkers 5
+"""
+
 from fpylll import FPLLL
 
 FPLLL.set_random_seed(0x1337)
@@ -13,6 +20,30 @@ from global_consts import *
 from LatticeReduction import LatticeReduction
 from utils import * #random_on_sphere, reduce_to_fund_par_proj
 from hybrid_estimator.batchCVP import batchCVPP_cost
+
+def get_parser():
+    parser = argparse.ArgumentParser(
+        description="CVPP experiments."
+    )
+    parser.add_argument(
+    "--nthreads", default=1, type=int, help="Threads per slicer."
+    )
+    parser.add_argument(
+    "--nworkers", default=1, type=int, help="Number of workers for experiments."
+    )
+    parser.add_argument(
+    "--ntests", default=1, type=int, help="Number of CVP instances per lattice."
+    )
+    parser.add_argument(
+    "--nlats", default=50, type=int, help="TNumber of lattices."
+    )
+    parser.add_argument(
+    "--n", default=80, type=int, help="Lattice dimension"
+    )
+    parser.add_argument(
+    "--betamax", default=50, type=int, help="Lattice dimension"
+    )
+    return parser
 
 def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705,seed=0,threads=1,verbose=False):
     #TODO: consider if we may load an already reduced basis and extend the context
@@ -165,30 +196,6 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
         if verbose: print( f"Experiments for nrand_param={nrand_param} done...", flush=True)
         aggregated_data.append([nrand_param, Ds]) 
     return aggregated_data
-
-def get_parser():
-    parser = argparse.ArgumentParser(
-        description="CVPP experiments."
-    )
-    parser.add_argument(
-    "--nthreads", default=1, type=int, help="Threads per slicer."
-    )
-    parser.add_argument(
-    "--nworkers", default=1, type=int, help="Workers for experiments."
-    )
-    parser.add_argument(
-    "--ntests", default=1, type=int, help="Number of tests per lattice."
-    )
-    parser.add_argument(
-    "--nlats", default=1, type=int, help="TNumber of lattices."
-    )
-    parser.add_argument(
-    "--n", default=80, type=int, help="Lattice dimension"
-    )
-    parser.add_argument(
-    "--betamax", default=50, type=int, help="Lattice dimension"
-    )
-    return parser
 
 if __name__=="__main__":
     parser = get_parser()
