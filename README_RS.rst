@@ -43,29 +43,35 @@ It outputs the number of successful CVP runs for Babai and for the Slicer.
 
 Running the Hybrid attack
 ==========================
-To run the hybrid attack on LWE with parameters ``n=130, q=3329`` and ``\kappa=4`` (the number of guessed coordinates)  first execute preprocessing
+
+Preprocessing
+--------------
+
+To run the hybrid attack on LWE with parameters ``n=130, q=3329`` and ``kappa=4`` (the number of guessed coordinates)  first execute preprocessing
 
 .. code-block:: bash 
     
-    python prepocessing.py --params "[(130, 4, 46)]" --q 3329 --dist "ternary" --dist_param 0.8333
+    python preprocessing.py --params "[(130, 4, 46)]" --q 3329 --dist "ternary" --dist_param 0.08333
 
-The script terminates within a few minutes on a laptop. It creates report file ``lwe_instances/reduced_lattices/{n}_{q}_{dist}_{dist_param}_{seed[0]}_{kappa}_{sieve_dim_min}_{sieve_dim_max}_{beta_bkz}.pkl"``
+``--dist_param 0.08333`` corresponds to ternary secrets/errors of Hamming weight 1/6.
+
+The script terminates within a few minutes on a laptop. It creates a report file ``lwe_instances/reduced_lattices/report_prehyb_130_3329_ternary_0.8333_0_4_46_47_46.pkl"``
 
 Optional parameters:
 
 * ``beta_bkz_offset`` TODO (default ``1``)
 * ``sieve_dim_max_offset`` TODO (default ``1``)
+* ``recompute_instance`` TODO (default False)
+* TODO: add the new parameter
 
+Progressive Hybrid
+--------------
 
+Optional parameters:
 
-Report file naming variables
-* ``sieve_dim_min`` is the minimal dimension for the last projective block (sieving dimension) (the third input in --params )
-* ``sieve_dim_max`` is the maximal dimension of progressive sieving
-* ``beta_bkz``
-
-
-
-The script generates XXX different LWE matrices and XXX different ``b``'s for each LWE matrix with secret and error distribution 
+* ``n_slicer_coord`` TODO (default ``1``)
+* ``delta_slicer_coord`` TODO (default ``1``)
+* TODO: add the new parameter
 
 Running the Primal attack
 ==========================
