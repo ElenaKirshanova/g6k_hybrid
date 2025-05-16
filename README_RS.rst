@@ -58,20 +58,20 @@ To run the hybrid attack on LWE with parameters ``n=130, q=3329`` and ``kappa=4`
 The script terminates within a few minutes on a laptop. It creates a report file ``lwe_instances/reduced_lattices/report_prehyb_130_3329_ternary_0.8333_0_4_46_47_46.pkl"``
 
 Optional parameters:
-
-* ``beta_bkz_offset`` TODO (default ``1``)
-* ``sieve_dim_max_offset`` TODO (default ``1``)
-* ``recompute_instance`` TODO (default False)
-* TODO: add the new parameter
+* ``params`` list of triples (n, n_guess_coordinates, bkzbeta). The preprocessing will iterate through this list.
+* ``beta_bkz_offset`` BKZ-beta reduced bases will be computed for beta in [bkzbeta,...,bkzbeta+beta_bkz_offset] where bkzbeta is defined by the current triple from params (default ``1``)
+* ``sieve_dim_max_offset`` sieving will take place in dimensions up to bkzbeta + sieve_dim_max_offset (default ``1``)
+* ``nsieves`` sieving will take place in dimensions starting from bkzbeta + sieve_dim_max_offset - nsieves
+* ``recompute_instance`` recomputes new LWE instances (default False)
 
 Progressive Hybrid
 --------------
 
 Optional parameters:
-
-* ``n_slicer_coord`` TODO (default ``1``)
-* ``delta_slicer_coord`` TODO (default ``1``)
-* TODO: add the new parameter
+* ``n_guess_coord`` the number of guessing coordinates for the preprocessed data
+* ``n_slicer_coord`` the base slicer dimension
+- ``beta_pre`` BKZ blocksize the data was preprocessed with 
+* ``delta_slicer_coord``  an integer defining the upper bound on the slicer dimension as n_slicer_coord+delta_slicer_coord (default ``1``)
 
 Running the Primal attack
 ==========================

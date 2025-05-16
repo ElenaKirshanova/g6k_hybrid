@@ -192,8 +192,7 @@ def get_parser():
     "--nworkers", default=1, type=int, help="Workers for experiments."
     )
     parser.add_argument(
-    "--" \
-    "", default=1, type=int, help="Number of lattices."
+    "--lats_per_dim", default=1, type=int, help="Number of lattices."
     )
     parser.add_argument(
     "--n", default=125, type=int, help="LWE dimension"

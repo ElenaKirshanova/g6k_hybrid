@@ -167,7 +167,7 @@ def get_parser():
     "--dist_param", default=2.0, type=float, help="LWE distribution's parameter (as float). For binomial should be an integer for ternary should be in (0,1/2)."
     )
     parser.add_argument(
-    "--beta_bkz_offset", default=1, type=int, help="BKZ blocksize would surpass the predicted value by this offset."
+    "--beta_bkz_offset", default=1, type=int, help="BKZ-beta reduced bases will be computed for beta in [sieve_dim,...,sieve_dim+beta_bkz_offset]."
     )
     parser.add_argument(
     "--sieve_dim_max_offset", default=1, type=int, help="he largest slicer will work on dim=predicted beta + this offset."
