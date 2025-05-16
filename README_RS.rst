@@ -28,14 +28,14 @@ The number of parallel compilation jobs can be controlled with `-j #`.
 
 Running RandomizedSlicer
 ====================
-To test-run our randomized slicer, execute the script test_slicer.py.
+To test-run our randomized slicer, execute the script test_slicer.py
 
 .. code-block:: bash 
     
     python test_slicer.py -n 60 --betamax 55 --nexp 3 --approx_factor 0.99
 
-This example will generate an LWE instance of dim 60, BKZ-reduce it with block size 55, run siever on the full lattice (bdgl2 algorithm), generate 3 targets with approximation factor 0.99, and execute Babai's algorithm from FPyLLL and the Randomized Slicer on the instance.
-It outputs the number of successful CVP runs for Babai and for the Slicer.
+This example will generate an LWE instance of dim 60, BKZ-reduce it with block size 55, run siever on the full lattice (bdgl2 algorithm), generate 3 targets with approximation factor 0.99, and execute Babai's algorithm from FPyLLL and the Randomized Slicer on the generated instances.
+It outputs the number of successful CVP runs for Babai and for the Slicer alongside with the solutions.
 
 
 Running the Hybrid attack
@@ -48,53 +48,55 @@ To run the hybrid attack on LWE with parameters ``n=130, q=3329`` and ``kappa=4`
 
 .. code-block:: bash 
     
-    python preprocessing.py --params "[(130, 4, 46)]" --q 3329 --dist "ternary" --dist_param 0.08333
+    python preprocessing.py --params "[(130, 4, 46)]" --q 3329 --dist "ternary" --dist_param 0.08333 --recompute_instance
 
-``--dist_param 0.08333`` corresponds to ternary secrets/errors of Hamming weight 1/6.
+``--dist_param 0.08333`` corresponds to ternary secrets/errors of Hamming weight 1/6. ``params`` is a list of triples (n, n_guess_coordinates, bkzbeta). The preprocessing will iterate through this list.
 
 The script terminates within a few minutes on a laptop. It creates a report file ``lwe_instances/reduced_lattices/report_prehyb_130_3329_ternary_0.08333_0_4_46_47_46.pkl"``
 
+The additional flag ``inst_per_lat X`` will generate ``X`` LWE ``b``'s for the same LWE matrix ``A``, the flag ``lats_per_dim Y``will generate ``Y`` difference LWE matrices ``A``. 
+
+To parallelize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``. For central binomial secrets and errors with parameter X use ``--dist "binomial" --dist_param X``.
+
 Optional parameters:
-* ``params`` list of triples (n, n_guess_coordinates, bkzbeta). The preprocessing will iterate through this list.
-* ``beta_bkz_offset`` BKZ-beta reduced bases will be computed for beta in [bkzbeta,...,bkzbeta+beta_bkz_offset] where bkzbeta is defined by the current triple from params (default ``1``)
+
+* ``beta_bkz_offset`` BKZ-beta reduced bases will be computed for beta in [bkzbeta,...,bkzbeta+beta_bkz_offset] where bkzbeta is defined by the current triple from ``params`` (default ``1``)
 * ``sieve_dim_max_offset`` sieving will take place in dimensions up to bkzbeta + sieve_dim_max_offset (default ``1``)
-* ``nsieves`` sieving will take place in dimensions starting from bkzbeta + sieve_dim_max_offset - nsieves
-* ``recompute_instance`` recomputes new LWE instances (default False)
+* ``nsieves`` sieving will take place in dimensions starting from bkzbeta + sieve_dim_max_offset - nsieves (default ``1``)
+* ``recompute_instance`` recomputes new LWE instances (default False). Execute with this flag if LWE instance was not generated before
 
 Progressive Hybrid
 --------------
 
-Run the hybrdin attack after the preprocessing step above is finished like so
+Run the hybrid attack after the preprocessing step above is finished like so
 
 .. code-block:: bash 
 
     python run_prog_hyb.py --n 130 --q 3329 --dist "ternary" --dist_param 0.0833 --n_guess_coord 4
 
-The parameter ``--n_guess_coord`` should be identical to the second parameters in `` --params`` for ``preprocessing.py``.
+The parameter ``--n_guess_coord`` should be identical to the second parameter in ``--params`` for ``preprocessing.py``.
 
 Optional parameters:
-* ``n_guess_coord`` the number of guessing coordinates for the preprocessed data
-* ``n_slicer_coord`` the base slicer dimension
-- ``beta_pre`` BKZ blocksize the data was preprocessed with 
+
+* ``n_slicer_coord`` the minimal slicer dimension
+* ``beta_pre`` BKZ blocksize the data was preprocessed with 
 * ``delta_slicer_coord``  an integer defining the upper bound on the slicer dimension as n_slicer_coord+delta_slicer_coord (default ``1``)
 
 Running the Primal attack
 ==========================
 For the sake of comparison with the hybrid attack, we implemented the primal attack on Kyber (Kannan's embedding) in ``primal_kyber.py``
 
-To run the attack on LWE with parameters ``n=130, q=3329``, ternary error and secret distribution with sparsity parameter 0.8333 and maximum BKZ blocksize parameter 60, execute
+To run the attack on LWE with parameters ``n=130, q=3329``, ternary error and secret distribution with sparsity parameter 0.08333 and maximum BKZ blocksize parameter 60, execute
 
 .. code-block:: bash 
     
-    python primal_kyber.py --ns "range(130,131,1)" --q 3329 --dist "ternary" --dist_param 0.833 --betamax 60
+    python primal_kyber.py --ns "range(130,131,1)" --q 3329 --dist "ternary" --dist_param 0.0833 --betamax 60 --recompute_instance
 
-The experiments will terminate in an hour on a laptop with the output dumped in a file ``lwe_instances/reduced_lattices/exp{[n]}_{q}_{dist}_{dist_param}.pkl``
+The experiments will terminate in a several minutes on a laptop with the output dumped in a file ``lwe_instances/reduced_lattices/exp[130]_3329_ternary_0.08330.pkl``
 
 The additional flag ``inst_per_lat X`` will generate ``X`` LWE ``b``'s for the same LWE matrix ``A``, the flag ``lats_per_dim Y``will generate ``Y`` difference LWE matrices ``A``. 
 
 To parallelize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``. For central binomial secrets and errors with parameter X use ``--dist "binomial" --dist_param X``.
-
-
 
 
 
