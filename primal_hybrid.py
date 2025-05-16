@@ -1,12 +1,11 @@
 from experiments.lwe_gen import *
 
-import sys,os
+import os
 import time
-from time import perf_counter
 from fpylll import *
 from fpylll.algorithms.bkz2 import BKZReduction
 from fpylll.tools.quality import basis_quality
-from math import log, sqrt
+from math import log
 
 try:
     from multiprocess import Pool  # you might need pip install multiprocess
@@ -14,9 +13,7 @@ except ModuleNotFoundError:
     from multiprocessing import Pool
 
 try:
-  from g6k import Siever, SieverParams
-  from g6k.algorithms.bkz import pump_n_jump_bkz_tour
-  from g6k.utils.stats import dummy_tracer
+  from g6k import SieverParams
 except ImportError:
   raise ImportError("g6k not installed")
 
@@ -26,6 +23,7 @@ from utils import get_filename
 
 import pickle
 from global_consts import *
+import argparse
 
 from signal import signal, SIGPIPE, SIG_DFL  
 signal(SIGPIPE,SIG_DFL) 
@@ -59,8 +57,8 @@ def gen_and_dump_lwe(params):
     n = params["n"]
     q = params["q"]
     ntar = params["ntar"]
-    dist = params["dist"]
-    dist_param = params["dist_param"]
+    dist = params["dist"] 
+    dist_param = params["dist_param"] if dist!="binomial" else int(params["dist_param"])
     seed = params["seed"][0]
     print(f"- - - n,seed={n,seed} - - - gen")
     A,q,bse= generateLWEInstances(n, q, dist, dist_param, ntar)
@@ -90,7 +88,7 @@ def prepare_kyber(params): #for debug purposes
     n = params["n"]
     q = params["q"]
     dist = params["dist"]
-    dist_param = params["dist_param"]
+    dist_param = params["dist_param"] 
     betapre = params["betapre"]
     seed = params["seed"]
     nthreads = params["nthreads"]
@@ -272,6 +270,43 @@ def attack_on_kyber(params):
 
     return report
 
+def get_parser():
+    parser = argparse.ArgumentParser(
+        description="Experiments for primal attack."
+    )
+    parser.add_argument(
+    "--nthreads", default=1, type=int, help="Threads per slicer."
+    )
+    parser.add_argument(
+    "--nworkers", default=1, type=int, help="Workers for experiments."
+    )
+    parser.add_argument(
+    "--inst_per_lat", default=1, type=int, help="Number of instances per lattice."
+    )
+    parser.add_argument(
+    "--lats_per_dim", default=1, type=int, help="Number of lattices."
+    )
+    parser.add_argument(
+    "--ns", default= "range(125,126,1)", type=str, help="String that evaluattes list of LWE dimations."
+    )
+    parser.add_argument(
+    "--q", default=3329, type=int, help="LWE modulus"
+    )
+    parser.add_argument(
+    "--dist", default="binomial", type=str, help="LWE distribution"
+    )
+    parser.add_argument(
+    "--dist_param", default=2.0, type=float, help="LWE distribution's parameter (as float)"
+    )
+    parser.add_argument(
+    "--betapre", default=45, type=int, help="Preprocessing BKZ blocksize."
+    )
+    parser.add_argument(
+    "--betamax", default=60, type=int, help="Upper bound on the BKZ blocksize."
+    )
+    parser.add_argument("--verbose", action="store_true", help="Increase output verbosity")
+    return parser
+
 if __name__ == "__main__":
     # path = "exp_folder/"
     isExist = os.path.exists(out_path)
@@ -280,16 +315,18 @@ if __name__ == "__main__":
             os.makedirs(out_path)
         except:
             pass    #still in docker if isExists==False, for some reason folder can exist and this will throw an exception.
+    
+    parser = get_parser()
+    args = parser.parse_args()
 
-    nthreads = 5
-    nworkers = 2
-    lats_per_dim = 2 #10
-    inst_per_lat = 10 #10 #how many instances per A, q
-    # dist, dist_param = "ternary", 1/6.
-    dist, dist_param = "binomial", 2
+    nthreads = args.nthreads
+    nworkers = args.nworkers
+    lats_per_dim = args.lats_per_dim
+    inst_per_lat = args.inst_per_lat #10 #how many instances per A, q
+    dist, dist_param = args.dist, args.dist_param
     q = 3329
-    nks = [ (144+5*i) for i in range(1) ]
-    betapre,betamax = 47, 73
+    ns = [n for n in eval( args.ns )]
+    betapre,betamax = args.betapre, args.betamax
 
     output = []
     pool = Pool( processes = nworkers )
@@ -298,7 +335,7 @@ if __name__ == "__main__":
     RECOMPUTE_KYBER = True
     if RECOMPUTE_INSTANCE:
         print(f"Generating Kyber...")
-        for n in nks:
+        for n in ns:
             for latnum in range(lats_per_dim):
                 params = {
                     "n": n,
@@ -317,7 +354,7 @@ if __name__ == "__main__":
 
     if RECOMPUTE_KYBER or RECOMPUTE_INSTANCE:
         pretasks = []
-        for n in nks:
+        for n in ns:
             for latnum in range(lats_per_dim):
                 params = {
                     "n": n,
@@ -337,7 +374,7 @@ if __name__ == "__main__":
         for t in pretasks:
             t.get()
 
-    for n in nks:
+    for n in ns:
         for latnum in range(lats_per_dim):
             for tstnum in range(inst_per_lat):
                 params = {
@@ -361,7 +398,7 @@ if __name__ == "__main__":
 
     pool.close()
 
-    name = f"exp{nks}_{q}_{dist}_{dist_param:.04f}.pkl" if dist=="ternary" else f"exp{nks}_{q}_{dist}_{dist_param}.pkl"
+    name = f"exp{ns}_{q}_{dist}_{dist_param:.04f}.pkl" if dist=="ternary" else f"exp{ns}_{q}_{dist}_{dist_param}.pkl"
     with open( out_path+name, "wb" ) as file:
         pickle.dump( output,file )
 

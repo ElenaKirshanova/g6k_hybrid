@@ -2,9 +2,8 @@ from fpylll import *
 FPLLL.set_random_seed(0x1337)
 from g6k.siever import Siever
 from g6k.siever_params import SieverParams
-from g6k.slicer import RandomizedSlicer
+import argparse
 from utils import *
-import sys
 from time import perf_counter
 from experiments.lwe_gen import *
 
@@ -71,6 +70,7 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
     # bkz_performed = False
     # LR = LatticeReduction( G.B, threads_bkz=nthreads )
     if dist=="binomial":
+        dist_param = int(dist_param)
         distrib = centeredBinomial(dist_param)
     elif dist=="ternary":
          print(f"dist_param: {dist_param}")
@@ -191,6 +191,46 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
         print(f" - - - {all(answer==v2)} - - - ")
     return stats_dict
 
+def get_parser():
+    parser = argparse.ArgumentParser(
+        description="Preprocessing for hybrid attack."
+    )
+    parser.add_argument(
+    "--nthreads", default=N_SIEVE_THREADS, type=int, help="Threads per slicer."
+    )
+    parser.add_argument(
+    "--nworkers", default=1, type=int, help="Workers for experiments."
+    )
+    parser.add_argument(
+    "--lats_per_dim", default=1, type=int, help="Number of lattices."
+    )
+    parser.add_argument(
+    "--n", default=125, type=int, help="LWE dimension"
+    )
+    parser.add_argument(
+    "--q", default=3329, type=int, help="LWE modulus"
+    )
+    parser.add_argument(
+    "--dist", default="binomial", type=str, help="LWE distribution"
+    )
+    parser.add_argument(
+    "--dist_param", default=2.0, type=float, help="LWE distribution's parameter (as float)"
+    )
+    parser.add_argument(
+    "--beta_pre", default=46, type=int, help="BKZ blocksize."
+    )
+    parser.add_argument(
+    "--n_guess_coord", default=2, type=int, help="Number of guessing coordinates"
+    )
+    parser.add_argument(
+    "--n_slicer_coord", default=47, type=int, help="Minimal imension of slicer."
+    )
+    parser.add_argument(
+    "--delta_slicer_coord", default=3, type=int, help="Maximal dimension of slicer will be n_slicer_coord+delta_slicer_coord."
+    )
+    parser.add_argument("--verbose", action="store_true", help="Increase output verbosity")
+    return parser
+
 if __name__=="__main__":
     """
     This file implements the hybrid attack on preprocessed Kyber instances.
@@ -198,13 +238,20 @@ if __name__=="__main__":
     preprocessing.py (preprocess the data) and then run this file.
     The attack is relaxed -- we do not guess all the subkeys, but rather consider a single batch.
     """
-    n = 144
-    q = 3329
-    # dist, dist_param = "ternary", 1/6.
-    dist, 
-    
+    parser = get_parser()
+    args = parser.parse_args()
 
-    
+    n = args.n
+    q = args.q
+    # dist, dist_param = "ternary", 1/6.
+    dist, dist_param = args.dist, args.dist_param
+    latnum = args.lats_per_dim
+    n_guess_coord, n_slicer_coord = args.n_guess_coord, args.n_slicer_coord
+    beta_pre = args.beta_pre
+    delta_slicer_coord = args.delta_slicer_coord #integer >=0, n_slicer_coord + delta_slicer_coord is the cap on slicer dimension
+    nthreads = args.nthreads
+    nworkers = args.nworkers
+
     params={}
     params["nthreads"] = nthreads
     params["n"], params["dist"], params["dist_param"], params["q"] = n, dist, dist_param, q
