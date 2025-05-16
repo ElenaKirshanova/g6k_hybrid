@@ -254,5 +254,5 @@ if __name__=="__main__":
 
     filename = f"slicsucc_{n}.pkl"
     with open(filename,"wb") as file:
-        pickle.dump(aggregated_data, file)
+        pickle.dump("./lwe_instances/reduced_lattices/"+aggregated_data, file)
     print( f"saved in {filename}" )

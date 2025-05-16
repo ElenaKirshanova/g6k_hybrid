@@ -10,7 +10,7 @@ The code is based on BDGL implementation from Ducas-Stevens-van Woerden `"Advanc
 Building the library
 ====================
 
-You will the `G6K library <https://github.com/fplll/g6k>`_ . Building on Lunix usually works by running ``bootstrap.sh`` (see comprehensive instruction at the `G6K repository <https://github.com/fplll/g6k>`_):
+You will need the `G6K library <https://github.com/fplll/g6k>`_. Building on Lunix usually works by running ``bootstrap.sh`` (see comprehensive instruction at the `G6K repository <https://github.com/fplll/g6k>`_):
 
 .. code-block:: bash
 
@@ -62,9 +62,31 @@ Reproducing Figure 1
 
 Reproducing Figure 2
 ---------------------
+To get the necessary data for figure reproduction, first reproduce the figure 1. Then copy ``lwe_histo.sage`` to the root folder of the repository. Then, execute:
+
+.. code-block:: bash 
+    
+    sage lwe_histo.sage
+
+The script will tell the names XXX.png the resulting plots are stored under.
 
 Reproducing Figure 4
 ---------------------
+To get the necessary data for figure reproduction, run ``cvpp_exp.py`` as:
+
+.. code-block:: bash 
+    
+    python cvpp_exp.py --n 70 --betamax 55 --nlats 10 --ntests 10
+    python cvpp_exp.py --n 80 --betamax 55 --nlats 10 --ntests 10
+
+This will BKZ reduce 10 lattices and launch 3*11*10*10 experiments for 3 n_randomizations 11 approximation factors, 10 lattices with 10 instances per each one. 
+Once the experiments are finished, make the figures as:
+
+.. code-block:: bash 
+    
+    sage cvpp_graph.sage
+    
+The script will tell the names XXX.png the resulting plots are stored under.
 
 Reproducing Figure 5
 ---------------------
