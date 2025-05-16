@@ -77,11 +77,18 @@ Reproducing the experiments from the paper
 
 Reproducing Figure 1
 ---------------------
+To reproduce Figure 1 perform primal attack, preprocessing and hybrid attack as explained above (for an appropriate distribution and othe parameters).
+Depending on the distribution considered, copy ``gen_figures/aggr_attacks_{XXX}.sage`` to the root directory where XXX is ``binom`` for binomial distribution, ``sparse`` for Ternary(1/6) and ``ternary`` for Ternary(1/3).
+Run the corresponding script:
+.. code-block:: bash 
+    
+    sage aggr_attacks_{XXX}.sage
 
+The script will tell the names XXX.png the resulting plots are stored under.
 
 Reproducing Figure 2
 ---------------------
-To get the necessary data for figure reproduction, first reproduce the figure 1. Then copy ``gen_figures/lwe_histo.sage`` to the root folder of the repository. Then, execute:
+To get the necessary data for figure reproduction, first reproduce the Figure 1. Then copy ``gen_figures/lwe_histo.sage`` to the root folder of the repository. Then, execute:
 
 .. code-block:: bash 
     
@@ -125,7 +132,7 @@ To get the figure 5, run:
 Algorithms
 ====================
 #. ``hyb_attack_on_kyber.py`` -- implementation of Batched-Tail-BDD;
-#. ``test_slicer `` -- script for showcasing slicer; 
+#. ``test_slicer.py`` -- script for showcasing slicer; 
 #. ``lattice_reduction.py`` -- implementation of pump'n'jump BKZ;
 #. ``benchmark_slicer_our.py`` -- runs a benchmark on various lattices for our slicer;
 #. ``cvpp_exp.py`` -- investigates CVP success rate w.r.t. the approximation factor and the number of rerandomizations;

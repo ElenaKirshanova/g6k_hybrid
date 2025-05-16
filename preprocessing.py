@@ -164,13 +164,16 @@ def get_parser():
     "--dist", default="binomial", type=str, help="LWE distribution"
     )
     parser.add_argument(
-    "--dist_param", default=2.0, type=float, help="LWE distribution's parameter (as float)"
+    "--dist_param", default=2.0, type=float, help="LWE distribution's parameter (as float). For binomial should be an integer for ternary should be in (0,1/2)."
     )
     parser.add_argument(
     "--beta_bkz_offset", default=1, type=int, help="BKZ blocksize would surpass the predicted value by this offset."
     )
     parser.add_argument(
     "--sieve_dim_max_offset", default=1, type=int, help="he largest slicer will work on dim=predicted beta + this offset."
+    )
+    parser.add_argument(
+    "--nsieves", default=1, type=int, help="Number of sieves performed."
     )
     parser.add_argument("--recompute_instance", action="store_true", help="Recomputes instances. WARNING deletes previous instance irreversibly.")
     parser.add_argument("--verbose", action="store_true", help="Increase output verbosity")
@@ -224,7 +227,7 @@ if __name__=="__main__":
                     "beta_bkz": param[2], #beta_bkz
                     "beta_bkz_offset": beta_bkz_offset,
                     "sieve_dim_max": param[2]+sieve_dim_max_offset, #sieve_dim_max
-                    "nsieves": 1,  #nsieves
+                    "nsieves": args.nsieves,  #nsieves
                     "kappa": kappa, #kappa
                     "nthreads": nthreads, #nthreads
                 }
