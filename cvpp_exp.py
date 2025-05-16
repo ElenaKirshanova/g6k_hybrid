@@ -18,7 +18,7 @@ import argparse
 from global_consts import *
 
 
-from LatticeReduction import LatticeReduction
+from lattice_reduction import LatticeReduction
 from utils import * #random_on_sphere, reduce_to_fund_par_proj
 from hybrid_estimator.batchCVP import batchCVPP_cost
 
@@ -168,7 +168,7 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
                         attemptcntr = 0
                         for tmp, _ in iterator:
                             attemptcntr += 1
-                            out_gs_reduced = np.array( tmp )  #cdb[0]
+                            out_gs_reduced = np.array( tmp ) 
                             if (out_gs_reduced@out_gs_reduced)>1.01*(e_@e_):
                                 break
 
@@ -188,7 +188,7 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
 
 
                     except Exception as excpt: #if slicer fails for some reason,
-                        #then prey, this is not a devastating segfault
+                        #then pray, this is not a devastating segfault
                         print(excpt)
                         raise excpt
 

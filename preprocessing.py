@@ -5,7 +5,7 @@ from fpylll import *
 from g6k.siever import Siever
 from g6k.siever_params import SieverParams
 from utils import *
-from LatticeReduction import LatticeReduction
+from lattice_reduction import LatticeReduction
 from copy import deepcopy
 
 try:
@@ -19,21 +19,14 @@ from utils import get_filename
 
 inp_path = "lwe_instances/saved_lattices/"
 out_path = "lwe_instances/reduced_lattices/"
-#path = "saved_lattices/"
 does_exist = os.path.exists(inp_path)
 if not does_exist:
     sys.exit('cannot find path for input lattices')
 
-does_exist = os.path.exists(out_path)
-if not does_exist:
-    try:
-        os.makedirs(out_path)
-    except:
-        pass #TODO: why pass?
+os.makedirs(out_path,exist_ok=True)
 
 
 def load_lwe(params):
-    # n,q,dist,dist_param,seed=0
     n = params["n"]
     q = params["q"]
     dist = params["dist"]
@@ -44,13 +37,11 @@ def load_lwe(params):
     filename = get_filename( "lwe_instance", params )
     with open(inp_path + filename, "rb") as fl:
         D = pickle.load(fl)
-    # A_, q_, dist, dist_param, bse_ = D["A"], D["q"], D["dist"], D["dist_param"], D["bse"]
     A_, q_,  bse_ = D["A"], D["q"], D["bse"]
     return A_, q_, bse_
 
 
 def run_preprocessing(params):
-    # n,q,dist,dist_param,k,seed,beta_bkz,sieve_dim_max,nsieves, kappa,nthreads=N_SIEVE_THREADS,dump_bkz=True
     n, q, dist, dist_param = params["n"], params["q"], params["dist"], params["dist_param"]
     seed,beta_bkz,sieve_dim_max,nsieves,kappa = params["seed"],params["beta_bkz"],params["sieve_dim_max"],params["nsieves"],params["kappa"]
     beta_bkz_offset = params["beta_bkz_offset"]
@@ -65,7 +56,6 @@ def run_preprocessing(params):
         "bkz_runtime": 0,
         "bdgl_runtime": [0]*(nsieves+1),
     }
-    # n,q,dist,dist_param,seed[0]
     A, q, bse = load_lwe(params) #D["A"], D["q"], D["bse"]
 
     B = [ [int(0) for i in range(2*n)] for j in range(2*n) ]
@@ -197,7 +187,6 @@ if __name__=="__main__":
 
     lats_per_dim = args.lats_per_dim
     inst_per_lat = args.inst_per_lat #how many instances per A, q
-    # dist, dist_param = "ternary", 1/6.
     dist, dist_param = args.dist, args.dist_param
     q = args.q
     output = []

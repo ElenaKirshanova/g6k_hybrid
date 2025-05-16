@@ -27,7 +27,7 @@ from sample import *
 
 from preprocessing import load_lwe
 from hybrid_estimator.batchCVP import batchCVPP_cost
-from LatticeReduction import LatticeReduction
+from lattice_reduction import LatticeReduction
 
 def get_parser():
     parser = argparse.ArgumentParser(
@@ -120,7 +120,6 @@ def run_experiment( lat_index, params, stats_dict, verbose=False ):
         param_sieve['otf_lift'] = False
         g6k.params = param_sieve
         nothing_to_load = False
-        #if verbose: print(f"Load succeeded...")
     except Exception as excpt:
         print(excpt)
         gen_cvpp_g6k(n,betamax=beta,n_slicer_coord=beta,k=None,bits=11.705,seed=seed)
@@ -210,10 +209,8 @@ def run_experiment( lat_index, params, stats_dict, verbose=False ):
 
             t = np.array( Ts[indx], )
             bab_01 = np.array( G.babai(t-out_reduced) )
-            # solution_candidate = np.array( G.B.multiply_left( bab_01 ), dtype=DTYPE )
             c = Cs[indx]
             succ = all(c==bab_01)
-            # print(f"Slic Succsess: {succ}")
 
             if succ:
                 D[(n,beta,approx_factor)][tstnum*n_uniq_targets+indx][1] = True #batch no. tstnum*ntests+indx successfull
@@ -228,9 +225,7 @@ if __name__ == '__main__':
     parser = get_parser()
     args = parser.parse_args()
 
-    # n,beta = 120, 55
     nworkers = args.nworkers # number of workers
-    # Nlats = 5
 
     params = {
         "n": args.n,

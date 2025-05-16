@@ -65,8 +65,6 @@ def run_exp(lat_id, n, betamax, sieve_dim, range_, Nexperiments, nthreads=1):
         lll()
     # - - - end Make all fpylll objects - - -
 
-
-    # rinv_ = np.array( [sqrt(gh/tt) for tt in G.r()[G.d-sieve_dim:]], dtype=np.float64 ) #transform. coeffs btwn scaled and non-scaled gs coords
     param_sieve = SieverParams()
     param_sieve['threads'] = nthreads
     g6k = Siever(G,param_sieve)
@@ -127,17 +125,6 @@ def run_exp(lat_id, n, betamax, sieve_dim, range_, Nexperiments, nthreads=1):
         N.update_gso()
         bab_1 = G.babai(t-np.array(out),start=n-sieve_dim) #last sieve_dim coordinates of s
 
-        # tmp = t - np.array( G.B[-sieve_dim:].multiply_left(bab_1) )
-        # tmp = N.to_canonical( G.from_canonical( tmp, start=0, dimension=n-sieve_dim ) ) #project onto span(B[-sieve_dim:])
-        # bab_0 = N.babai(tmp)
-        #
-        # bab_01=np.array( bab_0+bab_1 )
-        # succ = all(c==bab_01)
-
-        #print((f"recovered*B^(-1): {bab_0+bab_1}"))
-        #print(c)
-        #print(f"Coeffs of b found: {(c==bab_01)}")
-
         succ = all( np.array( c[G.d-sieve_dim:] )==bab_1 )
         print(f"Babai Success: {succ}")
         if succ:
@@ -146,9 +133,6 @@ def run_exp(lat_id, n, betamax, sieve_dim, range_, Nexperiments, nthreads=1):
             ctr = 0
             #this_instance_succseeded = False
             for nrand_fact in range_:
-                #if this_instance_succseeded: #can only enter here after a succsessful slicer
-                #    slicer_suc[ctr] += 1
-                #    continue
 
                 slicer = RandomizedSlicer(g6k)
                 slicer.set_nthreads(2);
@@ -174,9 +158,6 @@ def run_exp(lat_id, n, betamax, sieve_dim, range_, Nexperiments, nthreads=1):
                     print(f"{len(set(nrms))} out of {len(nrms)} targets are unique", flush=True)
                     # - - - Check - - - -
                     out = to_canonical_scaled( G,out_gs,offset=sieve_dim )
-
-                    # N = GSO.Mat( G.B[:n-sieve_dim], float_type=ft )
-                    # N.update_gso()
 
                     """
                     out_gs_fpylll_format = out_gs * rinv_ #translate from unsceled to the scaled representation for babai

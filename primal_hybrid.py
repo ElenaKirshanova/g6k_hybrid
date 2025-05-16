@@ -17,7 +17,7 @@ try:
 except ImportError:
   raise ImportError("g6k not installed")
 
-from LatticeReduction import LatticeReduction
+from lattice_reduction import LatticeReduction
 from experiments.lwe_gen import *
 from utils import get_filename
 
@@ -153,7 +153,6 @@ def attack_on_kyber(params):
     seed = params["seed"]
     nthreads = params["nthreads"]
     print( f"launching {n,q,dist,dist_param,seed}" )
-    # n,q,dist,dist_param,betapre,seed, nthreads=5
     B, A, q, dist, dist_param, bse = prepare_kyber(params)
     dim = B.nrows+1 #dimension of Kannan
 
@@ -231,9 +230,8 @@ def attack_on_kyber(params):
         param_sieve = SieverParams()
         param_sieve['threads'] = nthreads #10
         param_sieve['default_sieve'] = "bgj1" #"bgj1" "bdgl2"
-        # g6k = Siever(M, param_sieve)
 
-        #we do not use LatticeReduction here since we do not neccesarily
+        #we do not use lattice_reduction here since we do not neccesarily
         #want to run all the tours and can interupt after any given one.
         LR = LatticeReduction( M.B, threads_bkz=nthreads )
         for beta in range(max(BKZ_SIEVING_CROSSOVER,betapre-1),betamax+1):
@@ -242,19 +240,6 @@ def attack_on_kyber(params):
             round_time = time.perf_counter()-then_round
             slope = basis_quality(M)["/"]
             print(f"beta: {beta:}, done in: {round_time : 0.4f}, slope: {slope : 0.6f}, log r00: {log( M.get_r(0,0),2 )/2 : 0.5f} task_id = {seed}", flush=True)
-            """
-            for cntr0 in range(BKZ_MAX_LOOPS):
-                then_round=time.perf_counter()
-                pump_n_jump_bkz_tour(g6kdummy_tracer, beta, jump=1,
-                 dim4free_fun="default_dim4free_fun",
-                 extra_dim4free=0,
-                 pump_params={'down_sieve': False},)
-                round_time = time.perf_counter()-then_round
-                slope = basis_quality(M)["/"]
-                print(f"Sieve tour: {cntr0}, beta: {beta:}, done in: {round_time : 0.4f}, slope: {slope : 0.6f}, log r00: {log( g6k.M.get_r(0,0),2 )/2 : 0.5f} task_id = {seed}", flush=True)
-                sys.stdout.flush()  #flush after the BKZ call
-
-            """
             report["time"] += round_time
             
             M = LR.gso
@@ -308,7 +293,6 @@ def get_parser():
     return parser
 
 if __name__ == "__main__":
-    # path = "exp_folder/"
     isExist = os.path.exists(out_path)
     if not isExist:
         try:
@@ -348,9 +332,7 @@ if __name__ == "__main__":
                     "seed": [latnum,0],
                     "nthreads": nthreads
                 }
-                # n, q, dist, dist_param, ntar=inst_per_lat, seed=latnum
                 gen_and_dump_lwe(params)
-                # prepare_kyber(params)
 
     if RECOMPUTE_KYBER or RECOMPUTE_INSTANCE:
         pretasks = []
@@ -390,7 +372,6 @@ if __name__ == "__main__":
                 tasks.append( pool.apply_async(
                     attack_on_kyber, ( params, )
                     ) )
-                # attack_on_kyber, (n,q,dist,dist_param,betapre,betamax,5,[latnum,tstnum],nthreads)
 
 
     for t in tasks:

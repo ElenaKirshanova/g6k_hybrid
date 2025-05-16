@@ -67,8 +67,6 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
 
     G = g6k.M
     G.update_gso()
-    # bkz_performed = False
-    # LR = LatticeReduction( G.B, threads_bkz=nthreads )
     if dist=="binomial":
         dist_param = int(dist_param)
         distrib = centeredBinomial(dist_param)
@@ -88,7 +86,6 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
     overhead_tsieve = time.perf_counter()
     assert n_slicer_coord <= G.d, f"Too many slicer coords: {n_slicer_coord}>{G.d}"
 
-    # G = GSO.Mat( G.B, U=IntegerMatrix.identity(g6k.M.d,int_type="mpz"), UinvT=IntegerMatrix.identity(g6k.M.d,int_type="mpz"), float_type=ft )
     G = g6k.M
     g6k = Siever(G,param_sieve)
     print(g6k.M.d-delta)
@@ -111,7 +108,6 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
     gh_sub = gaussian_heuristic(G.r()[-n_slicer_coord:])
 
     print(f"Sieving-1 done in {perf_counter() - then}")
-    # lambda1 = (b0@b0)**0.5
 
     print(f"r / r = {(g6k.M.r()[-n_slicer_coord] / g6k.M.r()[-1])**0.5}")
     for (b, s, e) in bse:
@@ -143,10 +139,6 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
         B = IntegerMatrix.from_matrix(Binit)
 
         tracer = {}
-        # v = alg_3_debug(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=None)
-        # iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, eta, s, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
-        with open("progvar","wb") as file:
-            pickle.dump([n_slicer_coord,t,e,s,EPS2 * dist_sq_bnd, g6k.M.r(), gh_sub], file)
         iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, dist, dist_param, s, dist_sq_bnd=EPS2 * dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
         guess_cntr = 0
         sli_succ = False
@@ -243,7 +235,6 @@ if __name__=="__main__":
 
     n = args.n
     q = args.q
-    # dist, dist_param = "ternary", 1/6.
     dist, dist_param = args.dist, args.dist_param
     latnum = args.lats_per_dim
     n_guess_coord, n_slicer_coord = args.n_guess_coord, args.n_slicer_coord
@@ -275,7 +266,6 @@ if __name__=="__main__":
     for t in tasks:
             stats_dict_agr.update(t.get())
 
-    # print(ex_cntr, succ_cntr)
     print(stats_dict_agr)
 
     filename = f"tph_{n}_{dist}_{dist_param:0.4f}_{n_guess_coord}_{beta_pre}_{n_slicer_coord+delta_slicer_coord}.pkl"
