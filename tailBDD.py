@@ -255,5 +255,5 @@ if __name__ == '__main__':
     print(f"output: \n {output}")
 
     filename=f"tail_bdd_n{args.n}_b{args.beta}.pkl"
-    with open(filename,"wb") as file:
+    with open("./lwe_instances/reduced_lattices/"+filename,"wb") as file:
         pickle.dump(output,file)

@@ -272,7 +272,7 @@ def get_parser():
     "--lats_per_dim", default=1, type=int, help="Number of lattices."
     )
     parser.add_argument(
-    "--ns", default= "range(125,126,1)", type=str, help="String that evaluattes list of LWE dimations."
+    "--ns", default= "range(125,126,1)", type=str, help="String that evaluates list of LWE dimensions."
     )
     parser.add_argument(
     "--q", default=3329, type=int, help="LWE modulus"
@@ -309,7 +309,7 @@ if __name__ == "__main__":
     lats_per_dim = args.lats_per_dim
     inst_per_lat = args.inst_per_lat #10 #how many instances per A, q
     dist, dist_param = args.dist, args.dist_param
-    q = 3329
+    q = args.q
     ns = [n for n in eval( args.ns )]
     betapre,betamax = args.betapre, args.betamax
 

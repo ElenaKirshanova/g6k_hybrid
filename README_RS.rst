@@ -62,7 +62,7 @@ Reproducing Figure 1
 
 Reproducing Figure 2
 ---------------------
-To get the necessary data for figure reproduction, first reproduce the figure 1. Then copy ``lwe_histo.sage`` to the root folder of the repository. Then, execute:
+To get the necessary data for figure reproduction, first reproduce the figure 1. Then copy ``gen_figures/lwe_histo.sage`` to the root folder of the repository. Then, execute:
 
 .. code-block:: bash 
     
@@ -80,18 +80,43 @@ To get the necessary data for figure reproduction, run ``cvpp_exp.py`` as:
     python cvpp_exp.py --n 80 --betamax 55 --nlats 10 --ntests 10
 
 This will BKZ reduce 10 lattices and launch 3*11*10*10 experiments for 3 n_randomizations 11 approximation factors, 10 lattices with 10 instances per each one. 
-Once the experiments are finished, make the figures as:
+Then copy ``gen_figures/cvpp_graph.sage`` to the root folder of the repository. Once the experiments are finished, make the figures as:
 
 .. code-block:: bash 
     
     sage cvpp_graph.sage
-    
+
+
 The script will tell the names XXX.png the resulting plots are stored under.
 
 Reproducing Figure 5
 ---------------------
+To get the necessary data for figure reproduction, run
+.. code-block:: bash 
+    
+    python tailBDD.py --n 120 --beta 55 --Nlats 5 --ntests 5 --n_uniq_targets 10  --approx_factor 0.43 
 
+This will BKZ reduce 5 dimension-120 lattices and solve 5 Batch-Tail-BDD instances each consisting of 10 BDD instances.
+To get the figure 5, run:
 
+.. code-block:: bash 
+    
+    sage tailBDD.sage
+
+Algorithms
+====================
+#. ``hyb_attack_on_kyber.py`` -- implementation of Batched-Tail-BDD;
+#. ``test_slicer `` -- script for showcasing slicer; 
+#. ``lattice_reduction.py`` -- implementation of pump'n'jump BKZ;
+#. ``benchmark_slicer_our.py`` -- runs a benchmark of our slicer;
+#. ``cvpp_exp.py`` -- investigates CVP success rate w.r.t. the approximation factor and the number of rerandomizations;
+#. ``primal_kyber.py`` -- primal attack on LWE;
+#. ``preprocessing.py`` -- preprocessing for the hybrid attack on LWE;
+#. ``run_prog_hybrid.py`` -- hybrid attack on LWE (won't launch without preprocessing stage).
 
 Helper scripts
 ====================
+#. ``utils.py`` -- inner subroutines used across the repository;
+#. ``global_consts.py`` -- global constants used in algorithms;
+#. ``sample.py`` -- various distributions and samplers;
+#. ``discrete_gaussian.py`` -- discrete Gaussian sampler
