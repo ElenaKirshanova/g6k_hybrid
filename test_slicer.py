@@ -2,6 +2,7 @@ from fpylll import *
 FPLLL.set_random_seed(0x1337)
 from g6k.siever import Siever
 from g6k.siever_params import SieverParams
+import argparse
 from g6k.slicer import RandomizedSlicer
 from hybrid_estimator.batchCVP import batchCVPP_cost
 from utils import *
@@ -13,20 +14,46 @@ import numpy as np
 
 import time
 
+def get_parser():
+    parser = argparse.ArgumentParser(
+        description="Test run for slicer."
+    )
+    parser.add_argument(
+    "--approx_factor", default=0.95, type=float, help="CVP approx factor"
+    )
+    parser.add_argument(
+    "--nthreads", default=1, type=int, help="Threads per slicer."
+    )
+    parser.add_argument(
+    "--n", default=50, type=int, help="Lattice dimension"
+    )
+    parser.add_argument(
+    "--nexp", default=5, type=int, help="Number of experiments"
+    )
+    parser.add_argument(
+    "--betamax", default=30, type=int, help="BKZ blocksize"
+    )
+    parser.add_argument("--verbose", action="store_true", help="Increase output verbosity")
+   
+    return parser
+
 if __name__ == "__main__":
+    parser = get_parser()
+    args = parser.parse_args()
 
     slicer_interations = 140
     norm_slack = 1.01      #terminate slicer if norm_slack*||e_projected|| is found
-    approx_factor = 0.93
+    approx_factor = args.approx_factor
     nrand_param = 10
-    nthreads = 1
-    nexp = 2
-    verbose = True
+    nthreads = args.nthreads
+    nexp = args.nexp
+    verbose = args.verbose
     slicer_verbosity = True
 
 
     FPLLL.set_precision(200)
-    n, betamax, sieve_dim = 62, 53, 62
+    n, betamax,  = args.n, args.betamax
+    sieve_dim = n
     ft = "ld" if n<90 else ( "dd" if config.have_qd else "mpfr")
     # - - - try load a lattice - - -
     filename = f"bdgl2_n{n}_b{sieve_dim}.pkl"

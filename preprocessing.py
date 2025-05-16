@@ -7,6 +7,7 @@ from g6k.siever_params import SieverParams
 from utils import *
 from lattice_reduction import LatticeReduction
 from copy import deepcopy
+from primal_kyber import gen_and_dump_lwe
 
 try:
     from multiprocess import Pool  # you might need pip install multiprocess
@@ -171,6 +172,7 @@ def get_parser():
     parser.add_argument(
     "--sieve_dim_max_offset", default=1, type=int, help="he largest slicer will work on dim=prediceted beta + this offset."
     )
+    parser.add_argument("--recompute_instance", action="store_true", help="Recomputes instances. WARNING deletes previous instance irreversibly.")
     parser.add_argument("--verbose", action="store_true", help="Increase output verbosity")
     return parser
 
@@ -191,6 +193,24 @@ if __name__=="__main__":
     q = args.q
     output = []
     pool = Pool(processes = nworkers )
+
+    RECOMPUTE_INSTANCE = args.recompute_instance
+    RECOMPUTE_KYBER = True
+    if RECOMPUTE_INSTANCE:
+        print(f"Generating Kyber...")
+        for n in [pp[0] for pp in params]:
+            for latnum in range(lats_per_dim):
+                params_ = {
+                    "n": n,
+                    "q": q,
+                    "dist": dist,
+                    "dist_param": dist_param,
+                    "ntar": inst_per_lat,
+                    "seed": [latnum,0],
+                    "nthreads": nthreads
+                }
+                gen_and_dump_lwe(params_)
+
     tasks = []
     for param in params:
         for latnum in range(lats_per_dim):

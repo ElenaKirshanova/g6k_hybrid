@@ -289,6 +289,7 @@ def get_parser():
     parser.add_argument(
     "--betamax", default=60, type=int, help="Upper bound on the BKZ blocksize."
     )
+    parser.add_argument("--recompute_instance", action="store_true", help="Recomputes instances. WARNING deletes previous instance irreversibly.")
     parser.add_argument("--verbose", action="store_true", help="Increase output verbosity")
     return parser
 
@@ -315,8 +316,8 @@ if __name__ == "__main__":
     output = []
     pool = Pool( processes = nworkers )
     tasks = []
-    RECOMPUTE_INSTANCE = True
-    RECOMPUTE_KYBER = True
+    RECOMPUTE_INSTANCE = args.recompute_instance
+    RECOMPUTE_KYBER = False
     if RECOMPUTE_INSTANCE:
         print(f"Generating Kyber...")
         for n in ns:
