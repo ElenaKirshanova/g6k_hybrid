@@ -462,9 +462,9 @@ public:
 
     void print_statistics(std::ostream &os = std::cout)
     {
-                #ifdef COLLECT_STATISTICS_SLICER
-                std::cout << " - - - <STATISTIC> - - -" << std::endl;
-                #endif
+                //#ifdef COLLECT_STATISTICS_SLICER
+                //std::cout << " - - - <STATISTIC> - - -" << std::endl;
+                //#endif
 
                 if(collect_statistics_xorpopcnt)
                 {
@@ -531,9 +531,9 @@ public:
                     os << "iterations: " << get_stats_itercount_slicer();
                     os << "\n";
                 }
-                #ifdef COLLECT_STATISTICS_SLICER
-                std::cout << " - - - <END STATISTIC> - - -" << std::endl;
-                #endif
+                //#ifdef COLLECT_STATISTICS_SLICER
+                //std::cout << " - - - <END STATISTIC> - - -" << std::endl;
+                //#endif
     }
 
 };
