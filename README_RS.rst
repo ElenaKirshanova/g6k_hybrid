@@ -35,21 +35,43 @@ To test-run our randomized slicer, execute the script test_slicer.py.
 
 .. code-block:: bash 
     
-    python test_slicer.py TODO
+    python test_slicer.py -n 60 --betamax 55 --nexp 3 --approx_factor 0.99
 
-This example will generate an LWE instance of dim XXX, BKZ-reduce it with block size XXX, run siever on the full lattice (bdgl2 algorithm), generate XXX targets with approximation factor XXX, and execute Babai's algorithm from FPyLLL and the Randomized Slicer on the instance.
+This example will generate an LWE instance of dim 60, BKZ-reduce it with block size 55, run siever on the full lattice (bdgl2 algorithm), generate 3 targets with approximation factor 0.99, and execute Babai's algorithm from FPyLLL and the Randomized Slicer on the instance.
 It outputs the number of successful CVP runs for Babai and for the Slicer.
 
 
 Running the Hybrid attack
 ==========================
-To run the hybrid attack on LWE with parameters ``n=TODO, q=TODO``  first execute preprocessing
+
+Preprocessing
+--------------
+
+To run the hybrid attack on LWE with parameters ``n=130, q=3329`` and ``kappa=4`` (the number of guessed coordinates)  first execute preprocessing
 
 .. code-block:: bash 
     
-    python prepocessing.py TODO
+    python preprocessing.py --params "[(130, 4, 46)]" --q 3329 --dist "ternary" --dist_param 0.08333
 
-The script generates XXX different LWE matrices and XXX different ``b``'s for each LWE matrix with secret and error distribution 
+``--dist_param 0.08333`` corresponds to ternary secrets/errors of Hamming weight 1/6.
+
+The script terminates within a few minutes on a laptop. It creates a report file ``lwe_instances/reduced_lattices/report_prehyb_130_3329_ternary_0.8333_0_4_46_47_46.pkl"``
+
+Optional parameters:
+
+* ``beta_bkz_offset`` TODO (default ``1``)
+* ``sieve_dim_max_offset`` TODO (default ``1``)
+* ``recompute_instance`` TODO (default False)
+* TODO: add the new parameter
+
+Progressive Hybrid
+--------------
+
+Optional parameters:
+
+* ``n_slicer_coord`` TODO (default ``1``)
+* ``delta_slicer_coord`` TODO (default ``1``)
+* TODO: add the new parameter
 
 Running the Primal attack
 ==========================
@@ -61,11 +83,11 @@ To run the attack on LWE with parameters ``n=130, q=3329``, ternary error and se
     
     python primal_kyber.py --ns "range(130,131,1)" --q 3329 --dist "ternary" --dist_param 0.833 --betamax 60
 
-The experiments will terminate in several minutes with the output:
+The experiments will terminate in an hour on a laptop with the output dumped in a file ``lwe_instances/reduced_lattices/exp{[n]}_{q}_{dist}_{dist_param}.pkl``
 
 The additional flag ``inst_per_lat X`` will generate ``X`` LWE ``b``'s for the same LWE matrix ``A``, the flag ``lats_per_dim Y``will generate ``Y`` difference LWE matrices ``A``. 
 
-To parallelize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``.
+To parallelize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``. For central binomial secrets and errors with parameter X use ``--dist "binomial" --dist_param X``.
 
 
 
