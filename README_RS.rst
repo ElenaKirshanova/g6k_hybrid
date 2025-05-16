@@ -2,8 +2,8 @@
 The Randomized Slicer in the General Sieve Kernel (G6K) library
 ******************************
 
-The Randomized Slicer is a C++ and Python extension of the `G6K library<https://github.com/fplll/g6k>` that implements the batch-CVP algorithm from `Doulgerakis-Laarhoven-de Weger "Finding closest
-lattice vectors using approximate Voronoi cells."<https://eprint.iacr.org/2016/888.pdf>`
+The Randomized Slicer is a C++ and Python extension of the `G6K library<https://github.com/fplll/g6k>`_ that implements the batch-CVP algorithm from `Doulgerakis-Laarhoven-de Weger "Finding closest
+lattice vectors using approximate Voronoi cells."<https://eprint.iacr.org/2016/888.pdf>`_
 
 The code is based on BDGL implementation from `Ducas-Stevens-van Woerden "Advanced lattice  sieving on GPUs, with tensor cores"<https://eprint.iacr.org/2021/141.pdf>`
 
