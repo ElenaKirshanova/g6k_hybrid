@@ -1,6 +1,8 @@
 #! bin/bash
 
 # This script assumes that both conda and git are already installed.
+# Also, make sure to install libalglib as:
+# sudo apt install libalglib-dev
 # Tested on:
 # * * * Ubuntu-22.04 (via WSL2) * * * 
 
@@ -40,10 +42,14 @@ cp ../utils.py ./
 cp ../sample.py ./
 cp ../discretegauss.py ./
 
+# apt-get download libalglib-dev
+# dpkg -x libalglib-dev_*.deb ./libalglib
+
 git apply ./patch.patch
 
-# sudo apt install libalglib-dev
-conda install conda-forge::libglib
+
+
+
 conda install setuptools
 
 git clone https://github.com/cr-marcstevens/parallel-hashmap
