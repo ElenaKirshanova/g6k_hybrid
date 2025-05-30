@@ -8,13 +8,13 @@
 # conda create --name g6x  #(if g6x is nonexistent)
 # conda activate g6x
 
-sudo apt-get update && sudo apt install build-essential
-sudo apt-get install autotools-dev autoconf libtoolize
-sudo apt-get install g++
+conda install update 
+conda install install autotools-dev autoconf libtoolize
+conda install install g++
 
-sudo apt-get -y install libgmp10
-sudo apt-get install libmpfr-dev 
-sudo apt install libqd-dev
+conda install -y install libgmp10
+conda install install libmpfr-dev 
+conda install libqd-dev
 
 conda env list | grep g6x
 LATTICE_ENV_CHECK=$?
@@ -42,7 +42,8 @@ cp ../discretegauss.py ./
 
 git apply ./patch.patch
 
-sudo apt install libalglib-dev
+# sudo apt install libalglib-dev
+conda install conda-forge::libglib
 conda install setuptools
 
 git clone https://github.com/cr-marcstevens/parallel-hashmap
