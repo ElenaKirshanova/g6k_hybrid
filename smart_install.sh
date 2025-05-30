@@ -34,7 +34,7 @@ git reset --hard "442ae40"
 
 cp ../patch.patch ./
 cp ../benchmark_slicer_pump.py ./
-cp ../LatticeReduction.py ./
+cp ../lattice_reduction.py ./
 cp ../global_consts.py ./
 cp ../utils.py ./
 cp ../sample.py ./
