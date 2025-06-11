@@ -20,20 +20,23 @@ cdef class SlicerWW(object):
     def randomized_iterative_slice(self, target_yr, size_t samples, size_t max_entries_used=0):
         # assert(self.initialized)
         if max_entries_used == 0:
-            max_entries_used = self.dbsize
-        assert(max_entries_used <= self.dbsize)
+            max_entries_used = self._core.dbsize
+        assert(max_entries_used <= self._core.dbsize)
 
-        cdef np.ndarray t_yr = zeros( (self.n,), dtype=float32)
+        print(f"n: {self._core.n}")
+        print(f"dbsize: {self._core.dbsize}")
 
-        for i in xrange(self.n):
+        cdef np.ndarray t_yr = zeros( (self._core.n,), dtype=float32)
+
+        for i in xrange(self._core.n):
             t_yr[i] = target_yr[i]
 
         sig_on()
         self._core.randomized_iterative_slice( <float*> t_yr.data, max_entries_used, samples )
         sig_off()
 
-        return_yr = zeros( (self.n,), dtype=float32)
+        return_yr = zeros( (self._core.n,), dtype=float32)
 
-        for i in xrange(self.n):
+        for i in xrange(self._core.n):
             return_yr[i] = t_yr[i]
         return return_yr
