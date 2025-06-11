@@ -100,6 +100,7 @@ extensions = [
     Extension("g6k.siever", ["g6k/siever.pyx"], **kwds),
     Extension("g6k.siever_params", ["g6k/siever_params.pyx"], **kwds),
     Extension("g6k.slicer", ["g6k/slicer.pyx"], **kwds),
+    Extension("g6k.slicerww", ["g6k/slicerww.pyx"], **kwds),
 ]
 
 setup(

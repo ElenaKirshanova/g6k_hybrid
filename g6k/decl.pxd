@@ -375,3 +375,13 @@ cdef extern from "../kernel/slicer.h" nogil:
         void reset_stats()
 
 
+cdef extern from "../kernel/slicerww.h" nogil:
+
+    cdef cppclass SlicerWW:
+        SlicerWW(Siever &sieve, unsigned long int seed)
+        void randomized_iterative_slice( float* t_yr, size_t max_entries_used, size_t samples );
+
+        unsigned int n
+        size_t dbsize
+
+        
