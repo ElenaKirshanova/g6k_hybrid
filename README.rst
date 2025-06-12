@@ -53,7 +53,7 @@ For machines without sudo that will be:
     tar -xvzf alglib_4.0.0.orig.tar.gz -C ./alglib
     cd ./alglib
 
-Then the users without sudo should fix the `#include` blocks in `progressive_slicer_with_d4f.cpp` and `randomized_iterative_slicer.cpp` for `libalglib`. Change the prefixes of the paths to absolute paths to `/path/to/g6k_hybrid/alglib/alglib-cpp/`. 
+Then the users without sudo should fix the ``#include`` blocks in ``progressive_slicer_with_d4f.cpp`` and ``randomized_iterative_slicer.cpp`` for ``libalglib``. Change the prefixes of the paths to absolute paths to ``/path/to/g6k_hybrid/alglib/alglib-cpp/``. 
 
 Activate a conda environment.
 
@@ -65,7 +65,7 @@ Activate a conda environment.
 Then simply run the script that will fetch the `[sum25]` repository and install it inplace.
 
 .. code-block:: bash
-    
+
     source ./smart_install.sh
 
 
@@ -211,6 +211,9 @@ The script will output the name of the .png file with a plot.
 
 Reproducing Table 3
 ---------------------
+To compare our slicer against DLvW20 and summver, first install the [sum] slicer as per instructions in the installation section. Next, run ``benchmark_slicer_{xxx}`` for ``xxx = our, ww`` for this and DLvW20 slicers respectively. 
+For [sum] run ``benchmark_slicer_pump`` in ``cvp-g6k-cpu-solver``. This will create the ``cvp_comp`` directory that will contain the experiment data.
+
 Run ``aggregate_slicer_comparison.py`` in the terminal. The script will output the table.
 
 Algorithms
