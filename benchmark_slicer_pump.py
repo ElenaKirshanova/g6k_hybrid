@@ -157,7 +157,9 @@ if __name__ == "__main__":
     for tsk in tasks:
             results.append( tsk.get() )
 
-    filename = f"cvp_comp_{n}_{lat_num}_{inst_per_lat}_{betamax}_{appr_fact:0.4f}_pump.pkl"
+    path = f"../cvp_comp/pump/"
+    os.makedirs(path,exist_ok=True)
+    filename = path+f"cvp_comp_{n}_{lat_num}_{inst_per_lat}_{betamax}_{appr_fact:0.4f}.pkl"
     with open(filename,"wb") as file:
         pickle.dump(results, file)
     print(results)

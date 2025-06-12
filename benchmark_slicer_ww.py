@@ -3,7 +3,6 @@ from fpylll import *
 from g6k.siever import Siever
 from g6k.utils.stats import dummy_tracer
 from g6k.siever_params import SieverParams
-# from g6k.algorithms.pro_randslicer import pro_randslicer
 from g6k.algorithms.pump import pump
 from math import log, ceil
 
@@ -14,7 +13,9 @@ import os, time
 FPLLL.set_random_seed(0x1337)
 from g6k.siever import SaturationError
 from g6k.siever_params import SieverParams
-from g6k.slicer import RandomizedSlicer
+# 
+from g6k.slicerww import SlicerWW
+# from g6k.slicer import RandomizedSlicer
 
 import numpy as np
 from utils import *
@@ -22,9 +23,7 @@ import pickle
 from hybrid_estimator.batchCVP import batchCVPP_cost
 from multiprocessing import Pool
 
-from cvpp_exp import gen_cvpp_g6k
 from lattice_reduction import LatticeReduction
-# def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705,seed=0,threads=1,verbose=False):
 
 verbose = True
 
@@ -66,6 +65,7 @@ def gen_cvp_chal_w_bkz(n, inst_per_lat, betamax=50, apprr_fact=0.999):
     return B, cb
 
 def solve_cvp(B, t, params):
+    nrand = 1000
     sieve_dim =  B.nrows
     nrand_fact = params["nrand_fact"]
 
@@ -90,7 +90,6 @@ def solve_cvp(B, t, params):
     g6k.update_gso(0, n)
     f=0
     pump(g6k, dummy_tracer, 0, g6k.r, f, saturation_error="ignore", verbose=False)
-    # print( f"context: {g6k.ll, g6k.l, g6k.r}" )
     while not g6k.l==0:
         g6k.extend_left()
         g6k()
@@ -100,8 +99,6 @@ def solve_cvp(B, t, params):
     Tpre_slice = time.perf_counter()
     gh = gaussian_heuristic(g6k.M.r())
     t_gs = to_canonical_scaled(g6k.M,t,offset=g6k.M.d,scale_fact=gh)
-    slicer = RandomizedSlicer(g6k)
-    slicer.set_nthreads(1) #one since the slicer we are comparing against is not parralelized
 
     G = g6k.M
     dim = G.d
@@ -110,32 +107,11 @@ def solve_cvp(B, t, params):
     t_gs_non_scaled = G.from_canonical(t)[dim-sieve_dim:]
     shift_babai_c =  list( G.babai( list(t_gs_non_scaled), start=dim-sieve_dim, gso=True) )
     shift_babai = G.B.multiply_left( (dim-sieve_dim)*[0] + list( shift_babai_c ) )
-    t_gs_reduced = from_canonical_scaled( G,np.array(t, dtype=DTYPE)-shift_babai,offset=sieve_dim,scale_fact=gh ) #this is the actual reduced target
+    t_gs_reduced = from_canonical_scaled( G,np.array(t)-shift_babai,offset=sieve_dim,scale_fact=gh ) #this is the actual reduced target
+
+    g6y = SlicerWW( g6k )
     
-    nrand_, _ = batchCVPP_cost(g6k.M.d,1,len(g6k)**(1./g6k.M.d),1)
-    nrand = ceil(nrand_fact*(1./nrand_)**sieve_dim)
-    slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
-    blocks = 2 # should be the same as in siever
-    blocks = min(3, max(1, blocks))
-    blocks = min(int(sieve_dim / 28), blocks)
-    sp = SieverParams()
-    N = sp["db_size_factor"] * sp["db_size_base"] ** sieve_dim
-    buckets = sp["bdgl_bucket_size_factor"]* 2.**((blocks-1.)/(blocks+1.)) * sp["bdgl_multi_hash"]**((2.*blocks)/(blocks+1.)) * (N ** (blocks/(1.0+blocks)))
-    buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
-    buckets = max(buckets, 2**(blocks-1))
-
-    slicer.set_proj_error_bound(params["proj_err_bound"])
-    slicer.set_max_slicer_interations(params["max_slicer_interations"])
-    slicer.set_Nt(1)
-    slicer.set_saturation_scalar(params["saturation_scalar"])
-    slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], True) #slicer_verbosity
-
-    iterator = slicer.itervalues_cdb_t()
-    out_gs_reduced = None
-    for tmp, _ in iterator:
-        out_gs_reduced = np.array(tmp)  #cdb[0]
-        break
-    assert not( out_gs_reduced is None ), "itervalues_cdb_t is empty"
+    out_gs_reduced = g6y.randomized_iterative_slice([float(tt) for tt in t_gs_reduced],samples=nrand)
 
     out = to_canonical_scaled( G,np.concatenate( [(G.d-sieve_dim)*[0], out_gs_reduced] ), scale_fact=gh )
     bab_01 = np.round( np.array( G.babai( np.array(t)-out ) ) )
@@ -155,7 +131,7 @@ def run_experiment(B,cb,myparams,expid):
     return [nrand, Tpump, Tslice, db_size, dt, gh]
 
 if __name__ == "__main__":
-    n, lat_num, inst_per_lat, betamax, appr_fact = 64, 2, 5, 50, 0.999
+    n, lat_num, inst_per_lat, betamax, appr_fact = 64, 2, 2, 50, 0.999
     n_workers = 2
     myparams = {
     "max_slicer_interations": 150,
@@ -166,6 +142,7 @@ if __name__ == "__main__":
     "nthreads_sieve": 5,
     }
 
+    os.makedirs("./saved_lattices",exist_ok=True)
     filename = f"./saved_lattices/cvp_lats_{n}_{lat_num}_{inst_per_lat}_{betamax}_{appr_fact:0.4f}.pkl"
     L = []
     try:
@@ -179,16 +156,6 @@ if __name__ == "__main__":
             L.append( [B,cb] )
         with open(filename,"wb") as file:
             pickle.dump( L, file )
-
-    # tasks = []
-    # results = []
-    # for B, cbs in L:
-    #     for cb in cbs: 
-    #         c, b = cb['c'], cb['b']
-    #         close_vector, nrand, Tpump, Tslice, db_size, gh = solve_cvp(B,cb['b'], myparams)
-    #         v = B.multiply_left( c )
-    #         dt = (sum([(b[i] - close_vector[i])**2 for i in range(len(b))]))
-    #         results.append( [nrand, Tpump, Tslice, db_size, dt, gh] )
     
     print("Running experiments.", flush=True)
     pool = Pool(processes=n_workers)
@@ -208,7 +175,7 @@ if __name__ == "__main__":
     for tsk in tasks:
             results.append( tsk.get() )
 
-    path = f"cvp_comp/our/"
+    path = f"cvp_comp/ww/"
     os.makedirs(path,exist_ok=True)
     filename = path+f"cvp_comp_{n}_{lat_num}_{inst_per_lat}_{betamax}_{appr_fact:0.4f}.pkl"
     with open(filename,"wb") as file:
