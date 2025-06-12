@@ -31,9 +31,15 @@ class LatticeReduction:
     else:
       float_type = "mpfr"
 
-    M = GSO.Mat(B, float_type=float_type,
-      U=IntegerMatrix.identity(B.nrows, int_type=B.int_type),
-      UinvT=IntegerMatrix.identity(B.nrows, int_type=B.int_type))
+    try:
+      M = GSO.Mat(B, float_type=float_type,
+        U=IntegerMatrix.identity(B.nrows, int_type=B.int_type),
+        UinvT=IntegerMatrix.identity(B.nrows, int_type=B.int_type))
+    except ValueError:
+       float_type = "dd"
+       M = GSO.Mat(B, float_type=float_type,
+        U=IntegerMatrix.identity(B.nrows, int_type=B.int_type),
+        UinvT=IntegerMatrix.identity(B.nrows, int_type=B.int_type))
 
     M.update_gso()
 
