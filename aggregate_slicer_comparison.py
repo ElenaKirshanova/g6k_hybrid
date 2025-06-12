@@ -108,5 +108,8 @@ if __name__ == "__main__":
     # ).replace("0.0000", "t").replace("0.0000", "approx", 1))
 
     for n in sorted( D_our.keys() ):
-        t1, approx1, t2, approx2, t3, approx3  = D_our[n]["avg_Tslice"], D_our[n]["avg_dt_over_gh"],D_ww[n]["avg_Tslice"], D_ww[n]["avg_dt_over_gh"],D_pump[n]["avg_Tslice"], D_pump[n]["avg_dt_over_gh"],
-        print(fmt.format(n, t1, approx1, t2, approx2, t3, approx3))
+        try:
+            t1, approx1, t2, approx2, t3, approx3  = D_our[n]["avg_Tslice"], D_our[n]["avg_dt_over_gh"],D_ww[n]["avg_Tslice"], D_ww[n]["avg_dt_over_gh"],D_pump[n]["avg_Tslice"], D_pump[n]["avg_dt_over_gh"],
+            print(fmt.format(n, t1, approx1, t2, approx2, t3, approx3))
+        except KeyError: #incomplete data
+            pass
