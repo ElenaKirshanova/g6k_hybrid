@@ -66,6 +66,7 @@ def gen_cvp_chal_w_bkz(n, inst_per_lat, betamax=50, apprr_fact=0.999):
 def solve_cvp(B, t, params):
     sieve_dim =  B.nrows
     nrand_fact = params["nrand_fact"]
+    n = sieve_dim
 
     ft = "ld" if n<50 else ( "dd" if config.have_qd else "mpfr")
     G=GSO.Mat( B, float_type=ft,
