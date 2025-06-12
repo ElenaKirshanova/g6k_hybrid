@@ -5,7 +5,7 @@ The Randomized Slicer in the General Sieve Kernel (G6K) library
 The Randomized Slicer is a C++ and Python extension of the `G6K library <https://github.com/fplll/g6k>`_ that implements the batch-CVP algorithm from Doulgerakis-Laarhoven-de Weger `"Finding closest
 lattice vectors using approximate Voronoi cells" <https://eprint.iacr.org/2016/888.pdf>`_.
 
-The code is based on BDGL implementation from Ducas-Stevens-van Woerden `"Advanced lattice  sieving on GPUs, with tensor cores" <https://eprint.iacr.org/2021/141.pdf>`_
+The code is based on BDGL implementation from Ducas-Stevens-van Woerden `"Advanced lattice  sieving on GPUs, with tensor cores" <https://eprint.iacr.org/2021/141.pdf>`_.
 
 Building the library
 ====================
@@ -23,7 +23,7 @@ You will need the `G6K library <https://github.com/fplll/g6k>`_. Building on Lun
 On systems with co-existing python2 and 3, you can force a specific version installation using ``PYTHON=<pythoncmd> ./boostrap.sh`` instead.
 The number of parallel compilation jobs can be controlled with `-j #`.
 
-Fetching and Installing the `[sum25] <https://github.com/Summwer/cvp-g6k-cpu-solver>` Slicer (Ubuntu)
+Fetching and Installing the `[sum25] <https://github.com/Summwer/cvp-g6k-cpu-solver>`_ Slicer (Ubuntu only)
 -----------------------
 
 Install conda as a prerequisite. For example, as follows:
@@ -43,19 +43,7 @@ This implementation of slicer relies on `libalglib` which can be installed on Ub
 
     sudo apt-get install libalglib-dev
 
-For machines without sudo that will be:
-
-.. code-block:: bash
-
-    brew install wget
-    wget http://archive.ubuntu.com/ubuntu/pool/universe/a/alglib/alglib_4.0.0.orig.tar.gz
-    mkdir ./alglib
-    tar -xvzf alglib_4.0.0.orig.tar.gz -C ./alglib
-    cd ./alglib
-
-Then the users without sudo should fix the ``#include`` blocks in ``progressive_slicer_with_d4f.cpp`` and ``randomized_iterative_slicer.cpp`` for ``libalglib``. Change the prefixes of the paths to absolute paths to ``/path/to/g6k_hybrid/alglib/alglib-cpp/``. 
-
-Activate a conda environment.
+Activate the conda environment.
 
 .. code-block:: bash
 
@@ -150,6 +138,7 @@ Reproducing the experiments from the paper
 Reproducing Figure 1
 ---------------------
 To reproduce Figure 1:
+
 * perform the primal attack as described above,
 * perform the hybrid attack as describe above (for an appropriate distribution (binomial and/or ternary).
 
@@ -211,10 +200,10 @@ The script will output the name of the .png file with a plot.
 
 Reproducing Table 3
 ---------------------
-To compare our slicer against DLvW20 and summver, first install the [sum] slicer as per instructions in the installation section. Next, run ``benchmark_slicer_{xxx}`` for ``xxx = our, ww`` for this and DLvW20 slicers respectively. 
-For [sum] run ``benchmark_slicer_pump`` in ``cvp-g6k-cpu-solver``. This will create the ``cvp_comp`` directory that will contain the experiment data.
+To compare our slicer against DLvW20 and [sum25], first install the [sum25] slicer as per instructions in the installation section. Next, run ``benchmark_slicer_{xxx}`` for ``xxx = our, ww`` for this and DLvW20 slicers respectively. 
+For [sum25] run ``benchmark_slicer_pump`` in the ``cvp-g6k-cpu-solver`` subdirectory. This will create the ``cvp_comp`` directory that will contain the experiment data.
 
-Run ``aggregate_slicer_comparison.py`` in the terminal. The script will output the table.
+Run ``aggregate_slicer_comparison.py`` in the terminal. The script will output Table 3.
 
 Algorithms
 ====================
