@@ -1,25 +1,16 @@
 ******************************
-The General Sieve Kernel (G6K)
+The Randomized Slicer in the General Sieve Kernel (G6K) library
 ******************************
 
-.. image:: https://github.com/fplll/g6k/workflows/Tests/badge.svg
-    :target: https://github.com/fplll/g6k/actions?query=workflow%3ATests
+The Randomized Slicer is a C++ and Python extension of the `G6K library <https://github.com/fplll/g6k>`_ that implements the batch-CVP algorithm from Doulgerakis-Laarhoven-de Weger `"Finding closest
+lattice vectors using approximate Voronoi cells" <https://eprint.iacr.org/2016/888.pdf>`_.
 
-G6K is a C++ and Python library that implements several Sieve algorithms to be used in more advanced lattice reduction tasks. It follows the stateful machine framework from: 
-
-Martin R. Albrecht and Léo Ducas and Gottfried Herold and Elena Kirshanova and Eamonn W. Postlethwaite and Marc Stevens, 
-The General Sieve Kernel and New Records in Lattice Reduction.
-
-The article is available `in this repository <https://github.com/fplll/g6k/blob/master/article.pdf>`__ and on `eprint <https://eprint.iacr.org/2019/089>`__ .
-
+The code is based on BDGL implementation from Ducas-Stevens-van Woerden `"Advanced lattice  sieving on GPUs, with tensor cores" <https://eprint.iacr.org/2021/141.pdf>`_
 
 Building the library
 ====================
 
-Usual Installation
------------------------
-
-You will need the current master of FPyLLL. See ``bootstrap.sh`` for creating (almost) all dependencies from scratch:
+You will need the `G6K library <https://github.com/fplll/g6k>`_. Building on Lunix usually works by running ``bootstrap.sh`` (see comprehensive instruction at the `G6K repository <https://github.com/fplll/g6k>`_):
 
 .. code-block:: bash
 
@@ -31,28 +22,6 @@ You will need the current master of FPyLLL. See ``bootstrap.sh`` for creating (a
 
 On systems with co-existing python2 and 3, you can force a specific version installation using ``PYTHON=<pythoncmd> ./boostrap.sh`` instead.
 The number of parallel compilation jobs can be controlled with `-j #`.
-
-If building via ```./bootstrap.sh``` fails, then the script will return an error code. 
-The error codes are documented in ```bootstrap.sh.```
-
-Otherwise, you will need fplll and fpylll already installed and build the G6K Cython extension like so:
-
-.. code-block:: bash
-
-    pip install Cython
-    pip install -r requirements.txt
-    python setup.py build_ext --inplace [ -j # ]
-
-This builds G6K **in place**. Alternatively, you can skip ```--inplace``` and run ```python setup.py install``` as usual after building.
-    
-It's possible to alter the C++ kernel build configuration as follows:
-
-.. code-block:: bash
-
-    make clean
-    ./configure [opts...]           # e.g. opts: --enable-native --enable-templated-dim --with-max-sieving-dim=128
-                                    # see ./configure --help for more options
-    python setup.py build_ext [ -j # ]
 
 Fetching and Installing the `[sum25] <https://github.com/Summwer/cvp-g6k-cpu-solver>` Slicer (Ubuntu)
 -----------------------
@@ -91,198 +60,231 @@ Then simply run the script that will fetch the `[sum25]` repository and install 
 .. code-block:: bash
     source ./smart_install.sh
 
-Tests
-=====
+
+Running RandomizedSlicer
+====================
+To test-run our randomized slicer, execute the script test_slicer.py
+
+.. code-block:: bash 
+    
+    python test_slicer.py --n 60 --betamax 55 --nexp 3 --approx_factor 0.99
+
+This example will generate an LWE instance of dim 60, BKZ-reduce it with block size 55, run siever on the full lattice (bdgl2 algorithm), generate 3 targets with approximation factor 0.99, and execute Babai's algorithm from FPyLLL and the Randomized Slicer on the generated instances.
+It outputs the number of successful CVP runs for Babai and for the Slicer alongside with the solutions.
+
+
+Running the Hybrid attack
+==========================
+
+Preprocessing
+--------------
+
+To run the hybrid attack on LWE with parameters ``n=130, q=3329`` and ``kappa=4`` (the number of guessed coordinates)  first execute preprocessing
+
+.. code-block:: bash 
+    
+    python preprocessing.py --params "[(130, 4, 46)]" --q 3329 --dist "ternary" --dist_param 0.08333 --recompute_instance
+
+``--dist_param 0.08333`` corresponds to ternary secrets/errors of Hamming weight 1/6. ``params`` is a list of triples (n, n_guess_coordinates, bkzbeta). The preprocessing will iterate through this list.
+
+The script terminates within a few minutes on a laptop. It creates a report file ``lwe_instances/reduced_lattices/report_prehyb_130_3329_ternary_0.08333_0_4_46_47_46.pkl"``
+
+The additional flag ``inst_per_lat X`` will generate ``X`` LWE ``b``'s for the same LWE matrix ``A``, the flag ``lats_per_dim Y``will generate ``Y`` difference LWE matrices ``A``. 
+
+To parallelize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``. For central binomial secrets and errors with parameter X use ``--dist "binomial" --dist_param X``.
+
+Optional parameters:
+
+* ``beta_bkz_offset`` BKZ-beta reduced bases will be computed for beta in [bkzbeta,...,bkzbeta+beta_bkz_offset] where bkzbeta is defined by the current triple from ``params`` (default ``1``)
+* ``sieve_dim_max_offset`` sieving will take place in dimensions up to bkzbeta + sieve_dim_max_offset (default ``1``)
+* ``nsieves`` sieving will take place in dimensions starting from bkzbeta + sieve_dim_max_offset - nsieves (default ``1``)
+* ``recompute_instance`` recomputes new LWE instances (default False). Execute with this flag if LWE instance was not generated before
+
+Progressive Hybrid
+--------------
+
+Run the hybrid attack after the preprocessing step above is finished like so
+
+.. code-block:: bash 
+
+    python run_prog_hyb.py --n 130 --q 3329 --dist "ternary" --dist_param 0.0833 --n_guess_coord 4
+
+The parameter ``--n_guess_coord`` should be identical to the second parameter in ``--params`` for ``preprocessing.py``.
+
+Optional parameters:
+
+* ``n_slicer_coord`` the minimal slicer dimension
+* ``beta_pre`` BKZ blocksize the data was preprocessed with 
+* ``delta_slicer_coord``  an integer defining the upper bound on the slicer dimension as n_slicer_coord+delta_slicer_coord (default ``1``)
+
+Running the Primal attack
+==========================
+For the sake of comparison with the hybrid attack, we implemented the primal attack on Kyber (Kannan's embedding) in ``primal_kyber.py``
+
+To run the attack on LWE with parameters ``n=130, q=3329``, ternary error and secret distribution with sparsity parameter 0.08333 and maximum BKZ blocksize parameter 60, execute
+
+.. code-block:: bash 
+    
+    python primal_kyber.py --ns "range(130,131,1)" --q 3329 --dist "ternary" --dist_param 0.0833 --betamax 60 --recompute_instance
+
+The experiments will terminate in several minutes on a laptop with the output dumped in a file ``lwe_instances/reduced_lattices/exp[130]_3329_ternary_0.08330.pkl``
+
+The additional flag ``inst_per_lat X`` will generate ``X`` LWE ``b``'s for the same LWE matrix ``A``, the flag ``lats_per_dim Y``will generate ``Y`` difference LWE matrices ``A``. 
+
+To parallelize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``. For central binomial secrets and errors with parameter X use ``--dist "binomial" --dist_param X``.
+
+
+
+Reproducing the experiments from the paper
+====================
+
+
+Reproducing Figure 1
+---------------------
+To reproduce Figure 1:
+* perform the primal attack as described above,
+* perform the hybrid attack as describe above (for an appropriate distribution (binomial and/or ternary).
+
+Depending on the distribution considered, copy ``gen_figures/aggr_attacks_{XXX}.sage`` to the root directory where XXX is ``binom`` for binomial distribution, ``sparse`` for Ternary(1/6) and ``ternary`` for Ternary(1/3).
+
+Run the corresponding script:
+
+.. code-block:: bash 
+    
+    sage aggr_attacks_{XXX}.sage
+
+The script will output the name of the .png file with the plot. 
+
+Reproducing Figure 2
+---------------------
+To get the necessary data for figure reproduction, run the hybrid attack as explained above. Copy ``gen_figures/lwe_histo.sage`` to the root folder of the repository. Then, execute:
+
+.. code-block:: bash 
+    
+    sage lwe_histo.sage
+
+The script will output the name of the .png file with a plot. 
+
+Reproducing Figure 4
+---------------------
+To get the necessary data for figure reproduction, run ``cvpp_exp.py`` as:
+
+.. code-block:: bash 
+    
+    python cvpp_exp.py --n 70 --betamax 55 --nlats 10 --ntests 10
+    python cvpp_exp.py --n 80 --betamax 55 --nlats 10 --ntests 10
+
+This will BKZ reduce 10 lattices and launch 3*11*10*10 experiments for 3 n_randomizations ([1, 5, 10]) 11 approximation factors ([0.9, ..., 1.0]), 10 lattices with 10 instances per each lattice. 
+Then copy ``gen_figures/cvpp_graph.sage`` to the root folder of the repository. Once the experiments are finished, the figures will be generated by running:
+
+.. code-block:: bash 
+    
+    sage cvpp_graph.sage
+
+
+The script will output the name of the .png file with a plot. 
+
+Reproducing Figure 5
+---------------------
+To get the necessary data for figure reproduction, run
+
+.. code-block:: bash 
+    
+    python tailBDD.py --n 120 --beta 55 --Nlats 5 --ntests 5 --n_uniq_targets 10  --approx_factor 0.43 
+
+This will BKZ reduce 5 dimension-120 lattices and solve 5 Batch-Tail-BDD instances each consisting of 10 BDD instances.
+To get Figure 5, run:
+
+.. code-block:: bash 
+    
+    sage tailBDD.sage
+
+The script will output the name of the .png file with a plot. 
+
+Reproducing Table 3
+---------------------
+Run ``aggregate_slicer_comparison.py`` in the terminal. The script will output the table.
+
+Algorithms
+====================
+#. ``hyb_attack_on_kyber.py`` -- implementation of Batched-Tail-BDD;
+#. ``test_slicer.py`` -- script for showcasing slicer; 
+#. ``lattice_reduction.py`` -- implementation of pump'n'jump BKZ;
+#. ``benchmark_slicer_our.py`` -- runs a benchmark on various lattices for our slicer;
+#. ``cvpp_exp.py`` -- investigates CVP success rate w.r.t. the approximation factor and the number of rerandomizations;
+#. ``tailBDD.sage`` -- investigates Batch-Tail-BDD success rate for our slicer; 
+#. ``primal_kyber.py`` -- primal attack on LWE;
+#. ``preprocessing.py`` -- preprocessing for the hybrid attack on LWE;
+#. ``run_prog_hybrid.py`` -- hybrid attack on LWE (won't launch without preprocessing stage).
+
+Helper scripts
+====================
+#. ``utils.py`` -- inner subroutines used across the repository;
+#. ``global_consts.py`` -- global constants used in algorithms;
+#. ``sample.py`` -- various distributions and samplers;
+#. ``discrete_gaussian.py`` -- discrete Gaussian sampler
+
+
+-----------------------------------------------------------------------------------------------------------------
+
+A workaround to solve issues building on ARM-Macs (also see `Issue #128 <https://github.com/fplll/g6k/issues/128>`_)
+-----------------------------------------------------------------------------------------------------------------
+
+If you have  g++ compiler installed from homebrew you may have issues building the code. If your only compiler is the one provided by Apple, you should be able to skip some of the steps.
+
+1. Create conda environment
+
+.. code-block:: bash
+
+    conda create --name g6x
+    conda activate g6x
+
+2. Install required packages (see requirements.txt)
+
+.. code-block:: bash
+
+    conda install fpylll cython cysignals flake8 ipython numpy begins pytest requests scipy multiprocessing-logging matplotlib autoconf automake libtool
+
+3. Clone the g6x git repo
+
+.. code-block:: bash
+
+    git clone git@github.com:fplll/g6k.git
+
+4. Checkout arm-fixes branch
+
+.. code-block:: bash
+
+    git checkout --track origin/arm-fixes
+
+5. Add modifications to file g6x/siever.pyx.
+
+Change ``def insert_best_lift(self, scoring=(lambda index, nlen, olen, aux: True), aux=None):`` (line 1664)
+to  ``def insert_best_lift(self, scoring=None, aux=None):`` . And inside this function (right the Example is finished) add
+
+.. code-block:: bash
+
+    if scoring==None:
+          scoring = lambda index, nlen, olen, aux: True
+
+6. Attempt to build the code
+
+.. code-block:: bash
+
+    python setup.py build_ext --inplace
+
+7. In case a compiler other than Apple’s clang is used and building fails, use Apple’s clang. Otherwise, skip the following three steps and execute tests
+
+.. code-block:: bash
+    make clean
+    ./configure CXX=/usr/bin/g++
+    python setup.py build_ext --inplace
+
+8. Check is building succeeded by executing tests
 
 .. code-block:: bash
 
     python -m pytest
 
 
-Gathering test coverage
------------------------
 
-Uncomment the line ``extra_compile_args += ["-DCYTHON_TRACE=1"]`` in ``setup py.`` and recompile. Then run
-
-.. code-block:: bash
-
-    py.test --cov=g6k
-
-
-Reproducing experiments of the paper for the command line
-=========================================================
-
-3-sieve (Sec 5.1)
------------------
-
-To recreate Figure 2, run (if you have 26 threads, otherwise change ``--threads`` and, possibly, decrease the dimension):
-
-.. code-block:: bash
-
-    python ./full_sieve.py 100 --sieve hk3 --seed 23 --trials 2 --threads 26 --db_size_base 1.140174986570044 1.1414898159861084 1.1428031326523391 1.1441149417781413 1.14542524854309 1.146734058097168 1.1480413755610026 1.1493472060 1.153255825912013 1.154555758722808 1.1547005383
-
-The whole experiment took ~15 h. If you do not want to wait that long, decrease the dimension. 
-*Note* : Asymptotically, one would need to adjust the `saturation_radius` accordingly. However, at these dimensions, the default `db_size_factor` was large enough to accomodate saturation in practce.
-
-
-Exact-SVP (Sec 6.1)
--------------------
-
-Before benchmarking for exact-SVP, one must first determine the length of the shortest vector. To do
-so on 3 lattices in each dimensions d ∈ {50, 52, 54, 56, 58}:
-
-.. code-block:: bash
-
-  python ./svp_exact_find_norm.py 50 -u 60 --workers 4 --challenge-seed 0 1 2
-
-This will run 4 independent tasks in parrallel, and takes about 1 minute. Challenges will be
-downloaded from https://www.latticechallenge.org/ if not already present.
-
-Then, run and obtain averaged timing:
-
-.. code-block:: bash
-
-    python ./svp_exact.py 50 -u 60 --workers 3 --challenge-seed 0 1 2
-
-Which will take around 10 seconds. To compare several algorithms, and average over 5 trials on each of the 3 lattices for d=50, you can run:
-
-.. code-block:: bash
-
-    python ./svp_exact.py 50 --workers 3 --trials 5 --challenge-seed 0 1 2 --svp/alg workout enum
-
-
-SVP-challenge (Sec 6.2)
------------------------
-
-You can here run a single instance on multiple cores, for example:
-
-.. code-block:: bash
-
-    python ./svp_challenge.py 100 --threads 4
-
-The above may take between half a minute and 10 minutes depending on how lucky you are
-
-
-BKZ (Sec 6.3)
--------------
-
-To recreate the experiments in the paper run:
-
-.. code-block:: bash
-
-    python bkz.py 180 --bkz/betas 60:95:1 --bkz/pre_beta 59 --trials 8 --workers 8
-    python bkz.py 180 --bkz/betas 60:93:1 --bkz/pre_beta 59 --trials 8 --workers 8 --bkz/extra_d4f 12
-    python bkz.py 180 --bkz/betas 60:97:1 --bkz/pre_beta 59 --trials 8 --workers 8 --bkz/extra_d4f 12 --bkz/jump 3
-    python bkz.py 180 --bkz/betas 60:85:1 --bkz/pre_beta 59 --trials 8 --workers 8 --bkz/alg naive
-    python bkz.py 180 --bkz/betas 60:82:1 --bkz/pre_beta 59 --trials 8 --workers 8 --bkz/alg fpylll
-
-
-LWE (Sec 6.4)
--------------
-
-To automatically attempt to solve a Darmstadt LWE Challenge (n, alpha) run:
-
-.. code-block:: bash
-
-    python lwe_challenge.py n --lwe/alpha alpha
-
-
-Other CLI programs and commands
-===============================
-
-It is also possible ot ask for HKZ reduction with hkz.py and hkz_maybe.py; the former really tries hard to get a HKZ basis (with no formal guarentees though) while the latter is providing something close to a HKZ basis significantly significantly faster than the former.
-
-Other options:
-Each of the parameters PARAM listed in g6k/siever_param.pyx can be set-up to a value VAL from the command line
-
-.. code-block:: bash
-
-        --PARAM VAL
-
-Though some of them may be overwritten by the call chain. A subset of reasonable parameter to play with are:
-
-.. code-block:: python
-
-        threads                         # Number of threads collaborating in a single g6k instance. Default=1
-        sample_by_sums                  # When increasing the db size, do that aggressively by sampling vectors as sums of existing vectors. Default=True
-        otf_lift                        # Lift vectors on the fly; slower per sieve, but highter probability to find a short vector in the lift context. Default=True
-        lift_radius                     # Bound (relative to squared-GH) to try to lift a vector on the fly. Default=1.7
-        saturation_ratio                # Stop the sieve when this ratio of vector has been found compared to the expected number of vector. Default=.5 
-        saturation_radius               # Define the ball square-radius for the saturation_ratio condition. Default=1.333333333
-        dual_mode                       # Implicitly run all operations on the dual-basis (in reversed order).
-
-Other parameters specific to subprograms SUBPRG∊{pump, workout, bkz} can be set-up to a value VAL form the CLI by adding the option
-
-.. code-block:: bash
-
-        --SUBPRG/PARAM VAL
-
-One can also specify a set of values, or a range of value, to iterate over
-
-.. code-block:: bash
-
-
-        --SUBPRG/PARAM VAL0 VAL1 ... VALx
-        --SUBPRG/PARAM MIN_VAL~MAX_VAL
-        --SUBPRG/PARAM MIN_VAL~MAX_VAL~STEP_VAL
-
-One can find all the available option by browsing through the programs in the g6k/algorithms/ subdirectory.
-
-It is also possible to plot or to output the so called `profile', namely the logarithmic plot of the Gram-Schmidt norms, with the option
-
-.. code-block:: bash
-
-        --profile filename.csv      #exporting raw data as column seperated values
-        --profile filename.EXT      #for EXT∊{png,pdf,...} plot in a file, requires matplotlib
-        --profile show              #plot in a pop-up window, requires matplotlib
-
-
-Interactive use of G6K from Python
-==================================
-
-General Sieving Kernel. We start by importing the siever and FPYLLL
-
-.. code-block:: python
-
-    >>> from fpylll import IntegerMatrix, LLL, FPLLL
-    >>> from g6k import Siever
-
-Construct a challenge instance
-
-.. code-block:: python
-
-    >>> FPLLL.set_random_seed(0x1337)
-    >>> A = IntegerMatrix.random(50, "qary", k=25, bits=20)
-    >>> A = LLL.reduction(A)
-
-Construct the instance
-
-.. code-block:: python
-
-    >>> g6k = Siever(A)
-    >>> g6k.initialize_local(0, 0, 50)
-    >>> g6k(alg="gauss")
-
-We recover the shortest vector found. Best lift returns the index, the squared norm and the vector expressed in base `A`:
-
-.. code-block:: python
-
-    >>> i, norm, coeffs = g6k.best_lifts()[0]
-    >>> l = int(round(norm))
-    >>> l < 3710000
-    True
-
-To test the answer we compute:
-
-.. code-block:: python
-
-    >>> v = A.multiply_left(coeffs)
-    >>> sum(v_**2 for v_ in v) == l
-    True
-
-More examples can be found in the folder  ``examples``.
-
-Acknowledgements
-================
-
-This project was supported through the European Union PROMETHEUS project (Horizon 2020 Research and Innovation Program, grant 780701), EPSRC grant EP/P009417/1 and EPSRC grant EP/S020330/1.
