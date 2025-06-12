@@ -23,7 +23,7 @@ You will need the `G6K library <https://github.com/fplll/g6k>`_. Building on Lun
 On systems with co-existing python2 and 3, you can force a specific version installation using ``PYTHON=<pythoncmd> ./boostrap.sh`` instead.
 The number of parallel compilation jobs can be controlled with `-j #`.
 
-Fetching and Installing the `[sum25] <https://github.com/Summwer/cvp-g6k-cpu-solver>` Slicer (Ubuntu)
+Fetching and Installing the `[sum25] <https://github.com/Summwer/cvp-g6k-cpu-solver>`_ Slicer (Ubuntu)
 -----------------------
 
 Install conda as a prerequisite. For example, as follows:
@@ -211,7 +211,7 @@ The script will output the name of the .png file with a plot.
 
 Reproducing Table 3
 ---------------------
-To compare our slicer against DLvW20 and summver, first install the [sum] slicer as per instructions in the installation section. Next, run ``benchmark_slicer_{xxx}`` for ``xxx = our, ww`` for this and DLvW20 slicers respectively. 
+To compare our slicer against DLvW20 and summver, first install the [sum25] slicer as per instructions in the installation section. Next, run ``benchmark_slicer_{xxx}`` for ``xxx = our, ww`` for this and DLvW20 slicers respectively. 
 For [sum] run ``benchmark_slicer_pump`` in ``cvp-g6k-cpu-solver``. This will create the ``cvp_comp`` directory that will contain the experiment data.
 
 Run ``aggregate_slicer_comparison.py`` in the terminal. The script will output the table.
