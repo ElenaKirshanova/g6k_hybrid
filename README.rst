@@ -29,6 +29,7 @@ Fetching and Installing the `[sum25] <https://github.com/Summwer/cvp-g6k-cpu-sol
 Install conda as a prerequisite. For example, as follows:
 
 .. code-block:: bash
+
     mkdir -p ~/miniconda3
     wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
     bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
@@ -37,11 +38,15 @@ Install conda as a prerequisite. For example, as follows:
     conda init --all
 
 This implementation of slicer relies on `libalglib` which can be installed on Ubuntu as:
+
 .. code-block:: bash
+
     sudo apt-get install libalglib-dev
 
 For machines without sudo that will be:
+
 .. code-block:: bash
+
     brew install wget
     wget http://archive.ubuntu.com/ubuntu/pool/universe/a/alglib/alglib_4.0.0.orig.tar.gz
     mkdir ./alglib
@@ -51,13 +56,16 @@ For machines without sudo that will be:
 Then the users without sudo should fix the `#include` blocks in `progressive_slicer_with_d4f.cpp` and `randomized_iterative_slicer.cpp` for `libalglib`. Change the prefixes of the paths to absolute paths to `/path/to/g6k_hybrid/alglib/alglib-cpp/`. 
 
 Activate a conda environment.
+
 .. code-block:: bash
+
     conda create -n g6x python=3.12
     conda activate g6x
 
 Then simply run the script that will fetch the `[sum25]` repository and install it inplace.
 
 .. code-block:: bash
+    
     source ./smart_install.sh
 
 
