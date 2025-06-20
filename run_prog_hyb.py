@@ -18,7 +18,7 @@ try:
 except ModuleNotFoundError:
     from multiprocessing import Pool
 
-from test_hyb_att import alg_3_debug_v2 #, generateLWEInstances, se_gen, kyberGen
+from test_hyb_att import alg_3_debug_v2, alg_3_debug #, generateLWEInstances, se_gen, kyberGen
 from global_consts import *
 from copy import copy
 
@@ -67,12 +67,19 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
 
     G = g6k.M
     G.update_gso()
-    if dist=="binomial":
-        dist_param = int(dist_param)
-        distrib = centeredBinomial(dist_param)
-    elif dist=="ternary":
-         print(f"dist_param: {dist_param}")
-         distrib = ternaryDist(dist_param)
+
+    match dist:
+        case "binomial":
+            dist_param = int(dist_param)
+            distrib = centeredBinomial(dist_param)
+        case "ternary":
+            print(f"dist_param: {dist_param}")
+            distrib = ternaryDist(dist_param)
+        case "ternary_sparse":
+            distrib = centeredBinomial(dist_param)
+        case _:
+            raise NotImplementedError(f"Bad distribution")
+            
     for delta in range(n_slicer_coord,n_slicer_coord+delta_slicer_coord+1):
         lens = test_vect_proj(G, delta, NPROJ_TESTS, distrib)
         est_norm = np.percentile(lens,50)
@@ -137,7 +144,11 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
         B = IntegerMatrix.from_matrix(Binit)
 
         tracer = {}
-        iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, dist, dist_param, s, dist_sq_bnd=EPS2 * dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
+        # iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, dist, dist_param, s, dist_sq_bnd=EPS2 * dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
+        tracer["wrong_guess_time_alg3"] = 0 
+        tracer["wrong_guess_time_alg2"] = 0
+        
+        iter_v = alg_3_debug(g6k,H11,B,t,n_guess_coord, dist, dist_param, dist_sq_bnd=EPS2 * dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
         guess_cntr = 0
         sli_succ = False
         v2 = None

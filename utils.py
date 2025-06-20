@@ -47,43 +47,48 @@ def get_filename(which_file,params):
     f"tha_{n}_{q}_binomial_{dist_param}_{n_guess_coord}_{n_slicer_coord}.pkl"
     """
     dp = params["dist_param"]
-    if params["dist"] == "ternary":
-        dpstr = f"{dp:.04f}"
-    elif params["dist"] == "binomial":
-        dpstr = f"{dp}"
-    else: raise ValueError("dist should be either \"ternary\" or \"binomial\" ")
+
+    match params["dist"]:
+        case "ternary":
+            dpstr = f"{dp:.04f}"
+        case "binomial":
+            dpstr = f"{dp}"
+        case "ternary_sparse":
+            dpstr = f"{dp}"
+        case _: raise ValueError("dist should be either \"ternary\" or \"binomial\" ")
     # params.update( {"dpstr": dpstr} )
 
-    if "lwe_instance" == which_file:
-        # raise NotImplementedError
-        n, q, seed, dist = params["n"], params["q"], params["seed"], params["dist"]
-        return f"lwe_instance_{dist}_{n}_{q}_{dpstr}_{seed[0]}.pkl"
-    
-    elif "kyb_preprimal" == which_file:
-        # raise NotImplementedError
-        n, q, seed, betapre, dist = params["n"], params["q"], params["seed"], params["betapre"], params["dist"]
-        return f"kyb_preprimal_{n}_{q}_{dist}_{dpstr}_{seed[0]}_{betapre}.pkl"
-    
-    elif "report_pre" == which_file:
-        # raise NotImplementedError
-        n, q, seed, betapre, dist = params["n"], params["q"], params["seed"], params["betapre"], params["dist"]
-        return f"kyb_preprimal_{n}_{q}_{dist}_{dpstr}_{seed[0]}_{betapre}.pkl"
-    
-    elif "exp" == which_file:
-        raise NotImplementedError
-    
-    elif "g6kdump" == which_file:
-        # raise NotImplementedError
-        n, q, seed, dist, kappa, n_sli_coord, bkz_beta = params["n"], params["q"], params["seed"], params["dist"], params["kappa"], params["n_sli_coord"], params["bkz_beta"]
-        return f'g6kdump_{n}_{q}_{dist}_{dpstr}_{seed[0]}_{kappa}_{n_sli_coord}_{bkz_beta}.pkl'
-    
-    elif "report_prehyb" == which_file:
-        # raise NotImplementedError dist["
-        n, q, dist, seed, kappa, sieve_dim_min, sieve_dim_max = dist["n"], dist["q"], dist["dist"], dist["seed"], dist["kappa"], dist["sieve_dim_min"], dist["sieve_dim_max"]
-        return f"report_prehyb_{n}_{q}_{dist}_{dpstr}_{seed[0]}_{kappa}_{sieve_dim_min}_{sieve_dim_max}.pkl"
-    
-    elif "tha" == which_file:
-        raise NotImplementedError
+    match which_file:
+        case "lwe_instance" :
+            # raise NotImplementedError
+            n, q, seed, dist = params["n"], params["q"], params["seed"], params["dist"]
+            return f"lwe_instance_{dist}_{n}_{q}_{dpstr}_{seed[0]}.pkl"
+        
+        case "kyb_preprimal" :
+            # raise NotImplementedError
+            n, q, seed, betapre, dist = params["n"], params["q"], params["seed"], params["betapre"], params["dist"]
+            return f"kyb_preprimal_{n}_{q}_{dist}_{dpstr}_{seed[0]}_{betapre}.pkl"
+        
+        case "report_pre" :
+            # raise NotImplementedError
+            n, q, seed, betapre, dist = params["n"], params["q"], params["seed"], params["betapre"], params["dist"]
+            return f"kyb_preprimal_{n}_{q}_{dist}_{dpstr}_{seed[0]}_{betapre}.pkl"
+        
+        case "exp" :
+            raise NotImplementedError
+        
+        case "g6kdump" :
+            # raise NotImplementedError
+            n, q, seed, dist, kappa, n_sli_coord, bkz_beta = params["n"], params["q"], params["seed"], params["dist"], params["kappa"], params["n_sli_coord"], params["bkz_beta"]
+            return f'g6kdump_{n}_{q}_{dist}_{dpstr}_{seed[0]}_{kappa}_{n_sli_coord}_{bkz_beta}.pkl'
+        
+        case "report_prehyb" :
+            # raise NotImplementedError dist["
+            n, q, dist, seed, kappa, sieve_dim_min, sieve_dim_max = dist["n"], dist["q"], dist["dist"], dist["seed"], dist["kappa"], dist["sieve_dim_min"], dist["sieve_dim_max"]
+            return f"report_prehyb_{n}_{q}_{dist}_{dpstr}_{seed[0]}_{kappa}_{sieve_dim_min}_{sieve_dim_max}.pkl"
+        
+        case "tha" :
+            raise NotImplementedError
 
     return 0
 

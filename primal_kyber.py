@@ -58,7 +58,7 @@ def gen_and_dump_lwe(params):
     q = params["q"]
     ntar = params["ntar"]
     dist = params["dist"] 
-    dist_param = params["dist_param"] if dist!="binomial" else int(params["dist_param"])
+    dist_param = params["dist_param"] if dist=="ternary" else int(params["dist_param"])
     seed = params["seed"][0]
     print(f"- - - n,seed={n,seed} - - - gen")
     A,q,bse= generateLWEInstances(n, q, dist, dist_param, ntar)

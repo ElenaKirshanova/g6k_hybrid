@@ -1,4 +1,4 @@
-from random import randrange, choices
+from random import randrange, choices, shuffle
 import numpy as np
 import json
 
@@ -19,15 +19,21 @@ def generateLWEInstances(n,q,dist,dist_param,ntar):
     bse = []
 
     for _ in range(ntar):
-        if dist=="binomial":
-            s = binomial_vec(n, dist_param)
-            e = binomial_vec(n, dist_param)
-        elif dist=="ternary":
-           s = ternary_vec(n, dist_param)
-           e = ternary_vec(n, dist_param)
-        else:
-           raise NotImplementedError("Distribution %s not implemented." % dist)
-        
+        match dist:
+            case "binomial":
+                s = binomial_vec(n, dist_param)
+                e = binomial_vec(n, dist_param)  
+            case "ternary":
+                s = ternary_vec(n, dist_param)
+                e = ternary_vec(n, dist_param)
+            case "ternary_sparse":
+                s = [2*randrange(2)-1 for j in range(dist_param)] + (n-dist_param)*[0]
+                shuffle(s)
+                s = np.array(s)
+                e = binomial_vec(n, 3) 
+            case _:
+                raise NotImplementedError("Distribution %s not implemented." % dist)
+           
         b = (s.dot(A) + e) % q
 
         bse.append((b,s,e))
