@@ -321,6 +321,7 @@ def lwe_kernel(params=None, seed=None):
             T_overall = T_overall_0 - time.time()
             return True, T_overall, T_BKZ 
     T_overall = T_overall_0 - time.time()
+    print(f"FAIL: basis_quality: {basis_quality(bkz.M)}")
     return False, T_overall, T_BKZ
 
 def get_parser():
