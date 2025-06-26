@@ -123,10 +123,19 @@ def lwe_kernel(params=None, seed=None):
         for j in range(n):
             B[i][j] = int( A[i-n,j] )
 
-    B = IntegerMatrix.from_matrix( B )
     b_, s, e = bse[seed[1]]
+    c = np.concatenate([b_,[0]*n])
 
-    c = ( np.array(A@(s)) + np.array(e) )%q #the target
+    B = [ [ bb for bb in b ]+[0] for b in B ] + [ (2*n)*[0] + [1] ]
+
+    for j in range(n):
+        B[-1][j] = int( c[j] )
+    # print( [len(lol) for lol  in B] )
+    B = IntegerMatrix.from_matrix( B )
+    
+
+    # c = ( np.array(A@(s)) + np.array(e) )%q #the target
+    
     sec = np.concatenate([e,-s,[1]])
 
     goal_margin = params["goal_margin"]
