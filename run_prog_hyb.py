@@ -145,9 +145,9 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
 
         tracer = {}
         # iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, dist, dist_param, s, dist_sq_bnd=EPS2 * dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
-        tracer["wrong_guess_time_alg3"] = 0 
-        tracer["wrong_guess_time_alg2"] = 0
         
+        tracer["wrong_guess_time_alg3"] = 0 
+        tracer["wrong_guess_time_alg2"] = 0  
         iter_v = alg_3_debug(g6k,H11,B,t,n_guess_coord, dist, dist_param, dist_sq_bnd=EPS2 * dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
         guess_cntr = 0
         sli_succ = False

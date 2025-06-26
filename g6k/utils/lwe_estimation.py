@@ -113,6 +113,7 @@ def gsa_params(n, alpha, q=None, samples=None, d=None, decouple=False):
     stddev = alpha*q
 
     params = decoupler(decouple, n, samples, q, stddev, d)
+    # print(f"params: {params}")
     min_cost_param = find_min_complexity(params)
     if min_cost_param is not None:
         return min_cost_param
@@ -142,8 +143,8 @@ def decoupler(decouple, n, samples, q, stddev, d):
         ms = list(range(n, min(5*n+1, samples+1)))
 
     for m in ms:
-        beta_bound = min(m+1, 110+default_dim4free_fun(110))
-        svp_bound = min(m+1, 156)
+        beta_bound = min(m+1, 180+default_dim4free_fun(110)) #110+default_dim4free_fun(110))
+        svp_bound = min(m+1, 180) #156
         for bkz_block_size in range(40, beta_bound):
             delta_0 = delta_0f(bkz_block_size)
             if decouple:

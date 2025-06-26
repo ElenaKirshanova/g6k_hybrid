@@ -34,6 +34,15 @@ class Distribution:
 
     def sample(self, n):
         return [ choices(self.population, self.weights)[0] for _ in range(n) ]
+    
+def renormalize_nz(D):
+    assert abs( sum(D.values())-1 ) <10**-12
+
+    D.pop(0)
+    scale = 1/sum(D.values())
+    for key in D.keys():
+        D[key] *= scale
+    return D
 
 def centeredBinomial(eta):
     n = 2*eta
