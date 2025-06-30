@@ -9,7 +9,7 @@ from collections import OrderedDict # noqa
 from math import log
 
 from fpylll import BKZ as fplll_bkz
-from fpylll import IntegerMatrix
+from fpylll import IntegerMatrix, GSO
 from fpylll.algorithms.bkz2 import BKZReduction
 from fpylll.tools.quality import basis_quality
 from fpylll.util import gaussian_heuristic
@@ -38,7 +38,7 @@ try:
 except ModuleNotFoundError:
     from multiprocessing import Pool
 
-def lwe_kernel(params=None, seed=None):
+def lwe_kernel(params=None, seed=None, my_tracer={}):
     """
     Run the primal attack against Darmstadt LWE instance (n, alpha).
 
@@ -83,6 +83,13 @@ def lwe_kernel(params=None, seed=None):
         - verbose: print information throughout the lwe challenge attempt
 
     """
+    my_tracer = {
+                    "bkz_invoked": {},
+                    "svp_calls": [],
+                    "succ": False,
+                    "T_overall": 0,
+                    "T_BKZ": 0
+                }
 
     params = copy.copy(params)
     n = params["n"]
@@ -212,7 +219,11 @@ def lwe_kernel(params=None, seed=None):
     param_sieve = SieverParams()
     param_sieve['threads'] = nthreads
     param_sieve['otf_lift'] = False
-    g6k = Siever(B, param_sieve)
+    U=IntegerMatrix.identity(B.nrows)
+    UinvT=IntegerMatrix.identity(B.nrows)
+    G=GSO.Mat(B,float_type="dd",U=U,UinvT=UinvT)
+    
+    g6k = Siever(G, param_sieve)
     print("GSO precision: ", g6k.M.float_type)
 
     if dont_trace:
@@ -230,6 +241,7 @@ def lwe_kernel(params=None, seed=None):
     T0_BKZ = time.time()
     for blocksize in blocksizes:
         for tt in range(tours):
+            T_tour_0 = time.time()
             # BKZ tours
 
             if blocksize < fpylll_crossover:
@@ -254,6 +266,12 @@ def lwe_kernel(params=None, seed=None):
                                      goal_r0=target_norm,
                                      pump_params=pump_params)
                 print(f"basis_quality: {basis_quality(bkz.M)}")
+            T_tour = time.time() - T_tour_0
+            if not blocksize in my_tracer["bkz_invoked"].keys():
+                my_tracer["bkz_invoked"][blocksize] = {"iters": 1, "times":[T_tour]}
+            else:
+                my_tracer["bkz_invoked"][blocksize]["iters"]+=1
+                my_tracer["bkz_invoked"][blocksize]["times"] += [T_tour]
 
             T_BKZ = time.time() - T0_BKZ
 
@@ -305,8 +323,11 @@ def lwe_kernel(params=None, seed=None):
 
             if verbose:
                 print("Starting svp pump_{%d, %d, %d}, n_max = %d, Tmax= %.2f sec" % (llb, d-llb, f, n_max, svp_Tmax)) # noqa
+            T_sieve = time.time()
             pump(g6k, tracer, llb, d-llb, f, verbose=verbose,
                  goal_r0=target_norm * (d - llb)/(1.*d))
+            T_sieve = time.time() - T_sieve
+            my_tracer["svp_calls"].append( (d-llb, T_sieve) )
 
             if verbose:
                 slope = basis_quality(g6k.M)["/"]
@@ -323,15 +344,20 @@ def lwe_kernel(params=None, seed=None):
             print("Finished! TT=%.2f sec" % (time.time() - T0))
             print(g6k.M.B[0])
             alpha_ = int(alpha*1000)
-            filename = 'lwechallenge/%03d-%03d-solution.txt' % (n, alpha_)
-            fn = open(filename, "w")
-            fn.write(str(g6k.M.B[0]))
-            fn.close()
-            T_overall = T_overall_0 - time.time()
-            return True, T_overall, T_BKZ 
+            # filename = 'lwechallenge/%03d-%03d-solution.txt' % (n, alpha_)
+            # fn = open(filename, "w")
+            # fn.write(str(g6k.M.B[0]))
+            # fn.close()
+            T_overall = time.time() - T_overall_0
+            my_tracer["succ"] = True
+            my_tracer["T_BKZ"] = T_BKZ
+            my_tracer["T_overall"] = T_overall
+            return my_tracer
     T_overall = T_overall_0 - time.time()
+    my_tracer["T_BKZ"] = T_BKZ
+    my_tracer["T_overall"] = T_overall
     print(f"FAIL: basis_quality: {basis_quality(bkz.M)}")
-    return False, T_overall, T_BKZ
+    return my_tracer
 
 def get_parser():
     parser = argparse.ArgumentParser(
@@ -436,10 +462,10 @@ if __name__ == "__main__":
                 "nthreads": nthreads
             }
             gen_and_dump_lwe(params)
-
+    my_tracers = []
     for latnum in range(lats_per_dim):
             for tstnum in range(inst_per_lat):
-                print("lol")
+
                 params = {
                 "n": n,
                 "q": q,
@@ -463,9 +489,12 @@ if __name__ == "__main__":
                     ) )
                 
     for t in tasks:
-            output.append( t.get() )
+            my_tracers.append( t.get() )
 
     pool.close()
 
-    print(output)
+    with open(f"exp_{n}.pkl","wb") as file:
+        pickle.dump(my_tracers,file)
+
+    print( my_tracers )
     
