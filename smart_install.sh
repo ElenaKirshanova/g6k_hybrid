@@ -2,17 +2,17 @@
 
 # This script assumes that both conda and git are already installed.
 # Tested on:
-# * * * Ubuntu-22.04 (via WSL2) * * * 
+# * * * Ubuntu-22.04 (via WSL2) * * *
 
 # Before executing the script run:
 # conda create --name g6x  #(if g6x is nonexistent)
 # conda activate g6x
 
-# sudo apt-get update 
+# sudo apt-get update
 # sudo apt-get install build-essential autotools-dev autoconf g++
 
 # sudo apt-get -y install libgmp10
-# sudo apt-get install libmpfr-dev 
+# sudo apt-get install libmpfr-dev
 # sudo apt install libqd-dev
 
 conda env list | grep g6x
@@ -22,6 +22,7 @@ if [ $LATTICE_ENV_CHECK -ne 0 ]; then
         exit 1
 fi
 
+conda config --append channels conda-forge
 conda install build-essential autoconf g++
 
 

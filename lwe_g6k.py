@@ -1,3 +1,8 @@
+"""
+Invoke as:
+python lwe_g6k.py --nthreads 2 --nworkers 2 --inst_per_lat 2 --lats_per_dim 2 --n 125 --m 125 --dist "binomial" --dist_param 3 --use_pnj_strat_instead --extra_dim4free 3 --recompute_instance --goal_margin 1.05 --svp_bkz_time_factor 1.0 --verbose
+"""
+
 from __future__ import absolute_import
 from __future__ import print_function
 import copy
@@ -29,6 +34,7 @@ import numpy as np
 from sample import Distribution, centeredBinomial
 from primal_kyber import gen_and_dump_lwe, load_lwe
 from utils import get_filename
+from pnj_strat import strats_kyber
 
 import pickle
 from global_consts import *
@@ -237,10 +243,17 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
     slope = basis_quality(g6k.M)["/"]
     print("Intial Slope = %.5f\n" % slope)
 
+    use_pnj_strat_instead = params["use_pnj_strat_instead"]
+    if not use_pnj_strat_instead:
+        iter_strat = [ (tmp,jump,tours) for tmp in blocksizes ]
+    else:
+        iter_strat = [ (tmp,1,2) for tmp in range(5,46) ] + strats_kyber[(dist,dist_param)][n]
+
     T0 = time.time()
     T0_BKZ = time.time()
-    for blocksize in blocksizes:
-        for tt in range(tours):
+    cntr = 0
+    for blocksize, jump, ntours in iter_strat:
+        for tt in range(ntours):
             T_tour_0 = time.time()
             # BKZ tours
 
@@ -257,7 +270,7 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
 
             else:
                 if verbose:
-                    print("Starting a pnjBKZ-%d tour. " % (blocksize), flush=True)
+                    print("Starting a pnjBKZ-%d-%d tour. " % (blocksize,jump))
 
                 pump_n_jump_bkz_tour(g6k, tracer, blocksize, jump=jump,
                                      verbose=verbose,
@@ -290,21 +303,21 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
             n_max = int(58 + 2.85 * log(svp_Tmax * nthreads)/log(2.))
 
             rr = [g6k.M.get_r(i, i) for i in range(d)]
-            continue_flag = False
+            
             for n_expected in range(2, d-2):
                 x = (target_norm/goal_margin) * n_expected/(1.*d)
                 # if 4./3 * gaussian_heuristic(rr[d-n_expected:]) > x:
                 #     break
-                if 0.96 * gaussian_heuristic(rr[d-n_expected:]) > x: #the estimation above is not for BDD
+                if 1.02 * gaussian_heuristic(rr[d-n_expected:]) > x: #the estimation above is not for BDD
                     break
 
             #but underdoing won`t solve the bdd instance at all
-            if 1.02 * gaussian_heuristic(rr[d-n_expected:]) < x: #the estimation above is not for BDD
-                print(f"Solution unlikely: {1.02 * gaussian_heuristic(rr[d-n_expected:])} < {x}")
-                continue
+            # if 1.02 * gaussian_heuristic(rr[d-n_expected:]) < x: #the estimation above is not for BDD
+            #     print(f"Solution unlikely: {1.02 * gaussian_heuristic(rr[d-n_expected:])} < {x}")
+            #     continue
 
             print("Without otf, would expect solution at pump-%d. n_max=%d in the given time." % (n_expected, n_max)) # noqa
-            if n_expected >= n_max - 1:
+            if n_expected >= n_max - 1 and not cntr>=len(iter_strat)-1:
                 continue
 
             n_max += 1
@@ -339,7 +352,7 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
             T0_BKZ = time.time()
             if g6k.M.get_r(0, 0) <= target_norm:
                 break
-
+        cntr+=1
         if g6k.M.get_r(0, 0) <= target_norm:
             print("Finished! TT=%.2f sec" % (time.time() - T0))
             print(g6k.M.B[0])
@@ -402,6 +415,7 @@ def get_parser():
     parser.add_argument(
     "--jump", default=1, type=int, help="BKZ jump"
     )
+    parser.add_argument("--use_pnj_strat_instead", action="store_true", help="Overrides blocksizes tours and jump. Uses strategies from pnj_strat.py instead.")
     parser.add_argument(
     "--extra_dim4free", default=12, type=int, help="Upper bound on the BKZ blocksize."
     )
@@ -476,6 +490,7 @@ if __name__ == "__main__":
                 "blocksizes": args.blocksizes,
                 "tours": args.tours,
                 "jump": args.jump,
+                "use_pnj_strat_instead": args.use_pnj_strat_instead,
                 "extra_dim4free": args.extra_dim4free,
                 "fpylll_crossover": args.fpylll_crossover,
                 "svp_bkz_time_factor": args.svp_bkz_time_factor,
