@@ -508,7 +508,8 @@ if __name__ == "__main__":
 
     pool.close()
 
-    with open(f"exp_{n}.pkl","wb") as file:
+    filename = f"exp_{n}.pkl" if not args.use_pnj_strat_instead else f"exp_{n}_pnj.pkl"
+    with open(filename,"wb") as file:
         pickle.dump(my_tracers,file)
 
     print( my_tracers )
