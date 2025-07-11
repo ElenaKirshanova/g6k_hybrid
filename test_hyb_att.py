@@ -1,3 +1,12 @@
+"""
+Exapmles.
+For ternary sparse run (e.g.):
+
+    python preprocessing.py --nthreads 2 --nworkers 2 --inst_per_lat 2 --lats_per_dim 2 --params "[ (160,25,52) ]" --q 3329 --dist "ternary_sparse" --dist_param 12 --verbose
+    python run_prog_hyb.py --nthreads 2 --nworkers 2 --lats_per_dim 2 --n 160 --q 3329 --dist "ternary_sparse" --dist_param 12 --verbose --beta_pre 52 --n_guess_coord 25 --n_slicer_coord 53 --delta_slicer_coord 5
+
+"""
+
 from fpylll import *
 FPLLL.set_random_seed(0x1337)
 from g6k.siever import Siever
@@ -10,6 +19,7 @@ from experiments.lwe_gen import *
 
 from hyb_att_on_kyber import alg_2_batched
 from sample import *
+from sparse_dist import sparse_distribution
 
 from g6k.siever import SaturationError
 
@@ -77,6 +87,7 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, dist, dist_param, s, dist_sq_
     then_start = perf_counter()
     gh_sub = gaussian_heuristic(g6k.M.r()[-(g6k.r-g6k.l):])
     dim = B.nrows
+    n = dim
     print(f"dim: {dim}")
 
     t1, t2 = target[:-n_guess_coord], target[-n_guess_coord:]
@@ -85,6 +96,9 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, dist, dist_param, s, dist_sq_
     elif dist=="ternary":
          print(f"dist_param: {dist_param}")
          distrib = ternaryDist(dist_param)
+    elif dist=="ternary_sparse":
+        distrib = sparse_distribution(n,n_guess_coord,int(dist_param),Distribution({-1: 0.5, 1: 0.5}))
+
     #TODO: make/(check if is) practical
     nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord ) )
     print(f"nsampl: {nsampl}")
@@ -213,6 +227,7 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, dist, dist_param, dist_sq_bnd=1.
     then_start = perf_counter()
     gh_sub = gaussian_heuristic(g6k.M.r()[-(g6k.r-g6k.l):])
     dim = B.nrows
+    n = dim
     print(f"dim: {dim}")
 
     t1, t2 = target[:-n_guess_coord], target[-n_guess_coord:]
@@ -221,7 +236,9 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, dist, dist_param, dist_sq_bnd=1.
     elif dist=="ternary":
          print(f"dist_param: {dist_param}")
          distrib = ternaryDist(dist_param)
-    #TODO: make/(check if is) practical
+    elif dist=="ternary_sparse":
+        distrib = sparse_distribution(n,n_guess_coord,int(dist_param),Distribution({-1: 0.5, 1: 0.5}))
+
     nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord ) )
     print(f"nsampl: {nsampl}")
     tracer_alg3["key_num"] = 0 #nsampl

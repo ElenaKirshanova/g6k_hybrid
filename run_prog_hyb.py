@@ -8,6 +8,7 @@ from time import perf_counter
 from experiments.lwe_gen import *
 
 from sample import *
+from sparse_dist import sparse_distribution
 
 from g6k.siever import SaturationError
 
@@ -76,7 +77,7 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
             print(f"dist_param: {dist_param}")
             distrib = ternaryDist(dist_param)
         case "ternary_sparse":
-            distrib = centeredBinomial(dist_param)
+            distrib = sparse_distribution(n,n_guess_coord,int(dist_param),Distribution({-1:0.5,1:0.5}))
         case _:
             raise NotImplementedError(f"Bad distribution")
             
@@ -86,7 +87,7 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
         print(f"#{lat_index} est_proj_norm is: {est_norm} for dim={delta}",flush=True)
         if est_norm <= HYB_PROJ_THRESHOLD:
             break
-
+    # print( distrib.sample() )
     print(f"#{lat_index} final est_proj_norm is: {est_norm} @dim={delta}")
 
     # - - - when we chose the slicing dimension, we are ready to go
@@ -144,11 +145,12 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
         B = IntegerMatrix.from_matrix(Binit)
 
         tracer = {}
-        # iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, dist, dist_param, s, dist_sq_bnd=EPS2 * dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
+        iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, dist, dist_param, s, dist_sq_bnd=EPS2 * dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
         
-        tracer["wrong_guess_time_alg3"] = 0 
-        tracer["wrong_guess_time_alg2"] = 0  
-        iter_v = alg_3_debug(g6k,H11,B,t,n_guess_coord, dist, dist_param, dist_sq_bnd=EPS2 * dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
+        # tracer["wrong_guess_time_alg3"] = 0 
+        # tracer["wrong_guess_time_alg2"] = 0  
+        # iter_v = alg_3_debug(g6k,H11,B,t,n_guess_coord, dist, dist_param, dist_sq_bnd=EPS2 * dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
+        
         guess_cntr = 0
         sli_succ = False
         v2 = None

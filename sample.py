@@ -38,7 +38,10 @@ class Distribution:
 def renormalize_nz(D):
     assert abs( sum(D.values())-1 ) <10**-12
 
-    D.pop(0)
+    try:
+        D.pop(0)
+    except KeyError:
+        pass
     scale = 1/sum(D.values())
     for key in D.keys():
         D[key] *= scale
