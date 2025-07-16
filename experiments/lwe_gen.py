@@ -19,7 +19,7 @@ def generateLWEInstances(n,q,dist,dist_param,ntar):
     bse = []
 
     for _ in range(ntar):
-        match dist:
+        match str(dist):
             case "binomial":
                 s = binomial_vec(n, dist_param)
                 e = binomial_vec(n, dist_param)  

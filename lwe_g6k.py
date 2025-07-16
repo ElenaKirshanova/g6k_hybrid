@@ -31,7 +31,7 @@ from g6k.utils.lwe_estimation import gsa_params, primal_lattice_basis
 from six.moves import range
 import numpy as np
 
-from sample import Distribution, centeredBinomial
+from sample import Distribution, centeredBinomial, ternaryDist
 from primal_kyber import gen_and_dump_lwe, load_lwe
 from utils import get_filename
 from pnj_strat import strats_kyber
