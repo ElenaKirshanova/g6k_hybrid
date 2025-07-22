@@ -34,6 +34,10 @@ from g6k import Siever, SieverParams
 from g6k.utils.stats import SieveTreeTracer
 from g6k.algorithms.bkz import pump_n_jump_bkz_tour
 
+from g6k.slicer import RandomizedSlicer
+from utils import *
+from global_consts import *
+
 from utils_hnp import SuppressStream
 
 
@@ -734,11 +738,251 @@ class USVPPredBKZSieve:
 
 usvp_pred_bkz_sieve_solve = USVPPredBKZSieve()
 
+# - - -
+
+class USVPPredSlic:
+    """
+    Solve an uSVP with predicate instance with many-approxCVP+Slicer.
+
+    :param M: FPyLLL ``MatGSO`` object or ``IntegerLattice``
+    :param t: target (list of integers)
+    :param predicate: predicate to evaluate
+    :param block_size: BKZ block size
+    :param slicer_dim: Slicer dimension
+    :param invalidate_cache: a callable to invalidate caches for the predicate.
+    :param max_loops: maximum number of BKZ tours
+    :param threads: number of threads to use
+    :returns: statistics
+    :rtype: ``USVPPredSolverResults``
+
+    """
+
+    def __call__(cls, M, t, predicate, block_size, slicer_dim, invalidate_cache=lambda: None, threads=1, max_loops=5, **kwds):
+        from fpylll import BKZ as BKZ_FPYLLL
+        from fpylll.algorithms.bkz2 import BKZReduction
+        from fpylll import LLL
+        import numpy as np
+        import time 
+
+        M = GSO.Mat(M)
+        M.update_gso()
+        lll = LLL.Reduction(M)
+        lll()
+        flags = BKZ_FPYLLL.AUTO_ABORT|BKZ_FPYLLL.MAX_LOOPS|BKZ_FPYLLL.GH_BND
+        bkz = BKZReduction(M)
+        for beta in range(15,56,2):    #BKZ reduce the basis
+            par = BKZ_FPYLLL.Param(beta,
+                                max_loops=1,
+                                flags=flags,
+                                strategies=BKZ_FPYLLL.DEFAULT_STRATEGY
+                                )
+            then_round=time.perf_counter()
+            bkz(par)
+            round_time = time.perf_counter()-then_round
+            print( f"BKZ-{beta} done in {round_time}" )
+        M = M.B
+
+        params = SieverParams(threads=threads)
+        g6k = Siever(M, params)
+        tracer = SieveTreeTracer(g6k, root_label="bkz-sieve", start_clocks=True)
+        for b in range(55, block_size + 1, 10):
+            pump_n_jump_bkz_tour(g6k, tracer, b, pump_params={"down_sieve": True})
+
+        auto_abort = BKZ.AutoAbort(M, M.d)
+        found, ntests, solution = False, 0, None
+        for tour in range(max_loops):
+            pump_n_jump_bkz_tour(g6k, tracer, block_size, pump_params={"down_sieve": True})
+
+            invalidate_cache()
+
+            if auto_abort.test_abort():
+                break
+
+            with tracer.context("check"):
+                coeff = M.babai( t )
+                v = M.B.multiply_left(coeff)
+                b0, b0e = M.get_r_exp(0, 0)
+                if predicate(v, standard_basis=True):
+                    solution = tuple([int(v_) for v_ in v])
+                    found = True
+                    tracer.exit()
+                    return USVPPredSolverResults(
+                        success=found,
+                        ntests=1,
+                        solution=solution,
+                        b0=b0 ** (0.5) * 2 ** (b0e / 2.0),
+                        cputime=tracer.trace.data["cputime"],
+                        walltime=tracer.trace.data["walltime"],
+                        data=tracer.trace,
+                    )
+            
+        param_sieve = SieverParams()
+        param_sieve['threads'] = threads
+        param_sieve['db_size_base'] = (4/3.)**0.5 #(4/3.)**0.5 ~ 1.1547
+        param_sieve['db_size_factor'] = 3.2 #3.2
+        param_sieve['saturation_ratio'] = 0.5
+        param_sieve['saturation_radius'] = 1.32
+
+        g6k = Siever(M,param_sieve)
+        n = g6k.M.d
+        g6k.initialize_local(n-slicer_dim,n-slicer_dim,n) 
+
+        print("Running bdgl2...")
+        then = time.perf_counter()
+        g6k(alg="bdgl2")   #TODO: we'd better pump here
+        print(f"bdgl2 done in {time.perf_counter()-then}")
+
+        gh_sub = gaussian_heuristic(g6k.M.r()[-(g6k.r-g6k.l):])
+        # t1, t2 = t[:-slicer_dim], t[-slicer_dim:]
+        H11 = g6k.M.B
+        H12 = IntegerMatrix.from_matrix( [list(b)[:n-slicer_dim] for b in M[n-slicer_dim:]] )
+
+        it = cls.solveBDD(g6k,t,1.1,threads)
+
+        ntests = 0
+        with tracer.context("check"):
+            for ctilde1 in it:
+                ntests += 1
+                v = np.array( H11.multiply_left( ctilde1 ) )
+                b0, b0e = M.get_r_exp(0, 0)
+                if predicate(v, standard_basis=True):
+                    solution = tuple([int(v_) for v_ in v])
+                    found = True
+                    tracer.exit()
+                    return USVPPredSolverResults(
+                        success=found,
+                        ntests=ntests,
+                        solution=solution,
+                        b0=b0 ** (0.5) * 2 ** (b0e / 2.0),
+                        cputime=tracer.trace.data["cputime"],
+                        walltime=tracer.trace.data["walltime"],
+                        data=tracer.trace,
+                    )
+
+        tracer.exit()
+
+    @classmethod
+    def solveBDD(g6k, t, dist_sq_bnd, nthreads=1):
+        # raise NotImplementedError
+    
+        slicer = RandomizedSlicer(g6k)
+        slicer.set_nthreads(nthreads)
+        slicer.set_max_slicer_interations(N_MAX_SLICER_ITERATIONS)
+        slicer.set_proj_error_bound( (EPS2*(dist_sq_bnd)) )
+        slicer.set_Nt(1)
+        slicer.set_saturation_scalar(SATURATION_SCALAR)
+        slicer_dim = g6k.r - g6k.l
+
+        from hybrid_estimator.batchCVP import batchCVPP_cost
+        nrand_, _ = batchCVPP_cost(slicer_dim,100,len(g6k)**(1./slicer_dim),1)
+        nrand = ceil(NRAND_FACTOR*(1./nrand_)**slicer_dim)
+        print(f"times: {ceil( len(g6k) / nrand )}")
+        times = ceil( len(g6k) / nrand )
+        G = g6k.M
+        n = G.d
+        gh_sub = gaussian_heuristic( G.r()[-slicer_dim:] )
+
+        t_gs = from_canonical_scaled( G,t,offset=slicer_dim, scale_fact=gh_sub )
+        t_gs_non_scaled = G.from_canonical(t)[n-slicer_dim:]
+        shift_babai_c =  list( G.babai( list(t_gs_non_scaled), start=n-slicer_dim, gso=True) )
+        shift_babai = G.B.multiply_left( (n-slicer_dim)*[0] + list( shift_babai_c ) )
+        t_gs_reduced = from_canonical_scaled( G,np.array(t, dtype=DTYPE)-shift_babai,offset=slicer_dim,scale_fact=gh_sub )
+        slicer.grow_db_with_target(t_gs_reduced, n_per_target=nrand)
+
+        print(f"running slicer")
+        blocks = 2 # should be the same as in siever
+        blocks = min(3, max(1, blocks))
+        blocks = min(int(slicer_dim / 28), blocks)
+        sp = g6k.params
+        N = sp["db_size_factor"] * sp["db_size_base"] ** slicer_dim
+        buckets = sp["bdgl_bucket_size_factor"]* 2.**((blocks-1.)/(blocks+1.)) * sp["bdgl_multi_hash"]**((2.*blocks)/(blocks+1.)) * (N ** (blocks/(1.0+blocks)))
+        buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
+        buckets = max(buckets, 2**(blocks-1))
+
+        slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False)
+        iterator = slicer.itervalues_cdb_t(return_with_index=True)
+
+        for tmp, index in iterator:
+            out_gs_reduced = np.array(tmp, dtype=DTYPE)  #db_t[0] is expected to contain the error vector
+            if (out_gs_reduced@out_gs_reduced) > 1.00001*dist_sq_bnd:
+                break
+            print(f"out_gs_reduced norm: {(out_gs_reduced@out_gs_reduced)**0.5} vs {dist_sq_bnd**0.5}")
+
+            out_reduced = np.array( to_canonical_scaled( G, out_gs_reduced, offset=slicer_dim, scale_fact=gh_sub ), dtype=DTYPE )
+            # the line below projects the error away from first basis vectors
+            out_reduced = G.to_canonical( (G.d-slicer_dim)*[0] + list( G.from_canonical( out_reduced,start=G.d-slicer_dim ) ), start=0 )
+
+            assert not (index is None), f"Impossible!"
+            bab_01 = np.array( G.babai(t-out_reduced) )
+            yield bab_01
+
+
+    @classmethod
+    def estimate(cls, M, squared_target_norm, target_prob=None):
+        """
+        :param M: either a GSO object or a tuple containing the ln of the squared volume and the dimension
+        :param squared_target_norm: the squared norm of the embedded target vector.
+        :returns: cost in CPU cycles, None
+
+        """
+        raise NotImplementedError("No estimation atm")
+        cost, data = usvp_pred_bkz_enum_solve.estimate(M, squared_target_norm)
+        if cost:
+            return cost, data
+
+        if target_prob is None:
+            target_prob = cls.DEFAULT_TARGET_PROB
+        try:
+            (log_vol, d) = M
+            log_vol = log_vol / log(2.0)
+        except TypeError:
+            try:
+                M.update_gso()
+            except AttributeError:
+                M = GSO.Mat(M)
+                M.update_gso()
+            d = M.d
+            log_vol = M.get_log_det(0, d) / log(2.0)
+
+        preproc_cost = 8 * float(d**3)
+        preproc_d = max(d - 20, 2)
+
+        for i in range(d):
+            d_ = min(preproc_d, d - i)
+            if d_ > 30:
+                preproc_cost += 8 * float(2 ** (0.1839 * d_ * log(d_, 2) - 0.995 * d_ + 16.25))
+
+        nf = round(log_vol * (1 / d))
+        log_vol -= d * nf  # handle rounding errors
+        squared_target_norm /= 2**nf
+
+        r = [1.0219 ** (2 * (d - 2 * i - 1)) * 2 ** (log_vol * (1 / d)) for i in range(d)]
+
+        from fpylll.tools.bkz_simulator import simulate
+
+        r, _ = simulate(r, BKZ.EasyParam(preproc_d))
+
+        (cost, prob), _ = cls.pruning_coefficients(squared_target_norm, r, preproc_cost, target_prob=target_prob)
+        return int(round(cost * 64)), None
+
+    @classmethod
+    def parametersf(cls, M, squared_target_norm):
+        ph = M.get_r_exp(M.d - 1, M.d - 1)[1]
+        # use integers to preserve precision, squared_target_norm might not be a float
+        return {"squared_target_norm": 101 * (squared_target_norm / 100), "ph": ph}
+
+
+usvp_pred_slic_solve = USVPPredSlic()
+
+# - - -
+
+
 solvers = {
     "bkz-enum": usvp_pred_bkz_enum_solve,
     "bkz-sieve": usvp_pred_bkz_sieve_solve,
     "enum_pred": usvp_pred_enum_solve,
     "sieve_pred": usvp_pred_sieve_solve,
+    "slic_pred": usvp_pred_slic_solve,
 }
 
 
