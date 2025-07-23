@@ -259,7 +259,7 @@ class ECDSASolver(object):
                 A,
                 U=IntegerMatrix.identity(A.nrows, int_type=A.int_type),
                 UinvT=IntegerMatrix.identity(A.nrows, int_type=A.int_type),
-                float_type="ld",
+                float_type="dd",
                 flags=GSO.ROW_EXPO,
             )
         else:
@@ -267,6 +267,7 @@ class ECDSASolver(object):
                 A,
                 U=IntegerMatrix.identity(A.nrows, int_type=A.int_type),
                 UinvT=IntegerMatrix.identity(A.nrows, int_type=A.int_type),
+                float_type="dd",
                 flags=GSO.ROW_EXPO,
             )
         M.update_gso()
@@ -431,6 +432,8 @@ class ECDSASolver(object):
             if abs(nz) != tau:
                 return False
 
+            print(f"This: {v[0] // f}")
+            print(f"will crash this {list(G_powers.keys())}")
             if standard_basis:
                 kG = G_powers[v[0] // f]
             else:

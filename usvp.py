@@ -744,8 +744,7 @@ class USVPPredSlic:
     """
     Solve an uSVP with predicate instance with many-approxCVP+Slicer.
 
-    :param M: FPyLLL ``MatGSO`` object or ``IntegerLattice``
-    :param t: target (list of integers)
+    :param M: FPyLLL ``MatGSO`` object or ``IntegerLattice`` (Kannan Embedding)
     :param predicate: predicate to evaluate
     :param block_size: BKZ block size
     :param slicer_dim: Slicer dimension
@@ -757,14 +756,30 @@ class USVPPredSlic:
 
     """
 
-    def __call__(cls, M, t, predicate, block_size, slicer_dim, invalidate_cache=lambda: None, threads=1, max_loops=5, **kwds):
+    def __call__(cls, M, predicate, block_size, slicer_dim, invalidate_cache=lambda: None, threads=1, max_loops=5, **kwds):
         from fpylll import BKZ as BKZ_FPYLLL
         from fpylll.algorithms.bkz2 import BKZReduction
         from fpylll import LLL
         import numpy as np
         import time 
+        float_type = M.float_type
+        int_type = M.B.int_type
+        n = M.d-1
+        last_target_coordinate = M.B[-1][-1]
+        target_save = np.array(list(M.B[-1])[:-1])
 
-        M = GSO.Mat(M)
+        print(f"ft: {float_type}")
+
+        t = [ int(tmp) for tmp in list( M.B[-1] )[:-1] ]
+        A = []
+        for i in range( M.d-1 ):
+            A.append([])
+            for j in range( M.d-1 ):
+                A[-1].append( int(M.B[i][j]) )
+                
+        M = IntegerMatrix.from_matrix(A)
+
+        M = GSO.Mat(M, float_type=float_type)
         M.update_gso()
         lll = LLL.Reduction(M)
         lll()
@@ -781,6 +796,7 @@ class USVPPredSlic:
             round_time = time.perf_counter()-then_round
             print( f"BKZ-{beta} done in {round_time}" )
         M = M.B
+        M = GSO.Mat( M, U=IntegerMatrix.identity(n,int_type=int_type), UinvT=IntegerMatrix.identity(n,int_type=int_type), float_type=float_type )
 
         params = SieverParams(threads=threads)
         g6k = Siever(M, params)
@@ -791,30 +807,34 @@ class USVPPredSlic:
         auto_abort = BKZ.AutoAbort(M, M.d)
         found, ntests, solution = False, 0, None
         for tour in range(max_loops):
+            then = time.perf_counter()
             pump_n_jump_bkz_tour(g6k, tracer, block_size, pump_params={"down_sieve": True})
+            print(f"BKZ-{block_size} tour {tour} done in {time.perf_counter()-then}")
+
 
             invalidate_cache()
 
             if auto_abort.test_abort():
                 break
 
-            with tracer.context("check"):
-                coeff = M.babai( t )
-                v = M.B.multiply_left(coeff)
-                b0, b0e = M.get_r_exp(0, 0)
-                if predicate(v, standard_basis=True):
-                    solution = tuple([int(v_) for v_ in v])
-                    found = True
-                    tracer.exit()
-                    return USVPPredSolverResults(
-                        success=found,
-                        ntests=1,
-                        solution=solution,
-                        b0=b0 ** (0.5) * 2 ** (b0e / 2.0),
-                        cputime=tracer.trace.data["cputime"],
-                        walltime=tracer.trace.data["walltime"],
-                        data=tracer.trace,
-                    )
+            # with tracer.context("check"):
+            #     coeff = M.babai( t )
+            #     v = target_save - M.B.multiply_left(coeff)
+            #     v = list(v) #+ [last_target_coordinate]
+            #     b0, b0e = M.get_r_exp(0, 0)
+            #     if predicate(v, standard_basis=True):
+            #         solution = tuple([int(v_) for v_ in v])
+            #         found = True
+            #         tracer.exit()
+            #         return USVPPredSolverResults(
+            #             success=found,
+            #             ntests=1,
+            #             solution=solution,
+            #             b0=b0 ** (0.5) * 2 ** (b0e / 2.0),
+            #             cputime=tracer.trace.data["cputime"],
+            #             walltime=tracer.trace.data["walltime"],
+            #             data=tracer.trace,
+            #         )
             
         param_sieve = SieverParams()
         param_sieve['threads'] = threads
@@ -835,17 +855,21 @@ class USVPPredSlic:
         gh_sub = gaussian_heuristic(g6k.M.r()[-(g6k.r-g6k.l):])
         # t1, t2 = t[:-slicer_dim], t[-slicer_dim:]
         H11 = g6k.M.B
-        H12 = IntegerMatrix.from_matrix( [list(b)[:n-slicer_dim] for b in M[n-slicer_dim:]] )
 
         it = cls.solveBDD(g6k,t,1.1,threads)
 
         ntests = 0
+        found = False
         with tracer.context("check"):
             for ctilde1 in it:
                 ntests += 1
-                v = np.array( H11.multiply_left( ctilde1 ) )
+                v = target_save - M.B.multiply_left(ctilde1)
+                v = list(v) + [last_target_coordinate]
+                print(f"v-1: {last_target_coordinate}")
                 b0, b0e = M.get_r_exp(0, 0)
-                if predicate(v, standard_basis=True):
+
+                pred = predicate(v, standard_basis=True)
+                if pred:
                     solution = tuple([int(v_) for v_ in v])
                     found = True
                     tracer.exit()
@@ -860,9 +884,18 @@ class USVPPredSlic:
                     )
 
         tracer.exit()
+        return USVPPredSolverResults(
+                    success=found,
+                    ntests=ntests,
+                    solution=solution,
+                    b0=b0 ** (0.5) * 2 ** (b0e / 2.0),
+                    cputime=tracer.trace.data["cputime"],
+                    walltime=tracer.trace.data["walltime"],
+                    data=tracer.trace,
+                )
 
     @classmethod
-    def solveBDD(g6k, t, dist_sq_bnd, nthreads=1):
+    def solveBDD(cls, g6k, t, dist_sq_bnd, nthreads=1):
         # raise NotImplementedError
     
         slicer = RandomizedSlicer(g6k)
@@ -913,6 +946,7 @@ class USVPPredSlic:
             out_reduced = G.to_canonical( (G.d-slicer_dim)*[0] + list( G.from_canonical( out_reduced,start=G.d-slicer_dim ) ), start=0 )
 
             assert not (index is None), f"Impossible!"
+            t = np.array( t, dtype=DTYPE )
             bab_01 = np.array( G.babai(t-out_reduced) )
             yield bab_01
 
@@ -967,9 +1001,14 @@ class USVPPredSlic:
 
     @classmethod
     def parametersf(cls, M, squared_target_norm):
-        ph = M.get_r_exp(M.d - 1, M.d - 1)[1]
-        # use integers to preserve precision, squared_target_norm might not be a float
-        return {"squared_target_norm": 101 * (squared_target_norm / 100), "ph": ph}
+        block_size = max( [2, USVPPredBKZEnum.estimate(M, squared_target_norm)[1] ])
+        if not block_size:
+            block_size = M.d
+        slicer_dim = min( [M.d,block_size+10] )
+        return {
+            "block_size": block_size,
+            "slicer_dim": slicer_dim
+            }
 
 
 usvp_pred_slic_solve = USVPPredSlic()
@@ -1003,16 +1042,16 @@ def usvp_pred_solve(A, predicate, squared_target_norm, invalidate_cache=lambda: 
     from g6k import Siever
 
     try:
-        solver = solvers[solver]
-    except KeyError:
-        pass
-
-    try:
         A.update_gso()
         M = A
     except AttributeError:
         M = Siever.MatGSO(A)
         M.update_gso()
+
+    try:
+        solver = solvers[solver]
+    except KeyError:
+        pass
 
     predicate.__globals__["M"] = M
 

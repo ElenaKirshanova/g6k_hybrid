@@ -20,6 +20,9 @@ from math import ceil, log
 import usvp
 from ecdsa_hnp import ECDSA
 
+from fpylll import FPLLL
+FPLLL.set_precision(300)
+
 
 @click.group()
 def ecdsa():
