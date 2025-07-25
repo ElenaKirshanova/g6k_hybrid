@@ -13,6 +13,17 @@ A user probably wants to call ``usvp_pred_solve``.
 ..  note :: This file assumes that there is at most one vector satisfying the predicate in the
             lattice, i.e. we do early aborts.
 
+
+Example of our approach:
+
+ sage -python ecdsa_cli.py benchmark -n 256 -k 252.5 -m 120 -j 2 -p 5 --algorithm bkz-slic --loglvl DEBUG
+
+% 2025-07-25 13:57:07.050089 legion7 0x1f24b1d1fd747c29 ::  sr:  88%, v/b[0]: 1.000, E|v|/|b[0]|: 1.002, E|v|/E|b[0]|: 0.461, work: 1, t: -145.4s, w: 107.1s
+
+ sage -python ecdsa_cli.py benchmark -n 256 -k 252.5 -m 120 -j 2 -p 5 --loglvl DEBUG
+
+% 2025-07-25 14:01:54.093377 legion7 0xcbe27157aef94cdd ::  sr: 100%, v/b[0]: 1.000, E|v|/|b[0]|: 0.962, E|v|/E|b[0]|: 0.461, work: 155, t: 24.9s, w: 22.6s
+
 """
 # NOTE: This file should not import from the sage namespace,
 # i.e. this file is meant to be usable outside SageMath.
@@ -741,7 +752,7 @@ usvp_pred_bkz_sieve_solve = USVPPredBKZSieve()
 
 # - - -
 
-class USVPPredSlic:
+class USVPBKZSlic:
     """
     Solve an uSVP with predicate instance with many-approxCVP+Slicer.
 
@@ -757,7 +768,7 @@ class USVPPredSlic:
 
     """
 
-    def __call__(cls, M, predicate, block_size, slicer_dim, invalidate_cache=lambda: None, threads=1, max_loops=2, **kwds):
+    def __call__(cls, M, predicate, block_size, slicer_dim, invalidate_cache=lambda: None, threads=1, max_loops=5, **kwds):
         from fpylll import BKZ as BKZ_FPYLLL
         from fpylll.algorithms.bkz2 import BKZReduction
         from fpylll import LLL
@@ -827,6 +838,8 @@ class USVPPredSlic:
         lll()
         flags = BKZ_FPYLLL.AUTO_ABORT|BKZ_FPYLLL.MAX_LOOPS|BKZ_FPYLLL.GH_BND
         bkz = BKZReduction(Mstash)
+
+        Tbkz = time.perf_counter()
         for beta in range(15,46,15):    #BKZ reduce the basis
             par = BKZ_FPYLLL.Param(beta,
                                 max_loops=1,
@@ -837,12 +850,14 @@ class USVPPredSlic:
             bkz(par)
             round_time = time.perf_counter()-then_round
             print( f"BKZ-{beta} done in {round_time}" )
+        Tbkz = time.perf_counter() - Tbkz
         Mstash = bkz.M.B
         Mstash = GSO.Mat( Mstash, U=IntegerMatrix.identity(n,int_type=int_type), UinvT=IntegerMatrix.identity(n,int_type=int_type), float_type=float_type )
 
         params = SieverParams(threads=threads)
         g6k = Siever(M, params)
         tracer = SieveTreeTracer(g6k, root_label="bkz-sieve", start_clocks=True)
+        Tpnjbkz = time.perf_counter()
         for b in range(55, block_size + 1, 10):
             pump_n_jump_bkz_tour(g6k, tracer, b, pump_params={"down_sieve": True})
 
@@ -877,7 +892,8 @@ class USVPPredSlic:
             #             walltime=tracer.trace.data["walltime"],
             #             data=tracer.trace,
             #         )
-            
+        Tpnjbkz = time.perf_counter() - Tpnjbkz
+
         param_sieve = SieverParams()
         param_sieve['threads'] = threads
         param_sieve['db_size_base'] = (4/3.)**0.5 #(4/3.)**0.5 ~ 1.1547
@@ -892,17 +908,19 @@ class USVPPredSlic:
         g6k.initialize_local(n-slicer_dim,n-slicer_dim,n) 
 
         print("Running bdgl2...")
-        then = time.perf_counter()
+        Tpnj = time.perf_counter()
         # g6k(alg="bdgl2")   #TODO: we'd better pump here
         f=0
         pump(g6k, tracer, g6k.l, g6k.r-g6k.l, f, saturation_error="ignore", verbose=True)
-        print(f"bdgl2 done in {time.perf_counter()-then}")
+        Tpnj = time.perf_counter()-Tpnj
+        print(f"bdgl2 done in {Tpnj}")
 
         gh_sub = gaussian_heuristic(g6k.M.r()[-(g6k.r-g6k.l):])
         # t1, t2 = t[:-slicer_dim], t[-slicer_dim:]
         H11 = g6k.M.B
 
-        it = cls.solveBDD(g6k,t,1.1,threads)
+        Tbdd = time.perf_counter()
+        it = cls.solveBDD(g6k,t,1.0,threads)
 
         ntests = 0
         found = False
@@ -922,33 +940,39 @@ class USVPPredSlic:
 
                 if vvgh < 1.05:
                     try:
-                        pred = predicate(v, standard_basis=True)
-                    except KeyError:
-                        print(f"Whoops! - - - - - - -")
+                        try:
+                            pred = predicate(v, standard_basis=True)
+                        except KeyError:
+                            print(f"Whoops! - - - - - - -")
 
-                        pred = predicate(-v, standard_basis=True)
-                    if pred:
-                        solution = tuple([int(v_) for v_ in v])
-                        found = True
-                        tracer.exit()
-                        return USVPPredSolverResults(
-                            success=found,
-                            ntests=ntests,
-                            solution=solution,
-                            b0=b0 ** (0.5) * 2 ** (b0e / 2.0),
-                            cputime=tracer.trace.data["cputime"],
-                            walltime=tracer.trace.data["walltime"],
-                            data=tracer.trace,
-                        )
+                            pred = predicate(-v, standard_basis=True)
+                        if pred:
+                            Tbdd = time.perf_counter() - Tbdd
+                            solution = tuple([int(v_) for v_ in v])
+                            found = True
+                            tracer.exit()
+                            return USVPPredSolverResults(
+                                success=found,
+                                ntests=ntests,
+                                solution=solution,
+                                b0=b0 ** (0.5) * 2 ** (b0e / 2.0),
+                                cputime=tracer.trace.data["cputime"],
+                                walltime= Tbkz+Tpnjbkz+Tpnj+Tbdd,  #tracer.trace.data["walltime"],
+                                data=tracer.trace,
+                            )
+                    except KeyError:
+                        print(f"Whoops x2! - - - - - - -")
+                        pass
 
         tracer.exit()
+        Tbdd = time.perf_counter() - Tbdd
         return USVPPredSolverResults(
                     success=found,
                     ntests=ntests,
                     solution=solution,
                     b0=b0 ** (0.5) * 2 ** (b0e / 2.0),
                     cputime=tracer.trace.data["cputime"],
-                    walltime=tracer.trace.data["walltime"],
+                    walltime=Tbkz+Tpnjbkz+Tpnj+Tbdd,  #tracer.trace.data["walltime"],
                     data=tracer.trace,
                 )
         
@@ -962,7 +986,7 @@ class USVPPredSlic:
         slicer.set_nthreads(nthreads)
         slicer.set_max_slicer_interations(N_MAX_SLICER_ITERATIONS)
         slicer.set_proj_error_bound( (EPS2*(dist_sq_bnd)) )
-        slicer.set_Nt(1)
+        slicer.set_Nt(10)   #TODO: remove this *very* dirty trick
         slicer.set_saturation_scalar(SATURATION_SCALAR)
         slicer_dim = g6k.r - g6k.l
 
@@ -992,7 +1016,9 @@ class USVPPredSlic:
         buckets = min(buckets, sp["bdgl_multi_hash"] * N / sp["bdgl_min_bucket_size"])
         buckets = max(buckets, 2**(blocks-1))
 
+        then = time.perf_counter()
         slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False)
+        print(f"slicer done in: {time.perf_counter()-then}")
         iterator = slicer.itervalues_cdb_t(return_with_index=True)
 
         cntr = 0 
@@ -1063,17 +1089,18 @@ class USVPPredSlic:
 
     @classmethod
     def parametersf(cls, M, squared_target_norm):
-        block_size = max( [2, USVPPredBKZEnum.estimate(M, squared_target_norm)[1]-3 ])
+        base = USVPPredBKZEnum.estimate(M, squared_target_norm)[1]
+        block_size = max( [2, base-1 ])
         if not block_size:
             block_size = M.d
-        slicer_dim = min( [M.d,block_size+10] )
+        slicer_dim = min( [M.d,base+10] )
         return {
             "block_size": block_size,
             "slicer_dim": slicer_dim
             }
 
 
-usvp_pred_slic_solve = USVPPredSlic()
+usvp_pred_slic_solve = USVPBKZSlic()
 
 # - - -
 
@@ -1081,9 +1108,9 @@ usvp_pred_slic_solve = USVPPredSlic()
 solvers = {
     "bkz-enum": usvp_pred_bkz_enum_solve,
     "bkz-sieve": usvp_pred_bkz_sieve_solve,
+    "bkz-slic": usvp_pred_slic_solve,
     "enum_pred": usvp_pred_enum_solve,
     "sieve_pred": usvp_pred_sieve_solve,
-    "slic_pred": usvp_pred_slic_solve,
 }
 
 

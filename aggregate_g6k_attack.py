@@ -1,6 +1,6 @@
 import pickle
 import numpy as np
-filename = "exp_110.pkl"
+filename = "tph_144_binomial_3.0000_2_64_75.pkl"
 with open(filename,"rb") as file:
     my_tracers = pickle.load(file)
 
