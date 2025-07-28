@@ -295,7 +295,7 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
 
             g6k.lll(0, g6k.full_n)
 
-            if g6k.M.get_r(0, 0) <= target_norm:
+            if g6k.M.get_r(0, 0) <= 1.01 * target_norm:
                 break
 
             # overdoing n_max would allocate too much memory, so we are careful
