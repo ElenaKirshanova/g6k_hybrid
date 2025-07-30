@@ -66,6 +66,7 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
     param_sieve = SieverParams()
     param_sieve['threads'] = nthreads
     param_sieve['otf_lift'] = False
+    param_sieve['saturation_ratio'] = 0.7
     g6k.params = param_sieve
 
     G = g6k.M
@@ -99,13 +100,21 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
     G = g6k.M
     g6k = Siever(G,param_sieve)
     # print(g6k.M.d-delta)
-    # g6k.initialize_local(g6k.M.d-delta,g6k.M.d-delta,g6k.M.d)
+    g6k.initialize_local(g6k.M.d-delta,g6k.M.d-50,g6k.M.d)
     print("Running bdgl2...")
     then = time.perf_counter()
+    
+    g6k(alg="bdgl2") #alg="bdgl2"
+    while g6k.ll < g6k.l:
+        g6k.extend_left()
+        g6k(alg="bdgl2") #alg="bdgl2"
+    # f = 0
+    # pump(g6k, dummy_tracer, g6k.M.d-delta, delta, f, start_up_n=40, verbose=True)
+    print(f"pump done in {time.perf_counter()-then}")
+    print(f"len(g6k): {len(g6k)}")
+    # then = time.perf_counter()
     # g6k(alg="bdgl2") #alg="bdgl2"
-    f = 0
-    pump(g6k, dummy_tracer, g6k.M.d-delta, delta, f, start_up_n=40, verbose=True)
-    print(f"bdgl2 done in {time.perf_counter()-then}")
+    # print(f"bdgl2 done in {time.perf_counter()-then}")
 
     H11 = g6k.M.B
 
