@@ -334,6 +334,10 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
             llb = max(0, llb)
             f = max(d-llb-n_max, 0)
 
+            if f>12:
+                print(f"Was about to svp pump_{llb, d-llb, f, n_max}... Aborted")
+                continue
+
             if verbose:
                 print("Starting svp pump_{%d, %d, %d}, n_max = %d, Tmax= %.2f sec" % (llb, d-llb, f, n_max, svp_Tmax)) # noqa
             T_sieve = time.time()

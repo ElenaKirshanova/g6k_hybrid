@@ -2,6 +2,8 @@ from fpylll import *
 FPLLL.set_random_seed(0x1337)
 from g6k.siever import Siever
 from g6k.siever_params import SieverParams
+from g6k.utils.stats import SieveTreeTracer, dummy_tracer
+from g6k.algorithms.pump import pump
 import argparse
 from utils import *
 from time import perf_counter
@@ -96,11 +98,13 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
 
     G = g6k.M
     g6k = Siever(G,param_sieve)
-    print(g6k.M.d-delta)
-    g6k.initialize_local(g6k.M.d-delta,g6k.M.d-delta,g6k.M.d)
+    # print(g6k.M.d-delta)
+    # g6k.initialize_local(g6k.M.d-delta,g6k.M.d-delta,g6k.M.d)
     print("Running bdgl2...")
     then = time.perf_counter()
-    g6k(alg="bdgl2") #alg="bdgl2"
+    # g6k(alg="bdgl2") #alg="bdgl2"
+    f = 0
+    pump(g6k, dummy_tracer, g6k.M.d-delta, delta, f, start_up_n=40, verbose=True)
     print(f"bdgl2 done in {time.perf_counter()-then}")
 
     H11 = g6k.M.B
