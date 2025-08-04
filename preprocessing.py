@@ -109,10 +109,14 @@ def run_preprocessing(params):
         param_sieve['threads'] = nthreads
         param_sieve['otf_lift'] = False
         g6k = Siever(G,param_sieve)
-        g6k.initialize_local(H11r-sieve_dim_max, H11r-sieve_dim_max+nsieves ,H11r)
+        g6kl = min(sieve_dim_max-nsieves,60)
+        g6k.initialize_local(H11r-sieve_dim_max, g6kl ,H11r) #H11r-sieve_dim_max+nsieves
 
         sieve_start = time.perf_counter()
         g6k(alg="bdgl2")
+        while g6k.l > H11r-sieve_dim_max+nsieves:
+            g6k.extend_left(1)
+            g6k(alg="bdgl2")
         i = 0
         report["bdgl_runtime"][i] = time.perf_counter()-sieve_start
         print(f"siever-{seed[0]}-{kappa}-{sieve_dim_max-nsieves+i} for beta={beta} finished in added time {time.perf_counter()-sieve_start}\n" )

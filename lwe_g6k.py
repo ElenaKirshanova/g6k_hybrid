@@ -244,10 +244,10 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
     print("Intial Slope = %.5f\n" % slope)
 
     use_pnj_strat_instead = params["use_pnj_strat_instead"]
-    if not use_pnj_strat_instead:
-        iter_strat = [ (tmp,jump,tours) for tmp in blocksizes ]
-    else:
-        iter_strat = [ (tmp,1,2) for tmp in range(5,46) ] + strats_kyber[(dist,dist_param)][n]
+    # if not use_pnj_strat_instead:
+    iter_strat = [ (tmp,jump,tours) for tmp in blocksizes ]
+    # else:
+    #     iter_strat = [ (tmp,1,2) for tmp in range(5,46) ] + strats_kyber[(dist,dist_param)][n]
 
     T0 = time.time()
     T0_BKZ = time.time()

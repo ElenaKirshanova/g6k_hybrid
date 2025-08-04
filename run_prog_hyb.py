@@ -105,9 +105,11 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
     then = time.perf_counter()
     
     g6k(alg="bdgl2") #alg="bdgl2"
+    
     while g6k.ll < g6k.l:
         g6k.extend_left()
         g6k(alg="bdgl2") #alg="bdgl2"
+
     # f = 0
     # pump(g6k, dummy_tracer, g6k.M.d-delta, delta, f, start_up_n=40, verbose=True)
     print(f"pump done in {time.perf_counter()-then}")
