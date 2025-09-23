@@ -29,8 +29,8 @@ class Distribution:
 
         self.variance = self.secondMoment - self.mean**2
 
-        if s!=1:
-            raise ValueError("Probabilities don't sum to one.")
+        if not abs(s-1)<4.55e-16:  #fix for large eta
+            raise ValueError(f"Probabilities don't sum to one. ")
 
     def sample(self, n):
         return [ choices(self.population, self.weights)[0] for _ in range(n) ]

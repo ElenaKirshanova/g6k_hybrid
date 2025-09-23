@@ -1376,7 +1376,8 @@ cdef class Siever(object):
       mySiever.initialize_local(ll,l,r)
 
       loc_dim = r-ll #the dimension of sieve
-      assert len(coeffs[0]) == r-l, f"Corrupted siever context: expected {r-l} got {len(coeffs[0])}."
+      #I hope, python language specification doesn't change or the line below may crash
+      assert (len(coeffs)==0) or (len(coeffs[0]) == r-l), f"Corrupted siever context: expected {r-l} got {len(coeffs[0])}."
       for i in range(len(coeffs)):
           coeffs[i] += (MAX_SIEVING_DIM-loc_dim)*[0]
 
