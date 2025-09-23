@@ -199,14 +199,12 @@ for (n,k,sievedim,latdim) in processed_data.keys():
     
     aggrigated_data[ (n,k,sievedim) ] =  bkz_runtime + np.zeros(len(bdgl_runtime))
 
-# print(f"- -  aggrigated_data - - : {aggrigated_data}")
 l0, l1 = {}, {}
 
 for (n,k,sievedim) in aggrigated_data.keys():
     l0[n] = aggrigated_data[(n,k,sievedim)][-1]
     l1[n] = aggrigated_data[(n,k,sievedim)][0]
 
-# l0[210] = 52007.30014759633
 preprocess_hyb_time = deepcopy(l0)
 
 P += list_plot_semilogy(l0, plotjoined=True, base=10, axes_labels=["$n$", "$log(T)$"], color="green", legend_label="Hybrid preprocessing")
@@ -283,7 +281,6 @@ for n in available_ns:
     succs[n] = cur_succ_rate if cur_succ_rate>0 else 1/100.
 
 ltot_hyb_att = {}
-# print(f"available_ns:{available_ns}")
 
 for key in wtimes.keys():
     walltime = wtimes[key]

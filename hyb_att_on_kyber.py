@@ -53,7 +53,6 @@ def alg_3(g6k,B,H11,t,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads=1, tracer_al
         if times!=0 and times%64 == 0:
             print(f"{times} done out of {nsampl}", end=", ")
         etilde2 = np.array( distrib.sample( n_guess_coord ), dtype=DTYPE ) #= (0 | e2)
-        # print(f"len etilde2: {len(etilde2)}")
         vtilde2 = np.array(t2, dtype=DTYPE)-etilde2
         vtilde2s.append( vtilde2  )
         #compute H12*H22^-1 * vtilde2 = H12*vtilde2 since H22 is identity
@@ -109,7 +108,7 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
     # - - - END prepare Slicer for batch cvp - - -
 
     nrand_, _ = batchCVPP_cost(sieve_dim,1,len(g6k)**(1./sieve_dim),1)
-    nrand = ceil(NRAND_FACTOR*(1./nrand_)**sieve_dim) #min( 250, target_list_size / len(target_candidates ) )
+    nrand = ceil(NRAND_FACTOR*(1./nrand_)**sieve_dim)
 
     print(f"len(target_candidates): {len(target_candidates)} nrand: {nrand}")
     t_gs_list = []

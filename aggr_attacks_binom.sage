@@ -49,7 +49,7 @@ for oo in out:
 
 start, step, times = 140, 10, 5
 l = {}
-ddl = {} #{ start+step*i: 0 for i in range(times) }
+ddl = {} 
 for oo in out:
     if not oo["kyb"][0] in l.keys():
         l[oo["kyb"][0]] = [ oo["beta"], 1 ]

@@ -361,10 +361,6 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
             print("Finished! TT=%.2f sec" % (time.time() - T0))
             print(g6k.M.B[0])
             alpha_ = int(alpha*1000)
-            # filename = 'lwechallenge/%03d-%03d-solution.txt' % (n, alpha_)
-            # fn = open(filename, "w")
-            # fn.write(str(g6k.M.B[0]))
-            # fn.close()
             T_overall = time.time() - T_overall_0
             my_tracer["succ"] = True
             my_tracer["T_BKZ"] = T_BKZ

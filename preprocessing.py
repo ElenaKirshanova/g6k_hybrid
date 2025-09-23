@@ -114,27 +114,16 @@ def run_preprocessing(params):
         g6k.initialize_local(H11r-max_sieve_dim_bnd, H11r-g6kl, H11r) #todo: max_sieve_dim_bnd is max dim of sieving g6k is configured with - can we avoid creating a new object to infer it?
 
         sieve_start = time.perf_counter()
-        # g6k(alg="bdgl2")
-        # while g6k.l > H11r-sieve_dim_max+nsieves:
-        #     g6k.extend_left(1)
-        #     g6k(alg="bdgl2")
         i = 0
         report["bdgl_runtime"][i] = time.perf_counter()-sieve_start
-        # print(f"siever-{seed[0]}-{kappa}-{sieve_dim_max-nsieves+i} for beta={beta} finished in added time {time.perf_counter()-sieve_start}\n" )
         sys.stdout.flush()
-        #NOTE: this dumps
-        # assert g6k.r - g6k.l == sieve_dim_max-nsieves+i, f"g6k context: {g6k.r - g6k.l} != {sieve_dim_max-nsieves+i}"
         g6kdumppath = f'g6kdump_{n}_{q}_{dist}_{dist_param:.04f}_{seed[0]}_{kappa}_{g6k.n}_{beta}.pkl'
         g6k.dump_on_disk(out_path+g6kdumppath)
         for i in range(1,nsieves+1):
             g6k.extend_left(1)
             sieve_start = time.perf_counter()
-            # g6k(alg="bdgl2")
             report["bdgl_runtime"][i] = time.perf_counter()-sieve_start
-            # print(f"siever-{seed[0]}-{kappa}-{sieve_dim_max-nsieves+i} for beta={beta} finished in added time {time.perf_counter()-sieve_start}\n", flush=True )
             sys.stdout.flush()
-            #NOTE: this dumps
-            # assert g6k.r - g6k.l == sieve_dim_max-nsieves+i, f"g6k context: {g6k.r - g6k.l} != {sieve_dim_max-nsieves+i}"
             g6kdumppath = f'g6kdump_{n}_{q}_{dist}_{dist_param:.04f}_{seed[0]}_{kappa}_{g6k.n}_{beta}.pkl'
             g6k.dump_on_disk(out_path+g6kdumppath)
 

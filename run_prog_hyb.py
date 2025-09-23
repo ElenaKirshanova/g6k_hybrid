@@ -91,7 +91,7 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
         print(f"#{lat_index} est_proj_norm is: {est_norm} for dim={delta}",flush=True)
         if est_norm <= HYB_PROJ_THRESHOLD:
             break
-    # print( distrib.sample() )
+
     print(f"#{lat_index} final est_proj_norm is: {est_norm} @dim={delta}")
 
     # - - - when we chose the slicing dimension, we are ready to go
@@ -100,7 +100,6 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
 
     G = g6k.M
     g6k = Siever(G,param_sieve)
-    # print(g6k.M.d-delta)
     g6k.initialize_local(g6k.M.d-delta,g6k.M.d-50,g6k.M.d)
     print("Running bdgl2...")
     then = time.perf_counter()
@@ -111,21 +110,14 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
         g6k.extend_left()
         g6k(alg="bdgl2") #alg="bdgl2"
 
-    # f = 0
-    # pump(g6k, dummy_tracer, g6k.M.d-delta, delta, f, start_up_n=40, verbose=True)
     print(f"pump done in {time.perf_counter()-then}")
     print(f"len(g6k): {len(g6k)}")
-    # then = time.perf_counter()
-    # g6k(alg="bdgl2") #alg="bdgl2"
-    # print(f"bdgl2 done in {time.perf_counter()-then}")
 
     H11 = g6k.M.B
 
     overhead_tsieve = time.perf_counter() - overhead_tsieve
     n_slicer_coord = delta
     print(f"n_slic_c: {n_slicer_coord}")
-
-    # assert n_slicer_coord == g6k.r-g6k.l-1, f"No | n_slicer_coord: {n_slicer_coord} l:{g6k.l} r:{g6k.r} g6k.r-g6k.l-1: {g6k.r-g6k.l-1}"
 
     # Gaussian heuristic for the last sieve_dim dimensioal projective lattice of G.
     # ALL {from/to}_canonical_scaled calls must use scale_fact=gh_sub, or things go out of hand.
@@ -162,10 +154,6 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
 
         tracer = {}
         iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, dist, dist_param, s, dist_sq_bnd=EPS2 * dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
-        
-        # tracer["wrong_guess_time_alg3"] = 0 
-        # tracer["wrong_guess_time_alg2"] = 0  
-        # iter_v = alg_3_debug(g6k,H11,B,t,n_guess_coord, dist, dist_param, dist_sq_bnd=EPS2 * dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
         
         guess_cntr = 0
         sli_succ = False
