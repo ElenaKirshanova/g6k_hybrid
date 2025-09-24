@@ -84,6 +84,10 @@ Optional parameters:
 
 Running the Primal attack
 ==========================
+
+Naive Primal Attack
+--------------
+
 For the sake of comparison with the hybrid attack, we implemented the primal attack on Kyber (Kannan's embedding) in ``primal_kyber.py``
 
 To run the attack on LWE with parameters ``n=130, q=3329``, ternary error and secret distribution with sparsity parameter 0.08333 and maximum BKZ blocksize parameter 60, execute
@@ -98,7 +102,18 @@ The additional flag ``inst_per_lat X`` will generate ``X`` LWE ``b``'s for the s
 
 To parallelize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``. For central binomial secrets and errors with parameter X use ``--dist "binomial" --dist_param X``.
 
+Two-Step Primal Attack
+--------------
 
+To generate an instance and run the attack on LWE with parameters ``n=130, q=3329``, ternary error and secret distribution with sparsity parameter 0.08333 and maximum BKZ blocksize parameter 60, execute
+
+.. code-block:: bash 
+    
+    python lwe_g6k.py --n 130 --q 3329 --dist "ternary" --dist_param 0.0833 --blocksizes "50:60:1" --recompute_instance
+
+The experiments will terminate in a several minutes on a laptop with the output dumped in a file ``lwe_instances/reduced_lattices/exp_130.pkl``.
+
+To parallelize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``. For central binomial secrets and errors with parameter X use ``--dist "binomial" --dist_param X``.
 
 Reproducing the experiments from the paper
 ====================

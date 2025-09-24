@@ -46,45 +46,39 @@ except ModuleNotFoundError:
 
 def lwe_kernel(params=None, seed=None, my_tracer={}):
     """
-    Run the primal attack against Darmstadt LWE instance (n, alpha).
+    Run the primal attack against an LWE instance.
 
-    :param n: the dimension of the LWE-challenge secret
     :param params: parameters for LWE:
 
-        - lwe/alpha: the noise rate of the LWE-challenge
+        - n: the dimension of the LWE-challenge secret
+    
+        - q: the LWE modulus
 
-        - lwe/m: the number of samples to use for the primal attack
+        - m: the number of samples to use for the primal attack
 
-        - lwe/goal_margin: accept anything that is
-          goal_margin * estimate(length of embedded vector)
-          as an lwe solution
+        - dist: secret distribution
 
-        - lwe/svp_bkz_time_factor: if > 0, run a larger pump when
-          svp_bkz_time_factor * time(BKZ tours so far) is expected
-          to be enough time to find a solution
-
-        - bkz/blocksizes: given as low:high:inc perform BKZ reduction
+        - blocksizes: given as low:high:inc perform BKZ reduction
           with blocksizes in range(low, high, inc) (after some light)
           prereduction
 
-        - bkz/tours: the number of tours to do for each blocksize
+        - tours: the number of tours to do for each blocksize
 
-        - bkz/jump: the number of blocks to jump in a BKZ tour after
+        - jump: the number of blocks to jump in a BKZ tour after
           each pump
 
-        - bkz/extra_dim4free: lift to indices extra_dim4free earlier in
-          the lattice than the currently sieved block
+        - ntar: numper of LWE instances per lattice
 
-        - bkz/fpylll_crossover: use enumeration based BKZ from fpylll
+        - fpylll_crossover: use enumeration based BKZ from fpylll
           below this blocksize
 
-        - bkz/dim4free_fun: in blocksize x, try f(x) dimensions for free,
-          give as 'lambda x: f(x)', e.g. 'lambda x: 11.5 + 0.075*x'
+        - svp_bkz_time_factor: if > 0, run a larger pump when
+          svp_bkz_time_factor * time(BKZ tours so far) is expected
+          to be enough time to find a solution
 
-        - pump/down_sieve: sieve after each insert in the pump-down
-          phase of the pump
+        - goal_margin: an approximation factor
 
-        - dummy_tracer: use a dummy tracer which captures less information
+        - nthreads: number of threads allocated to the sieve and bkz
 
         - verbose: print information throughout the lwe challenge attempt
 
@@ -143,11 +137,8 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
 
     for j in range(n):
         B[-1][j] = int( c[j] )
-    # print( [len(lol) for lol  in B] )
-    B = IntegerMatrix.from_matrix( B )
-    
 
-    # c = ( np.array(A@(s)) + np.array(e) )%q #the target
+    B = IntegerMatrix.from_matrix( B )
     
     sec = np.concatenate([e,-s,[1]])
 
@@ -178,7 +169,6 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
     dont_trace = True #params["dummy_tracer"]
     verbose = params["verbose"]
 
-    # A, c, q = load_lwe_challenge(n=n, alpha=alpha)
     print("-------------------------")
     print("Primal attack, LWE challenge n=%d, alpha=%.4f" % (n, alpha))
 
@@ -205,7 +195,7 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
         blocksizes = list(range(10, 50)) + [b-20, b-17] + list(range(b - 14, b + 25, 2))
 
     A = IntegerMatrix.from_matrix(A)
-    # B = primal_lattice_basis(A, c, q, m=m)
+    
     B = [ [int(0) for i in range(2*n)] for j in range(2*n) ]
     for i in range( n ):
         B[i][i] = int( q )
@@ -509,7 +499,7 @@ if __name__ == "__main__":
     pool.close()
 
     filename = f"exp_{n}.pkl" if not args.use_pnj_strat_instead else f"exp_{n}_pnj.pkl"
-    with open(filename,"wb") as file:
+    with open(out_path + filename,"wb") as file:
         pickle.dump(my_tracers,file)
 
     print( my_tracers )
