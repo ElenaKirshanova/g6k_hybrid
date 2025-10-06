@@ -40,6 +40,7 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
     n, q, dist, dist_param = params["n"], params["q"], params["dist"], params["dist_param"]
     n_guess_coord, n_slicer_coord = params["n_guess_coord"], params["n_slicer_coord"]
     beta_pre = params["beta_pre"]
+    verbose = params["verbose"]
 
     ft = "dd" #"ld" if 2*n<140 else ( "dd" if config.have_qd else "mpfr")
     FPLLL.set_precision(210)
@@ -145,7 +146,7 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
         B = IntegerMatrix.from_matrix(Binit)
 
         tracer = {}
-        iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, dist, dist_param, s, dist_sq_bnd=EPS2 * dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer)
+        iter_v = alg_3_debug_v2(g6k,H11,B,t,n_guess_coord, dist, dist_param, s, dist_sq_bnd=EPS2 * dist_sq_bnd, nthreads=nthreads, tracer_alg3=tracer, verbose=verbose)
         
         guess_cntr = 0
         sli_succ = False
@@ -254,6 +255,7 @@ if __name__=="__main__":
     params["n"], params["dist"], params["dist_param"], params["q"] = n, dist, dist_param, q
     params["n_guess_coord"], params["n_slicer_coord"] = n_guess_coord, n_slicer_coord
     params["beta_pre"] = beta_pre
+    params["verbose"] = args.verbose
 
     succ_cntr = 0
     ex_cntr = 0

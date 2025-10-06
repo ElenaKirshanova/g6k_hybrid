@@ -115,10 +115,6 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
                 tracer_alg2["nrand"] = nrand
             yield best_bab_01
 
-
-    print(f"alg2 terminates after {attemptcntr} searches")
-
-
     return best_bab_01
 
 
@@ -175,14 +171,15 @@ def alg_3(g6k,B,H11,t,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads=1, tracer_al
         cntr += 1
     return argminv
 
-def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, dist, dist_param, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
+def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, dist, dist_param, s, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None, verbose=False):
     # Emulates batch CVPP with guessing.
     # - - - prepare targets - - -
     then_start = perf_counter()
     gh_sub = gaussian_heuristic(g6k.M.r()[-(g6k.r-g6k.l):])
     dim = B.nrows
     n = dim
-    print(f"Lattice dimension: {dim}")
+    if verbose:
+        print(f"Lattice dimension: {dim}")
 
     t1, t2 = target[:-n_guess_coord], target[-n_guess_coord:]
     if dist=="binomial":
@@ -202,7 +199,8 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, dist, dist_param, s, dist_sq_
     from hybrid_estimator.batchCVP import batchCVPP_cost
     nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
     nrand = ceil(NRAND_FACTOR*(1./nrand_)**sieve_dim)
-    print(f"Number of batches: {ceil( len(g6k) / nrand )}")
+    if verbose:
+        print(f"Number of batches: {ceil( len(g6k) / nrand )}")
     times = ceil( len(g6k) / nrand )
 
     tracer_alg2_correct, tracer_alg2_wrong = {}, {}
@@ -212,7 +210,7 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, dist, dist_param, s, dist_sq_
     vtilde2s = []
     wrong_guess_time = time.perf_counter()
     for cntr in range(times): #Alg 3 steps 4-7 ceil( (nrand * nsampl) / len(g6k) )
-        if cntr!=0 and cntr%1000 == 0:
+        if cntr!=0 and cntr%1000 == 0 and verbose:
             print(f"{cntr} guesses done out of {nsampl}", end=", ")
         if cntr>0:
             etilde2 = np.array( distrib.sample( n_guess_coord ) ) #= (0 | e2)
