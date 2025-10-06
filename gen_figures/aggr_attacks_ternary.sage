@@ -25,14 +25,16 @@ lwe_inst = [ #do we need lats_per_dim and inst_per_lat?
     {"n": 180, "q": 3329, "dist": 'ternary', "dist_param": 0.16666666666666666},
     {"n": 190, "q": 3329, "dist": 'ternary', "dist_param": 0.16666666666666666},
     {"n": 200, "q": 3329, "dist": 'ternary', "dist_param": 0.16666666666666666},
+    {"n": 210, "q": 3329, "dist": 'ternary', "dist_param": 0.16666666666666666},
 ]
 
 hparams = { #n_guess_coord's, n_slicer_coord from preprocessing.py
-    160: (6,51),
-    170: (6,56),
+    160: (5,50),
+    170: (5,56),
     180: (6,64),
     190: (6,74),
-    200: (6,83)
+    200: (6,83),
+    210: (6,90),
 }
 
 outpre = []
@@ -233,7 +235,7 @@ for path, directories, files in os.walk(path):
     lol+=1
     for candidate in files:
         match = regex.match(candidate)
-        if match and sec_type in candidate and f"{sec_param:0.4f}" in candidate:
+        if match and sec_type in candidate and "0.1667" in candidate: #f"{dist_param:04f}" seems to be insonsistent here and rounds 0.166666... to 0.1666 instead of 0.1667
             gd = match.groupdict()
             n             = int(gd['n'])
             dist          = gd['dist']
@@ -303,7 +305,7 @@ L_two_step = {}
 for path, directories, files in os.walk(path):
     for candidate in files:
         match = regex.match(candidate)
-        if match and sec_type in candidate and f"{sec_param:0.4f}" in candidate:
+        if match and sec_type in candidate and "0.1667" in candidate:
             gd = match.groupdict()
             n             = int(gd['n'])
             dist          = gd['dist']
@@ -314,7 +316,7 @@ for path, directories, files in os.walk(path):
                 L_two_step[n] = pickle.load(file)
 
 L_two_step_ = {}
-#print( L_two_step )
+print( f"data: {data}" )
 for n in L_two_step.keys():
     Ts = []
 
@@ -339,7 +341,17 @@ for n in L_two_step.keys():
     print( succs )
     L_two_step_[n] = avgtime*succs[1]/succs[0]
 
+with open("lwe_instances/reduced_lattices/outtsa_210_tern") as f:
+    text = f.read()
+# Find all "Finished! TT=..." occurrences
+matches = re.findall(r"Finished!\s*TT=(\d+(?:\.\d+)?)\s*sec", text)
+
+# Convert to floats
+times = [float(m) for m in matches]
+L_two_step_[210] = np.mean(times)  #these experiments never ended but new (slower ones) arrived which has pushed the yellow line upwards
+
 P += list_plot_semilogy(L_two_step_, plotjoined=True, base=10, axes_labels=["$n$", "$log(T)$"], color="orange", legend_label="Two-step total")
+
 
 print(f"succs: {succs}")
 print(f"ltot_hyb_att: {ltot_hyb_att}")

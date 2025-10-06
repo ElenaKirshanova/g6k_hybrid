@@ -11,11 +11,10 @@ out_path = "lwe_instances/reduced_lattices/"
 
 
 sec_type = "ternary"
-sec_param = 0.1667
-print(f"sec_param:{sec_param}")
+sec_param = float(1/6)
 q = 3329
 dist=sec_type
-dist_param=0.1666
+dist_param=sec_param
 
 with open("./lwe_instances/reduced_lattices/exp_[160, 170, 180, 190, 200]_3329_ternary_0.1667.pkl", "rb") as file:
     out = pickle.load( file )
@@ -35,7 +34,7 @@ hparams = { #n_guess_coord's, n_slicer_coord from preprocessing.py
     180: (6,64),
     190: (6,74),
     200: (6,83),
-    210: (6,90)
+    210: (6,90),
 }
 
 outpre = []
@@ -43,7 +42,7 @@ corresponding_blocksizes = {160:50, 170:50, 180:60, 190: 60, 200: 65}
 for n in range(160,201,10):
     betapre = corresponding_blocksizes[n]
     for seed in range(10):
-        filename = f"report_pre_{n}_{q}_{sec_type}_{sec_param:0.4f}_{seed}_{betapre}.pkl"
+        filename = f"report_pre_{n}_{q}_{sec_type}_{dist_param:0.4f}_{seed}_{betapre}.pkl"
         with open( out_path + filename, "rb" ) as file:
             outpre.append( pickle.load( file ) )
 
@@ -73,7 +72,7 @@ l_primal = l
 
 P = list_plot(l, plotjoined=True, marker='.',color="red", legend_label="Experiment")
 
-filename = f"betaprimal_d_{sec_type}_{sec_param:0.4f}.png"
+filename = f"betaprimal_d_{sec_type}_{dist_param:0.4f}.png"
 P.save_image( filename, axes_labels=['$n$', '$\\beta$'], title=f'$\\beta$ sufficient to solve uSVP, Kyber-$n$. 5 tours progressive BKZ. 100 experiments.', figsize=12 )
 print(f"Saved figure to {filename}")
 
@@ -168,7 +167,7 @@ for path, directories, files in os.walk(path):
 
 processed_data = {}
 for D in data: #loading from the text output
-    n, q, dist, dist_param, seed = D["params"]
+    n, q, dist, sec_param, seed = D["params"]
     if dist != sec_type:
         print(f"wrong dist: {dist}")
         continue
@@ -199,11 +198,14 @@ for (n,k,sievedim,latdim) in processed_data.keys():
     
     aggrigated_data[ (n,k,sievedim) ] =  bkz_runtime + np.zeros(len(bdgl_runtime))
 
+
+
 l0, l1 = {}, {}
 
 for (n,k,sievedim) in aggrigated_data.keys():
     l0[n] = aggrigated_data[(n,k,sievedim)][-1]
     l1[n] = aggrigated_data[(n,k,sievedim)][0]
+
 
 preprocess_hyb_time = deepcopy(l0)
 
@@ -229,25 +231,24 @@ regex = re.compile(pattern)
 
 lol=0
 max_n = 0
-available_ns = []
 for path, directories, files in os.walk(path):
     lol+=1
     for candidate in files:
         match = regex.match(candidate)
-        if match and sec_type in candidate and f"{sec_param:0.4f}" in candidate:
+        if match and sec_type in candidate and "0.1667" in candidate: #f"{dist_param:04f}" seems to be insonsistent here and rounds 0.166666... to 0.1666 instead of 0.1667
             gd = match.groupdict()
             n             = int(gd['n'])
-            # dist          = gd['dist']
-            # dist_param    = float(gd['dist_param'])
-            # kappa         = int(gd['kappa'])
-            # sieve_dim_max = int(gd['sieve_dim_max'])
-            # beta_bkz      = int(gd['beta_bkz'])
-            # print(True)
-            if not n in available_ns:
-                available_ns.append(n)
+            dist          = gd['dist']
+            dist_param    = float(gd['dist_param'])
+            kappa         = int(gd['kappa'])
+            sieve_dim_max = int(gd['sieve_dim_max'])
+            beta_bkz      = int(gd['beta_bkz'])
+            
+            available_ns.append(n)
             with open(path+candidate,"rb") as file:
                 L.update( pickle.load(file) )
             
+
 wtimes = {}
 succs = {}
 for n in available_ns:
@@ -263,32 +264,30 @@ for key in L:
         nrand = ceil(NRAND_FACTOR*(1./nrand_)**n_slicer_coord)
         utar_per_batch = ceil( L[key]["g6k_len"] / nrand ) #how many unique targets in batch
     
-        curtime = ( abs( L[key]["wrong_guess_time_alg2"] ) + abs( L[key]["wrong_guess_time_alg3"] ) )
+        curtime = abs( L[key]["wrong_guess_time_alg2"] ) + abs( L[key]["wrong_guess_time_alg3"] )
         overhead_tsieve = L[key]["overhead_tsieve"]
         batnum = ceil( L[key]["key_num"]/utar_per_batch )
         curtime *= batnum  #time * how many batches needed
         wtimes[n].append( [curtime , overhead_tsieve] )
         succs[n][0]+=1
         succs[n][1]+=L[key]['succ']
-print(f"- - - ")
 
 for n in available_ns:
     wtimes[n] = np.mean(wtimes[n], axis=0) #we don`t need to sieve for each new batch
     try:
         cur_succ_rate = float(succs[n][1] / succs[n][0])
     except TypeError:
-        cur_succ_rate = 1
+        cur_succ_rate = succs[n]
     succs[n] = cur_succ_rate if cur_succ_rate>0 else 1/100.
 
 ltot_hyb_att = {}
-
 for key in wtimes.keys():
     walltime = wtimes[key]
     ltot_hyb_att[key] = float( l1[key] + walltime[1] + ( 2*walltime[0] ) / succs[key] )  #success rate is 1/2 * slicer's proba
 
 
 P += list_plot_semilogy(ltot_hyb_att, plotjoined=True, base=10, axes_labels=["$n$", "$log(T)$"], color="red", legend_label="Hybrid total")
-plotfilename = f"time_{dist}_{sec_param:0.4f}_{available_ns}.png"
+plotfilename = f"time_{dist}_{dist_param:0.4f}_{available_ns}.png"
 # - - - now we process the two-step attack
 
 data = []
@@ -306,23 +305,25 @@ L_two_step = {}
 for path, directories, files in os.walk(path):
     for candidate in files:
         match = regex.match(candidate)
-        if match and sec_type in candidate and f"{sec_param:0.4f}" in candidate:
+        if match and sec_type in candidate and "0.1667" in candidate:
             gd = match.groupdict()
             n             = int(gd['n'])
-            # dist          = gd['dist']
-            # dist_param    = float(gd['dist_param'])
+            dist          = gd['dist']
+            dist_param    = float(gd['dist_param'])
             
             available_ns.append(n)
             with open(path+candidate,"rb") as file:
                 L_two_step[n] = pickle.load(file)
 
 L_two_step_ = {}
+print( f"data: {data}" )
 for n in L_two_step.keys():
     Ts = []
 
     succs = [0,0]
     cntr=0
     data = L_two_step[n]
+    #print(data)
     for D in data:
         tmp = 0
         for bkz in D["bkz_invoked"].values():
@@ -340,17 +341,24 @@ for n in L_two_step.keys():
     print( succs )
     L_two_step_[n] = avgtime*succs[1]/succs[0]
 
-L_two_step_[210] = 179854.06032
+with open("lwe_instances/reduced_lattices/outtsa_210_tern") as f:
+    text = f.read()
+# Find all "Finished! TT=..." occurrences
+matches = re.findall(r"Finished!\s*TT=(\d+(?:\.\d+)?)\s*sec", text)
+
+# Convert to floats
+times = [float(m) for m in matches]
+L_two_step_[210] = np.mean(times)  #these experiments never ended but new (slower ones) arrived which has pushed the yellow line upwards
 
 P += list_plot_semilogy(L_two_step_, plotjoined=True, base=10, axes_labels=["$n$", "$log(T)$"], color="orange", legend_label="Two-step total")
 
+
 print(f"succs: {succs}")
-print(f"hyb_preproc: {l0}")
 print(f"ltot_hyb_att: {ltot_hyb_att}")
 print(f"primal_timings: {primal_timings}")
 print(f"two_step_timings: {L_two_step_}")
 # - - -
-filename = f"hybVSprima_d_{dist}_{sec_param:0.4f}.png"
-P.save_image( filename, title=f'Preprocessing + attack Time for Hybrid, Kyber-$n$. Ternary {sec_param}', figsize=12 )
+filename = f"hybVSprima_d_{dist}_{dist_param:0.4f}.png"
+P.save_image( filename, title=f'Preprocessing + attack Time for Hybrid, Kyber-$n$. Ternary {dist_param}', figsize=12 )
 print(f"Saved figure to {filename}")
 

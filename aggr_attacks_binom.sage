@@ -22,12 +22,11 @@ lwe_inst = [
     {"n": 170, "q": 3329, "dist": 'binomial', "dist_param": 3},
 ]
 
-hparams = { #n_guess_coord's, n_slicer_coord from preprocessing.py + delta_beta
-    140: (1,61,0),
-    150: (1,71,0),
-    160: (1,81,0),
-    #170: (2,92,0)
-    170: (1,91,0)
+hparams = { #n_guess_coord's, n_slicer_coord from preprocessing.py
+    140: (1,61),
+    150: (1,71),
+    160: (1,81),
+    170: (1,91)
     #170: (1,88)
 }
 
@@ -49,7 +48,7 @@ for oo in out:
 
 start, step, times = 140, 10, 5
 l = {}
-ddl = {} 
+ddl = {} #{ start+step*i: 0 for i in range(times) }
 for oo in out:
     if not oo["kyb"][0] in l.keys():
         l[oo["kyb"][0]] = [ oo["beta"], 1 ]
@@ -114,8 +113,6 @@ for key in l.keys():
 primal_timings = deepcopy(l)
 # - - - 
 P = list_plot_semilogy(l, plotjoined=True, legend_label="Primal attack")
-PLOTS = {}
-PLOTS["prim"] = l
 
 data = []
 path = "./lwe_instances/reduced_lattices/"
@@ -155,7 +152,8 @@ for path, directories, files in os.walk(path):
                         kappa == hparams[n][0] and
                         beta_bkz == hparams[n][1] and
                         sec_type in candidate and
-                        f"{sec_param:0.4f}" in candidate
+                        f"{sec_param:0.4f}" in candidate and
+                        f"_{hparams[n][0]}_" in candidate
                     ):
                         with open( path+candidate, "rb" ) as file:
                             data.append( pickle.load(file) )
@@ -196,20 +194,19 @@ for (n,k,sievedim,latdim) in processed_data.keys():
     bkz_runtime = np.mean( D["bkz_runtime"] )
     bdgl_runtime = np.mean( D["bdgl_runtime"], axis=int(0) )
     
-    aggrigated_data[ (n,k,sievedim) ] =  bkz_runtime + np.zeros(len(bdgl_runtime)) #we redo the sieving for now
+    aggrigated_data[ (n,k,sievedim) ] =  bkz_runtime + np.zeros(len(bdgl_runtime))
 
 print(processed_data)
 
 l0, l1 = {}, {}
 
 for (n,k,sievedim) in aggrigated_data.keys():
-    l0[n] = aggrigated_data[(n,k,sievedim)][hparams[n][2]]
+    l0[n] = aggrigated_data[(n,k,sievedim)][-1]
     l1[n] = aggrigated_data[(n,k,sievedim)][0]
 
 preprocess_hyb_time = deepcopy(l0)
 
 P += list_plot_semilogy(l0, plotjoined=True, base=10, axes_labels=["$n$", "$log(T)$"], color="green", legend_label="Hybrid preprocessing")
-PLOTS["hyb_preproc"] = l0
 # P.show( title=f'Preprocessing Time for Hybrid, Kyber-$n$.', figsize=12 )
 
 # - - - processing the hybrid attack
@@ -286,15 +283,11 @@ for n in available_ns:
 ltot_hyb_att = {}
 for key in wtimes.keys():
     walltime = wtimes[key]
-    l1[key]
-    succs[key]
     ltot_hyb_att[key] = float( l1[key] + walltime[1] + ( 2*walltime[0] ) / succs[key] )  #success rate is 1/2 * slicer's proba
 
 P += list_plot_semilogy(ltot_hyb_att, plotjoined=True, base=10, axes_labels=["$n$", "$log(T)$"], color="red", legend_label="Hybrid total")
-PLOTS["hyb_tot"] = ltot_hyb_att
 plotfilename = f"time_{dist}_{dist_param:0.4f}_{available_ns}.png"
 
-print(f"succs hybrid: {succs}")
 # - - - now we process the two-step attack
 
 data = []
@@ -349,9 +342,8 @@ for n in L_two_step.keys():
     L_two_step_[n] = avgtime*succs[1]/succs[0]
 
 P += list_plot_semilogy(L_two_step_, plotjoined=True, base=10, axes_labels=["$n$", "$log(T)$"], color="orange", legend_label="Two-step total")
-PLOTS["two_step"] = L_two_step_
 
-print(f"succs two-step: {succs}")
+print(f"succs: {succs}")
 print(f"ltot_hyb_att: {ltot_hyb_att}")
 print(f"primal_timings: {primal_timings}")
 print(f"two_step_timings: {L_two_step_}")
@@ -361,6 +353,3 @@ print(f"two_step_timings: {L_two_step_}")
 filename = f"hybVSprima_d_{dist}_{dist_param:0.4f}.png"
 P.save_image( filename, title=f'Preprocessing + attack Time for Hybrid, Kyber-$n$. Binomial {dist_param}', figsize=12 )
 print(f"Saved figure to {filename}")
-
-with open(f"PLOTS.pkl", "wb") as file:
-    pickle.dump(PLOTS,file)

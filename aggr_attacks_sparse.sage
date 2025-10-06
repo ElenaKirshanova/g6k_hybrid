@@ -275,6 +275,21 @@ for key in L:
         succs[n][0]+=1
         succs[n][1]+=L[key]['succ']
 
+""" #this estimation was a mistake. We do not perform sieving for each batch -- only once
+for n in available_ns:
+    wtimes[n] = np.mean(wtimes[n])
+    try:
+        cur_succ_rate = float(succs[n][1] / succs[n][0])
+    except TypeError:
+        cur_succ_rate = succs[n]
+    succs[n] = cur_succ_rate if cur_succ_rate>0 else 1/100.
+
+ltot_hyb_att = {}
+for key in wtimes.keys():
+    walltime = wtimes[key]
+    ltot_hyb_att[key] = l1[key] + ( 2*walltime ) / succs[key]  #success rate is 1/2 * slicer's proba
+"""
+
 for n in available_ns:
     wtimes[n] = np.mean(wtimes[n], axis=0) #we don`t need to sieve for each new batch
     try:
@@ -316,12 +331,14 @@ for path, directories, files in os.walk(path):
                 L_two_step[n] = pickle.load(file)
 
 L_two_step_ = {}
+#print( L_two_step )
 for n in L_two_step.keys():
     Ts = []
 
     succs = [0,0]
     cntr=0
     data = L_two_step[n]
+    #print(data)
     for D in data:
         tmp = 0
         for bkz in D["bkz_invoked"].values():
