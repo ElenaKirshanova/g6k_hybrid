@@ -128,7 +128,7 @@ To run the attack on LWE with parameters ``n=130, q=3329``, ternary error and se
 
 .. code-block:: bash 
     
-    python primal_kyber.py --ns "range(130,131,1)" --q 3329 --dist "ternary" --dist_param 0.0833 --betamax 60 --recompute_instance
+    python primal_kyber.py --ns "range(130,131,1)" --q 3329 --dist "ternary" --dist_param 0.0833 --betapre 40 --betamax 50 --recompute_instance
 
 The experiments (on 1 lattice and 1 LWE instance) will terminate in several minutes on a laptop with the output dumped in a file ``lwe_instances/reduced_lattices/exp[130]_3329_ternary_0.08330.pkl``
 

@@ -27,7 +27,7 @@ try:
 except ModuleNotFoundError:
     from multiprocessing import Pool
 
-from hybrid_attack import alg_3_debug_v2, alg_3_debug #, generateLWEInstances, se_gen, kyberGen
+from hybrid_attack import alg_3_debug_v2 #, generateLWEInstances, se_gen, kyberGen
 from global_consts import *
 from copy import copy
 

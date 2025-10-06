@@ -89,7 +89,7 @@ def load_lwe(params):
     A_, q_,  bse_ = D["A"], D["q"], D["bse"]
     return A_, q_, bse_
 
-def prepare_kyber(params): #for debug purposes
+def prepare_kyber(params, new_kyber=False): #for debug purposes
     # n,q,dist,dist_param,betapre,seed=[0,0], nthreads=5
     n = params["n"]
     q = params["q"]
@@ -109,18 +109,23 @@ def prepare_kyber(params): #for debug purposes
         "time": 0
     }
 
-    try: #try load lwe instance
-        A, q, bse = load_lwe(params) #D["A"], D["q"], D["bse"]
-    except FileNotFoundError: #if no such, create one
-        print(f"No kyber instance found... generating.")
+    if new_kyber:
         gen_and_dump_lwe(params) #ntar = 5
         A, q, bse = load_lwe(params) #D["A"], D["q"], D["bse"]
+    else:
+        try: #try load lwe instance
+            A, q, bse = load_lwe(params) #D["A"], D["q"], D["bse"]
+        except FileNotFoundError: #if no such, create one
+            print(f"No kyber instance found... generating.")
+            gen_and_dump_lwe(params) #ntar = 5
+            A, q, bse = load_lwe(params) #D["A"], D["q"], D["bse"]
     #try load reduced kyber
-    try:
+    
+    if not new_kyber:
         with open(out_path + f"kyb_preprimal_{n}_{q}_{dist}_{dist_param:.04f}_{seed[0]}_{betapre}.pkl", "rb") as file:
             B = pickle.load(file)
             print(f"Kyber located")
-    except (FileNotFoundError, EOFError): #if no such, create one
+    else:
         B = [ [int(0) for i in range(2*n)] for j in range(2*n) ]
         for i in range( n ):
             B[i][i] = int( q )
@@ -357,7 +362,7 @@ if __name__ == "__main__":
                     "nthreads": nthreads
                 }
                 pretasks.append( pool.apply_async(
-                prepare_kyber, (params,) #NOTE: comma is crucial here
+                prepare_kyber, (params,True) #NOTE: comma is crucial here
                 ) )
         print(f"Preprocessing Kyber...", flush=True)
         for t in pretasks:
