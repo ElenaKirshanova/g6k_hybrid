@@ -149,6 +149,25 @@ The experiments will terminate in a several minutes on a laptop with the output 
 
 To parallelize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``. For central binomial secrets and errors with parameter X use ``--dist "binomial" --dist_param X``.
 
+In the last line of the output you will get a line similar to the following one:
+
+.. code-block:: bash
+    {(130, 0, 47, 4, 1): {'walltime': 2.4992673999986437, 'dist_bnd': np.float64(0.4450474927391203), 'succ': True, 'fail_reason': None, 'key_num': 10, 'g6k_len': 2762, 'g6k_dim': 47, 'wrong_guess_time_alg3': 1.253978199998528, 'correct_guess_time_alg3': 0.764686200000142, 'wrong_guess_time_alg2': 1.2452892000001157, 'correct_guess_time_alg2': 0.7554141000000527, 'walltime_observed': 2.0230597000008856, 'overhead_tsieve': 0.13418169999931706}}
+
+Each value within a disctionary contains the following:
+
+.# ``walltime`` -- attack's duration
+.# ``dist_bnd`` -- ratio of length of the error vector to the Gaussian Heuristic.
+.# ``succ`` -- whether attack succeeded.
+.# ``fail_reason`` -- the reason why attack had failed or None otherwise.
+.# ``g6k_len`` -- size of the siever's database.
+.# ``g6k_dim`` -- dimension of the siever.
+.# ``wrong_guess_time_alg3`` -- time spent on an incorrect guess in alg3
+.# ``correct_guess_time_alg3`` -- time spent on a correct guess in alg3
+.# ``wrong_guess_time_alg2`` -- time spent on an incorrect guess in alg2
+.# ``correct_guess_time_alg2`` -- time spent on a correct guess in alg2
+.# ``overhead_tsieve`` -- time spent on sieving.
+
 Reproducing the experiments from the paper
 ====================
 
