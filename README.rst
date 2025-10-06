@@ -136,7 +136,18 @@ The additional flag ``inst_per_lat X`` will generate ``X`` (default 1) LWE ``b``
 
 To parallelize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``. For central binomial secrets and errors with parameter X use ``--dist "binomial" --dist_param X``.
 
+Two-Step Primal Attack
+--------------
 
+To generate an instance and run the attack on LWE with parameters ``n=130, q=3329``, ternary error and secret distribution with sparsity parameter 0.08333 and maximum BKZ blocksize parameter 60, execute
+
+.. code-block:: bash 
+    
+    python lwe_g6k.py --n 130 --q 3329 --dist "ternary" --dist_param 0.0833 --blocksizes "50:60:1" --recompute_instance
+
+The experiments will terminate in a several minutes on a laptop with the output dumped in a file ``lwe_instances/reduced_lattices/exp_130.pkl``.
+
+To parallelize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``. For central binomial secrets and errors with parameter X use ``--dist "binomial" --dist_param X``.
 
 Reproducing the experiments from the paper
 ====================
@@ -218,18 +229,21 @@ Algorithms
 #. ``test_slicer.py`` -- script for showcasing slicer; 
 #. ``lattice_reduction.py`` -- implementation of pump'n'jump BKZ;
 #. ``benchmark_slicer_our.py`` -- runs a benchmark on various lattices for our slicer;
+#. ``benchmark_slicer_ww.py`` -- runs a benchmark on various lattices for WW slicer;
+#. ``benchmark_slicer_pump.py`` -- runs a benchmark on various lattices for [sum25] slicer (the installation process is described above);
 #. ``cvpp_exp.py`` -- investigates CVP success rate w.r.t. the approximation factor and the number of rerandomizations;
 #. ``tailBDD.sage`` -- investigates Batch-Tail-BDD success rate for our slicer; 
 #. ``primal_kyber.py`` -- primal attack on LWE;
 #. ``preprocessing.py`` -- preprocessing for the hybrid attack on LWE;
 #. ``run_prog_hybrid.py`` -- hybrid attack on LWE (won't launch without preprocessing stage).
+#. ``lwe_g6k.py`` -- automated two-step primal attack on lwe.
 
 Helper scripts
 ====================
 #. ``utils.py`` -- inner subroutines used across the repository;
 #. ``global_consts.py`` -- global constants used in algorithms;
 #. ``sample.py`` -- various distributions and samplers;
-#. ``discrete_gaussian.py`` -- discrete Gaussian sampler
+#. ``discretegauss.py`` -- discrete Gaussian sampler
 
 
 -----------------------------------------------------------------------------------------------------------------
