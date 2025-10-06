@@ -229,9 +229,6 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, dist, dist_param, s, dist_sq_
     """
     We return (if we succeed) (-s,e)[dim-kappa-betamax:dim-kappa] to avoid fp errors.
     """
-    #TODO: deduce what is the betamax
-    # def of alg_2_batched is in hyb_att_on_kyber.py
-    # ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg2_wrong )
     it = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg2_wrong )
     ctilde1 = np.zeros( dim-n_guess_coord )
     for ctilde1 in it: #what's returned is not quite relevant. The guess is wrong by design.
@@ -279,8 +276,6 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, dist, dist_param, s, dist_sq_
     """
     We return (if we succeed) (-s,e)[dim-kappa-betamax:dim-kappa] to avoid fp errors.
     """
-    #TODO: deduce what is the betamax
-    # def of alg_2_batched is in hyb_att_on_kyber.py
     it = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg2_correct )
     if not tracer_alg3 is None: #this belongs here since we may never start the loop
                     tracer_alg3["correct_guess_time_alg3"] = 0
@@ -307,7 +302,6 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, dist, dist_param, s, dist_sq_
                 yield argminv_correct
             cntr+=1
 
-    # correct_guess_time = time.perf_counter() - correct_guess_time
     # - - - END CORRECT GUESS - - -
 
 def alg_3_debug(g6k,H11,B,target,n_guess_coord, dist, dist_param, dist_sq_bnd=1.0, nthreads=1, tracer_alg3=None):
@@ -360,8 +354,6 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, dist, dist_param, dist_sq_bnd=1.
         """
         We return (if we succeed) (-s,e)[dim-kappa-betamax:dim-kappa] to avoid fp errors.
         """
-        #TODO: deduce what is the betamax
-        # def of alg_2_batched is in hyb_att_on_kyber.py
         it = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg2_correct )
         if not tracer_alg3 is None: #this belongs here since we may never start the loop
                         tracer_alg3["correct_guess_time_alg3"] = 0

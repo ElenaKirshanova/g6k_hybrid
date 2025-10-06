@@ -171,7 +171,6 @@ def attack_on_kyber(params):
     b, s, e = bse[seed[1]]
 
     r,c = A.shape
-    print(f"Shape: {A.shape}, n")
     t = np.concatenate([b,[0]*r]) #BDD target
     x = np.concatenate([b-e,s,[-1]]) #BBD solution
     sol = np.concatenate([e,-s,[1]])
@@ -188,8 +187,6 @@ def attack_on_kyber(params):
     FPLLL.set_precision(208)
     G = GSO.Mat(C,float_type=ft, U=IntegerMatrix.identity(dim,int_type=C.int_type), UinvT=IntegerMatrix.identity(dim,int_type=C.int_type))
     G.update_gso()
-
-    print(G.get_r(0,0)**0.5)
 
     report = {
         "kyb": ( n,q,dist, dist_param ),
@@ -224,7 +221,6 @@ def attack_on_kyber(params):
         bkz(par)
         round_time = time.perf_counter()-then_round
         curnrm = np.array( bkz.M.B[0] ).dot( np.array( bkz.M.B[0] ) )**(0.5)
-        # print(f"BKZ-{beta} done in {round_time} | {curnrm}")
         slope = basis_quality(bkz.M)["/"]
         print(f"Enum beta: {beta:}, done in: {round_time : 0.4f}, slope: {slope}  log r00: {log( bkz.M.get_r(0,0),2 )/2 : 0.5f} task_id = {seed}", flush=True)
         report["time"] += round_time

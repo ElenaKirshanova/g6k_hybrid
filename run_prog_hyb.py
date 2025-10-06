@@ -81,7 +81,6 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
     match dist:
         case "binomial":
             dist_param = int(dist_param)
-            print(f"debug: {dist_param}")
             distrib = centeredBinomial(dist_param)
         case "ternary":
             print(f"dist_param: {dist_param}")

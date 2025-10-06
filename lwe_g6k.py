@@ -104,7 +104,6 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
             dist_param = int(dist_param)
             distrib = centeredBinomial(dist_param)
         case "ternary":
-            print(f"dist_param: {dist_param}")
             distrib = ternaryDist(dist_param)
         case "ternary_sparse":
             distrib = centeredBinomial(dist_param)
@@ -221,7 +220,6 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
     G=GSO.Mat(B,float_type="dd",U=U,UinvT=UinvT)
     
     g6k = Siever(G, param_sieve)
-    print("GSO precision: ", g6k.M.float_type)
 
     if dont_trace:
         tracer = dummy_tracer
@@ -257,7 +255,6 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
                                       strategies=fplll_bkz.DEFAULT_STRATEGY,
                                       max_loops=1)
                 bkz(par)
-                print(f"basis_quality: {basis_quality(bkz.M)}")
 
             else:
                 if verbose:
@@ -269,7 +266,7 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
                                      dim4free_fun=dim4free_fun,
                                      goal_r0=target_norm,
                                      pump_params=pump_params)
-                print(f"basis_quality: {basis_quality(bkz.M)}")
+
             T_tour = time.time() - T_tour_0
             if not blocksize in my_tracer["bkz_invoked"].keys():
                 my_tracer["bkz_invoked"][blocksize] = {"iters": 1, "times":[T_tour]}
