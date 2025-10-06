@@ -81,8 +81,8 @@ To run the hybrid attack on LWE with parameters ``n=130, q=3329`` and ``kappa=4`
     
     python preprocessing.py --params "[(130, 4, 46)]" --q 3329 --dist "ternary" --dist_param 0.08333 --recompute_instance
 
-Here, ``dist_param 0.08333`` corresponds to ternary secrets/errors of Hamming weight 1/6. ``params`` is a list of triples (n, n_guess_coordinates, bkzbeta) = (LWE dimension, number of guessed coordinates, preprocessing BKZ blocksize). The preprocessing will iterate through this list.
-``q`` is the LWE modulus.
+Here, ``--dist "ternary"`` and ``dist_param 0.08333`` corresponds to ternary secrets/errors of Hamming weight 1/6 ("ternary" and "binomial" ``dist`` supported). ``params`` is a list of triples (n, n_guess_coordinates, bkzbeta) = (LWE dimension, number of guessed coordinates, preprocessing BKZ blocksize). The preprocessing will iterate through this list.
+``q`` is the LWE modulus. ``recompute_instance`` deletes all cashed data (such as reduced bases).
 
 The script terminates within a few minutes on a laptop. It creates a report file ``lwe_instances/reduced_lattices/report_prehyb_130_3329_ternary_0.08333_0_4_46_47_46.pkl"``
 
