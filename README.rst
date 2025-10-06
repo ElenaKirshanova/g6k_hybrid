@@ -225,7 +225,7 @@ Run ``aggregate_slicer_comparison.py`` in the terminal. The script will output T
 
 Algorithms
 ====================
-#. ``hyb_attack_on_kyber.py`` -- implementation of Batched-Tail-BDD;
+#. ``hybrid_attack.py`` -- implementation of Batched-Tail-BDD;
 #. ``test_slicer.py`` -- script for showcasing slicer; 
 #. ``lattice_reduction.py`` -- implementation of pump'n'jump BKZ;
 #. ``benchmark_slicer_our.py`` -- runs a benchmark on various lattices for our slicer;
