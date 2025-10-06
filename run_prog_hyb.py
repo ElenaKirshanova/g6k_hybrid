@@ -94,11 +94,8 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
     for delta in range(n_slicer_coord,n_slicer_coord+delta_slicer_coord+1):
         lens = test_vect_proj(G, delta, NPROJ_TESTS, distrib)
         est_norm = np.percentile(lens,50)
-        print(f"#{lat_index} est_proj_norm is: {est_norm} for dim={delta}",flush=True)
         if est_norm <= HYB_PROJ_THRESHOLD:
             break
-
-    print(f"#{lat_index} final est_proj_norm is: {est_norm} @dim={delta}")
 
     # - - - when we chose the slicing dimension, we are ready to go
     overhead_tsieve = time.perf_counter()
@@ -117,31 +114,24 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
         g6k(alg="bdgl2") #alg="bdgl2"
 
     print(f"pump done in {time.perf_counter()-then}")
-    print(f"len(g6k): {len(g6k)}")
 
     H11 = g6k.M.B
 
     overhead_tsieve = time.perf_counter() - overhead_tsieve
     n_slicer_coord = delta
-    print(f"n_slic_c: {n_slicer_coord}")
 
     # Gaussian heuristic for the last sieve_dim dimensioal projective lattice of G.
     # ALL {from/to}_canonical_scaled calls must use scale_fact=gh_sub, or things go out of hand.
     gh_sub = gaussian_heuristic(G.r()[-n_slicer_coord:])
 
     print(f"Sieving-1 done in {perf_counter() - then}")
-
-    print(f"r / r = {(g6k.M.r()[-n_slicer_coord] / g6k.M.r()[-1])**0.5}")
     for (b, s, e) in bse:
         ex_cntr+=1
         print(f"running exp # {ex_cntr}")
         ex_timer = perf_counter()
         assert ( all( (s@A+e)%q == b ) ), f"wrong lwe instance! {(A@s+e)%q , b}"
-        print(f"len {len(Binit), len(Binit[0])}")
 
         answer = np.concatenate( [b-e,s] )
-
-        print(f"Database size: {len(g6k)}")
 
         t = np.concatenate([b,n*[0]])
         e_ = np.concatenate([e,-s])[:-n_guess_coord]
@@ -152,9 +142,6 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
         dist_sq_bnd = e_@e_
         dist_bnd = dist_sq_bnd**0.5
         dist_threshold = ( G.r()[-n_slicer_coord] / gh_sub )**0.5
-        print(f"dist_bnd: {dist_bnd} | dist_threshold: {dist_threshold} | ratio: {dist_bnd/dist_threshold}")
-        print(f"dist_sq_bnd: {dist_sq_bnd}")
-        print(f"len(e_): {len(e_)} G.M.nrows(): {G.B.nrows}")
 
         B = IntegerMatrix.from_matrix(Binit)
 
@@ -178,10 +165,9 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
                 break
         if not sli_succ:
             print(f"Fail @{lat_index, ex_cntr}")
-        print(f"v2 is none: {v2 is None}")
+
         fail_reason = "other" if guess_cntr<1 else "parasites"
-        a0, a1 = tracer["wrong_guess_time_alg3"] , tracer["wrong_guess_time_alg2"]
-        print(f"a0, a1: {a0,a1}")
+        
         walltime, walltime_observed = tracer["wrong_guess_time_alg3"] + tracer["wrong_guess_time_alg2"], perf_counter() - ex_timer
         stats_dict[(n, lat_index, n_slicer_coord, n_guess_coord, ex_cntr)] = {
             "walltime": walltime,

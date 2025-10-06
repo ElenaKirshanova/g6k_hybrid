@@ -97,6 +97,7 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
     dist = params["dist"]
     dist_param = params["dist_param"]
     seed = params["seed"]
+    nthreads = params["nthreads"]
     
     match dist:
         case "binomial":

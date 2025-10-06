@@ -195,7 +195,6 @@ def attack_on_kyber(params):
         "kyb": ( n,q,dist, dist_param ),
         "beta": 2,
         "time": 0,
-        "projinfo": {}
     }
     lll = LLL.Reduction(G)
     then = time.perf_counter()
@@ -205,7 +204,6 @@ def attack_on_kyber(params):
         "kyb": ( n,q,dist, dist_param ),
         "beta": 2,
         "time": llltime,
-        "projinfo": {}
     }
     beta = betapre
     if lll.M.get_r(0,0) <= tarnrmsq:

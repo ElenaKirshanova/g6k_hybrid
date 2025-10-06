@@ -35,7 +35,6 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
         startt = time.perf_counter()
         tracer_alg2["walltime"] = 0
     sieve_dim = g6k.r-g6k.l #n_slicer_coord
-    print(f"in alg2 sieve_dim={sieve_dim}", flush=True)
 
     G = g6k.M
     gh_sub = gaussian_heuristic( G.r()[-sieve_dim:] )
@@ -56,7 +55,6 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
     nrand_, _ = batchCVPP_cost(sieve_dim,1,len(g6k)**(1./sieve_dim),1)
     nrand = ceil(NRAND_FACTOR*(1./nrand_)**sieve_dim)
 
-    print(f"len(target_candidates): {len(target_candidates)} nrand: {nrand}")
     t_gs_list = []
     t_gs_reduced_list = []
     shift_babai_c_list = []
@@ -73,7 +71,6 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
         t_gs_reduced_list.append(t_gs_reduced)
         slicer.grow_db_with_target(t_gs_reduced, n_per_target=nrand) #add a candidate to the Slicer
 
-    print(f"running slicer")
     blocks = 2 # should be the same as in siever
     blocks = min(3, max(1, blocks))
     blocks = min(int(sieve_dim / 28), blocks)
@@ -85,7 +82,6 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
 
     slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False)
 
-    print(f"t_gs_reduced norm: {t_gs_reduced@t_gs_reduced}")
     iterator = slicer.itervalues_cdb_t(return_with_index=True)
     best_bab_01 = np.array( g6k.M.d*[0] )
     attemptcntr = 0
@@ -94,7 +90,6 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
         if (out_gs_reduced@out_gs_reduced) > 1.00001*dist_sq_bnd:
             break
         attemptcntr += 1
-        print(f"out_gs_reduced norm: {(out_gs_reduced@out_gs_reduced)**0.5} vs {dist_sq_bnd**0.5}")
 
         #Now we deduce which target candidate the error vector corresponds to.
         #The idea is that if t_gs is an answer then t_gs_reduced - out_gs_reduced is in the projective lat
@@ -121,9 +116,6 @@ def alg_2_batched( g6k,target_candidates, dist_sq_bnd=1.0, nthreads=N_SIEVE_THRE
             yield best_bab_01
 
 
-        print(f"min_norm_err_sq: {min_norm_err_sq}")
-
-
     print(f"alg2 terminates after {attemptcntr} searches")
 
 
@@ -136,7 +128,7 @@ def alg_3(g6k,B,H11,t,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads=1, tracer_al
     # - - - prepare targets - - -
     then_start = perf_counter()
     dim = B.nrows
-    print(f"dim: {dim}")
+    print(f"Lattice dimension: {dim}")
 
     t1, t2 = t[:-n_guess_coord], t[-n_guess_coord:]
     slicer = RandomizedSlicer(g6k)
@@ -150,7 +142,7 @@ def alg_3(g6k,B,H11,t,n_guess_coord, eta, dist_sq_bnd=1.0, nthreads=1, tracer_al
     H12 = IntegerMatrix.from_matrix( [list(b)[:dim-n_guess_coord] for b in B[dim-n_guess_coord:]] )
     for times in range(nsampl): #Alg 3 steps 4-7
         if times!=0 and times%64 == 0:
-            print(f"{times} done out of {nsampl}", end=", ")
+            print(f"{times} guesses done out of {nsampl}", end=", ")
         etilde2 = np.array( distrib.sample( n_guess_coord ), dtype=DTYPE ) #= (0 | e2)
         vtilde2 = np.array(t2, dtype=DTYPE)-etilde2
         vtilde2s.append( vtilde2  )
@@ -190,20 +182,18 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, dist, dist_param, s, dist_sq_
     gh_sub = gaussian_heuristic(g6k.M.r()[-(g6k.r-g6k.l):])
     dim = B.nrows
     n = dim
-    print(f"dim: {dim}")
+    print(f"Lattice dimension: {dim}")
 
     t1, t2 = target[:-n_guess_coord], target[-n_guess_coord:]
     if dist=="binomial":
         distrib = centeredBinomial(dist_param)
     elif dist=="ternary":
-         print(f"dist_param: {dist_param}")
          distrib = ternaryDist(dist_param)
     elif dist=="ternary_sparse":
         distrib = sparse_distribution(n,n_guess_coord,int(dist_param),Distribution({-1: 0.5, 1: 0.5}))
 
     #TODO: make/(check if is) practical
     nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord ) )
-    print(f"nsampl: {nsampl}")
     tracer_alg3["key_num"] = nsampl
 
     H12 = IntegerMatrix.from_matrix( [list(b)[:dim-n_guess_coord] for b in B[dim-n_guess_coord:]] )
@@ -212,7 +202,7 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, dist, dist_param, s, dist_sq_
     from hybrid_estimator.batchCVP import batchCVPP_cost
     nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
     nrand = ceil(NRAND_FACTOR*(1./nrand_)**sieve_dim)
-    print(f"times: {ceil( len(g6k) / nrand )}")
+    print(f"Number of batches: {ceil( len(g6k) / nrand )}")
     times = ceil( len(g6k) / nrand )
 
     tracer_alg2_correct, tracer_alg2_wrong = {}, {}
@@ -223,7 +213,7 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, dist, dist_param, s, dist_sq_
     wrong_guess_time = time.perf_counter()
     for cntr in range(times): #Alg 3 steps 4-7 ceil( (nrand * nsampl) / len(g6k) )
         if cntr!=0 and cntr%1000 == 0:
-            print(f"{cntr} done out of {nsampl}", end=", ")
+            print(f"{cntr} guesses done out of {nsampl}", end=", ")
         if cntr>0:
             etilde2 = np.array( distrib.sample( n_guess_coord ) ) #= (0 | e2)
         else:
@@ -241,7 +231,6 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, dist, dist_param, s, dist_sq_
     """
     #TODO: deduce what is the betamax
     # def of alg_2_batched is in hyb_att_on_kyber.py
-    print(f"- - - alg 2 on incorrect guess - - -")
     # ctilde1 = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg2_wrong )
     it = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg2_wrong )
     ctilde1 = np.zeros( dim-n_guess_coord )
@@ -275,7 +264,7 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, dist, dist_param, s, dist_sq_
     correct_guess_time_start = time.perf_counter()
     for times in range(times): #Alg 3 steps 4-7 ceil( (nrand * nsampl) / len(g6k) )
         if times!=0 and times%1000 == 0:
-            print(f"{times} done out of {nsampl}", end=", ")
+            print(f"{times} guesses done out of {nsampl}", end=", ")
         if times>0:
             etilde2 = np.array( distrib.sample( n_guess_coord ) ) #= (0 | e2)
         else:
@@ -286,14 +275,12 @@ def alg_3_debug_v2(g6k,H11,B,target,n_guess_coord, dist, dist_param, s, dist_sq_
 
         t1_ = np.array( list(t1) ) - tmp
         target_candidates.append( t1_ )
-    print()
 
     """
     We return (if we succeed) (-s,e)[dim-kappa-betamax:dim-kappa] to avoid fp errors.
     """
     #TODO: deduce what is the betamax
     # def of alg_2_batched is in hyb_att_on_kyber.py
-    print(f"- - - alg 2 on correct guess - - -")
     it = alg_2_batched( g6k,target_candidates, dist_sq_bnd=dist_sq_bnd, nthreads=nthreads, tracer_alg2=tracer_alg2_correct )
     if not tracer_alg3 is None: #this belongs here since we may never start the loop
                     tracer_alg3["correct_guess_time_alg3"] = 0
@@ -330,19 +317,16 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, dist, dist_param, dist_sq_bnd=1.
     gh_sub = gaussian_heuristic(g6k.M.r()[-(g6k.r-g6k.l):])
     dim = B.nrows
     n = dim
-    print(f"dim: {dim}")
 
     t1, t2 = target[:-n_guess_coord], target[-n_guess_coord:]
     if dist=="binomial":
         distrib = centeredBinomial(dist_param)
     elif dist=="ternary":
-         print(f"dist_param: {dist_param}")
          distrib = ternaryDist(dist_param)
     elif dist=="ternary_sparse":
         distrib = sparse_distribution(n,n_guess_coord,int(dist_param),Distribution({-1: 0.5, 1: 0.5}))
 
     nsampl = ceil( 2 ** ( distrib.entropy * n_guess_coord ) )
-    print(f"nsampl: {nsampl}")
     tracer_alg3["key_num"] = 0 #nsampl
 
     H12 = IntegerMatrix.from_matrix( [list(b)[:dim-n_guess_coord] for b in B[dim-n_guess_coord:]] )
@@ -351,7 +335,6 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, dist, dist_param, dist_sq_bnd=1.
     from hybrid_estimator.batchCVP import batchCVPP_cost
     nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
     nrand = ceil(NRAND_FACTOR*(1./nrand_)**sieve_dim)
-    print(f"times: {ceil( len(g6k) / nrand )}")
     times = ceil( len(g6k) / nrand )
 
     tracer_alg2_correct, tracer_alg2_wrong = {}, {}
@@ -365,7 +348,7 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, dist, dist_param, dist_sq_bnd=1.
         for cntr in range(times): #Alg 3 steps 4-7 ceil( (nrand * nsampl) / len(g6k) )
             tracer_alg3["key_num"] += 1
             if cntr!=0 and cntr%1000 == 0:
-                print(f"{cntr} done out of {nsampl}", end=", ")
+                print(f"{cntr} guesses done out of {nsampl}", end=", ")
             etilde2 = np.array( distrib.sample( n_guess_coord ) ) #= (0 | e2)
             vtilde2 = np.array(t2)-etilde2
             vtilde2s.append( vtilde2  )
@@ -373,7 +356,6 @@ def alg_3_debug(g6k,H11,B,target,n_guess_coord, dist, dist_param, dist_sq_bnd=1.
 
             t1_ = np.array( list(t1) ) - tmp
             target_candidates.append( t1_ )
-        print()
 
         """
         We return (if we succeed) (-s,e)[dim-kappa-betamax:dim-kappa] to avoid fp errors.
