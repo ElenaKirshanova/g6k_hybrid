@@ -5,7 +5,7 @@ import pickle
 L = {}
 
 path = "./lwe_instances/reduced_lattices/"
-filename = "tph_170_binomial_3.0000_1_91_97.pkl" #fig. 2 (left)
+filename = "tph_170_binomial_3.0000_1_91_97_.pkl" #fig. 2 (left)
 # filename = "tph_170_binomial_3.0000_1_91_93.pkl" #fig. 2 (right)
 n_guess_coords = [ int( filename.split("_")[4] ) ]
 with open(path+filename,"rb") as file:
