@@ -152,17 +152,17 @@ To parallelize BKZ reduction, add flag ``--nthreads``, to parallelize over diffe
 In the last line of the output you will get a string representation of a python distionary.
 Each value within the dictionary contains the following values:
 
-.# ``walltime`` -- attack's duration
-.# ``dist_bnd`` -- ratio of length of the error vector to the Gaussian Heuristic.
-.# ``succ`` -- whether attack succeeded.
-.# ``fail_reason`` -- the reason why attack had failed or None otherwise.
-.# ``g6k_len`` -- size of the siever's database.
-.# ``g6k_dim`` -- dimension of the siever.
-.# ``wrong_guess_time_alg3`` -- time spent on an incorrect guess in alg3
-.# ``correct_guess_time_alg3`` -- time spent on a correct guess in alg3
-.# ``wrong_guess_time_alg2`` -- time spent on an incorrect guess in alg2
-.# ``correct_guess_time_alg2`` -- time spent on a correct guess in alg2
-.# ``overhead_tsieve`` -- time spent on sieving.
+#. ``walltime`` -- attack's duration
+#. ``dist_bnd`` -- ratio of length of the error vector to the Gaussian Heuristic.
+#. ``succ`` -- whether attack succeeded.
+#. ``fail_reason`` -- the reason why attack had failed or None otherwise.
+#. ``g6k_len`` -- size of the siever's database.
+#. ``g6k_dim`` -- dimension of the siever.
+#. ``wrong_guess_time_alg3`` -- time spent on an incorrect guess in alg3
+#. ``correct_guess_time_alg3`` -- time spent on a correct guess in alg3
+#. ``wrong_guess_time_alg2`` -- time spent on an incorrect guess in alg2
+#. ``correct_guess_time_alg2`` -- time spent on a correct guess in alg2
+#. ``overhead_tsieve`` -- time spent on sieving.
 
 Reproducing the experiments from the paper
 ====================
