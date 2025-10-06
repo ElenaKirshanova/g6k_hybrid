@@ -1,3 +1,9 @@
+import warnings
+import re
+
+warnings.filterwarnings("ignore", message=".*Dimension of lattice is larger than.*")
+warnings.filterwarnings("ignore", message=".*pkg_resources is deprecated as an API..*")
+
 from fpylll import *
 FPLLL.set_random_seed(0x1337)
 from g6k.siever import Siever
@@ -100,7 +106,7 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
 
     G = g6k.M
     g6k = Siever(G,param_sieve)
-    g6k.initialize_local(g6k.M.d-delta,g6k.M.d-50,g6k.M.d)
+    g6k.initialize_local(g6k.M.d-delta,max(g6k.M.d-delta,g6k.M.d-50),g6k.M.d)
     print("Running bdgl2...")
     then = time.perf_counter()
     

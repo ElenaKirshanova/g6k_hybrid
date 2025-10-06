@@ -7,6 +7,12 @@ For ternary sparse run (e.g.):
 
 """
 
+import warnings
+import re
+
+warnings.filterwarnings("ignore", message=".*Dimension of lattice is larger than.*")
+warnings.filterwarnings("ignore", message=".*pkg_resources is deprecated as an API..*")
+
 from fpylll import *
 FPLLL.set_random_seed(0x1337)
 from g6k.siever import Siever

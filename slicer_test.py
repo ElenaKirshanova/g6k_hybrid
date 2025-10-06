@@ -1,3 +1,9 @@
+import warnings
+import re
+
+warnings.filterwarnings("ignore", message=".*Dimension of lattice is larger than.*")
+warnings.filterwarnings("ignore", message=".*pkg_resources is deprecated as an API..*")
+
 from fpylll.util import gaussian_heuristic
 from fpylll import *
 from g6k.siever import Siever

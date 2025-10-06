@@ -87,7 +87,14 @@ The script terminates within a few minutes on a laptop. It creates a report file
 
 The additional flag ``inst_per_lat X`` will generate ``X`` LWE ``b``'s for the same LWE matrix ``A``, the flag ``lats_per_dim Y``will generate ``Y`` difference LWE matrices ``A``. 
 
-To parallelize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``. For central binomial secrets and errors with parameter X use ``--dist "binomial" --dist_param X``.
+To parallelize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``. For central binomial secrets and errors with parameter X use ``--dist "binomial" --dist_param X``. 
+For example, to run 2 experiments in parallel on 3 threads each run:
+
+.. code-block:: bash 
+    
+    python preprocessing.py --params "[(130, 4, 46)]" --q 3329 --dist "ternary" --dist_param 0.08333 --recompute_instance --inst_per_lat 1 --lats_per_dim 2 --nworkers 2 --nthreads 3
+
+Note: the experiments are parallelized over ``lats_per_dim`` lattices.
 
 Optional parameters:
 
@@ -123,9 +130,9 @@ To run the attack on LWE with parameters ``n=130, q=3329``, ternary error and se
     
     python primal_kyber.py --ns "range(130,131,1)" --q 3329 --dist "ternary" --dist_param 0.0833 --betamax 60 --recompute_instance
 
-The experiments will terminate in several minutes on a laptop with the output dumped in a file ``lwe_instances/reduced_lattices/exp[130]_3329_ternary_0.08330.pkl``
+The experiments (on 1 lattice and 1 LWE instance) will terminate in several minutes on a laptop with the output dumped in a file ``lwe_instances/reduced_lattices/exp[130]_3329_ternary_0.08330.pkl``
 
-The additional flag ``inst_per_lat X`` will generate ``X`` LWE ``b``'s for the same LWE matrix ``A``, the flag ``lats_per_dim Y``will generate ``Y`` difference LWE matrices ``A``. 
+The additional flag ``inst_per_lat X`` will generate ``X`` (default 1) LWE ``b``'s for the same LWE matrix ``A``, the flag ``lats_per_dim Y``will generate ``Y`` difference LWE matrices ``A`` (default 1). 
 
 To parallelize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``. For central binomial secrets and errors with parameter X use ``--dist "binomial" --dist_param X``.
 

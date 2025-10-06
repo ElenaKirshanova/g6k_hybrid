@@ -1,3 +1,9 @@
+import warnings
+import re
+
+warnings.filterwarnings("ignore", message=".*Dimension of lattice is larger than.*")
+warnings.filterwarnings("ignore", message=".*pkg_resources is deprecated as an API..*")
+
 import sys,os
 import time
 import argparse
@@ -128,7 +134,6 @@ def run_preprocessing(params):
             g6k.dump_on_disk(out_path+g6kdumppath)
 
 
-    print(report)
     sys.stdout.flush()
     return report
 
@@ -164,7 +169,7 @@ def get_parser():
     "--beta_bkz_offset", default=1, type=int, help="BKZ-beta reduced bases will be computed for beta in [sieve_dim,...,sieve_dim+beta_bkz_offset]."
     )
     parser.add_argument(
-    "--sieve_dim_max_offset", default=1, type=int, help="he largest slicer will work on dim=predicted beta + this offset."
+    "--sieve_dim_max_offset", default=1, type=int, help="The largest slicer will work on dim=predicted beta + this offset."
     )
     parser.add_argument(
     "--nsieves", default=1, type=int, help="Number of sieves performed."

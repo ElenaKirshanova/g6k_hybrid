@@ -1,3 +1,9 @@
+import warnings
+import re
+
+warnings.filterwarnings("ignore", message=".*Dimension of lattice is larger than.*")
+warnings.filterwarnings("ignore", message=".*pkg_resources is deprecated as an API..*")
+
 from experiments.lwe_gen import *
 
 import os
