@@ -31,88 +31,10 @@ hparams = { #n_guess_coord's, n_slicer_coord from preprocessing.py
 }
 
 
-outpre = []
-q, eta, k = 3329, 3, 1
-corresponding_blocksizes = {140:55, 150:55, 160:55, 170: 80, 180: 90}
-for n in range(140,181,10):
-    betapre = corresponding_blocksizes[n]
-    for seed in range(10):
-        filename = f"report_pre_{n}_{q}_{eta}_{k}_{seed}_{betapre}.pkl"
-        with open( out_path + filename, "rb" ) as file:
-            outpre.append( pickle.load( file ) )
-
-maxbeta =0
-for oo in out:
-    if oo["beta"] > maxbeta:
-        maxbeta = oo["beta"]
-
-start, step, times = 140, 10, 5
-l = {}
-ddl = {} #{ start+step*i: 0 for i in range(times) }
-for oo in out:
-    if not oo["kyb"][0] in l.keys():
-        l[oo["kyb"][0]] = [ oo["beta"], 1 ]
-        ddl[oo["kyb"][0]] = [ oo["beta"] ]
-    else:
-        l[oo["kyb"][0]][0] += oo["beta"]
-        l[oo["kyb"][0]][1] += 1
-        ddl[oo["kyb"][0]].append( oo["beta"] )
-
-for key in l.keys():
-    l[key] = l[key][0]/l[key][1].n()
-    ddl[key] = np.std(ddl[key])
-
-chi = out[0]['kyb'][2]
-
-predict3 = [(100,18),(110,29),(120,41),(130,52),(140,62),(150,71),(160,80),(170,89),(180,97),(190,107)]
-predict2 = [(100,11),(110,21),(120,32),(130,44),(140,54),(150,63),(160,72),(170,80),(180,89),(190,97)]
-P = list_plot(l, plotjoined=True, marker='.',color="red", legend_label="Experiment") + list_plot(predict3, plotjoined=True, marker='.', legend_label="Estimate")
-
-for ii in range(times):
-    i = start+step*ii
-    P += plot( line( [(i,l[i]+ddl[i]),(i,l[i]-ddl[i])], color="red", alpha=0.5 ) )
-
-filename = f"betaprimal_d_{sec_type}_{dist_param:0.4f}.png"
-P.save_image( filename, axes_labels=['$n$', '$\\beta$'], title=f'$\\beta$ sufficient to solve uSVP, Kyber-$n$. 5 tours progressive BKZ. 100 experiments. chi={chi}', figsize=12 )
-print(f"Saved figure to {filename}")
-
 if sec_type=="binomial":
     distrib = centeredBinomial(sec_param)
 elif sec_type=="ternary":
      distrib = ternaryDist(sec_param)
-
-# extracting the primal preprocessing timing
-r = {}
-for oo in outpre:
-    n, seed = oo['kyb'][0], oo['kyb'][4][0]
-    if not n in r.keys(): 
-        r[n] = [ oo["time"], 1 ]
-    else:
-        r[n][0] += oo["time"]
-        r[n][1] += 1
-
-
-#averaging the timing
-for key in r.keys():
-    r[key] = r[key][0]/r[key][1].n()
-
-# extracting the primal attack timing
-l = {}
-for oo in out:
-    if not oo["kyb"][0] in l.keys():
-        l[oo["kyb"][0]] = [ oo["time"], 1 ]
-    else:
-        l[oo["kyb"][0]][0] += oo["time"]
-        l[oo["kyb"][0]][1] += 1
-
-# averaging it
-for key in l.keys():
-    l[key] = l[key][0]/l[key][1].n() + r[key]
-    ddl[key] = np.std(ddl[key])
-
-primal_timings = deepcopy(l)
-# - - - 
-P = list_plot_semilogy(l, plotjoined=True, legend_label="Primal attack")
 
 data = []
 path = "./lwe_instances/reduced_lattices/"
@@ -206,7 +128,7 @@ for (n,k,sievedim) in aggrigated_data.keys():
 
 preprocess_hyb_time = deepcopy(l0)
 
-P += list_plot_semilogy(l0, plotjoined=True, base=10, axes_labels=["$n$", "$log(T)$"], color="green", legend_label="Hybrid preprocessing")
+P = list_plot_semilogy(l0, plotjoined=True, base=10, axes_labels=["$n$", "$log(T)$"], color="green", legend_label="Hybrid preprocessing")
 # P.show( title=f'Preprocessing Time for Hybrid, Kyber-$n$.', figsize=12 )
 
 # - - - processing the hybrid attack

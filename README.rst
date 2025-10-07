@@ -121,24 +121,9 @@ Optional parameters:
 * ``beta_pre`` BKZ blocksize the data was preprocessed with 
 * ``delta_slicer_coord``  an integer defining the upper bound on the slicer dimension as n_slicer_coord+delta_slicer_coord (default ``1``)
 
-Running the Primal attack
+Running the Two-Step Primal Attack
 ==========================
-For the sake of comparison with the hybrid attack, we implemented the primal attack on Kyber (Kannan's embedding) in ``primal_kyber.py``
-
-To run the attack on LWE with parameters ``n=130, q=3329``, ternary error and secret distribution with sparsity parameter 0.08333 and maximum BKZ blocksize parameter 60, execute
-
-.. code-block:: bash 
-    
-    python primal_kyber.py --ns "range(130,131,1)" --q 3329 --dist "ternary" --dist_param 0.0833 --betapre 32 --betamax 40 --recompute_instance
-
-The experiments (on 1 lattice and 1 LWE instance) will terminate in several minutes on a laptop with the output dumped in a file ``lwe_instances/reduced_lattices/exp[130]_3329_ternary_0.08330.pkl``
-
-The additional flag ``inst_per_lat X`` will generate ``X`` (default 1) LWE ``b``'s for the same LWE matrix ``A``, the flag ``lats_per_dim Y``will generate ``Y`` difference LWE matrices ``A`` (default 1). 
-
-To parallelize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``. For central binomial secrets and errors with parameter X use ``--dist "binomial" --dist_param X``.
-
-Two-Step Primal Attack
---------------
+For the sake of comparison with the hybrid attack, we implemented the two-step primal attack on Kyber.
 
 To generate an instance and run the attack on LWE with parameters ``n=130, q=3329``, ternary error and secret distribution with sparsity parameter 0.08333 and maximum BKZ blocksize parameter 60, execute
 
@@ -176,7 +161,7 @@ To reproduce Figure 1:
 * perform the primal attack as described above,
 * perform the hybrid attack as describe above (for an appropriate distribution (binomial and/or ternary).
 
-Depending on the distribution considered, copy ``gen_figures/aggr_attacks_{XXX}.sage`` to the root directory where XXX is ``binom`` for binomial distribution, ``sparse`` for Ternary(1/6) and ``ternary`` for Ternary(1/3).
+Depending on the distribution considered, copy ``gen_figures/aggr_attacks_dist.sage`` to the root directory where dist is ``binom`` for binomial distribution, ``sparse`` for Ternary(1/6) and ``ternary`` for Ternary(1/3).
 
 Run the corresponding script:
 
@@ -234,7 +219,7 @@ The script will output the name of the .png file with a plot.
 
 Reproducing Table 3
 ---------------------
-To compare our slicer against DLvW20 and [sum25], first install the [sum25] slicer as per instructions in the installation section. Next, run ``benchmark_slicer_{xxx}`` for ``xxx = our, ww`` for this and DLvW20 slicers respectively. 
+To compare our slicer against DLvW20 and [sum25], first install the [sum25] slicer as per instructions in the installation section. Next, run ``benchmark_slicer_dist`` for ``dist \in {“binom”, “sparse”, “ternary”}`` for this and DLvW20 slicers respectively. 
 For [sum25] run ``benchmark_slicer_pump`` in the ``cvp-g6k-cpu-solver`` subdirectory. This will create the ``cvp_comp`` directory that will contain the experiment data.
 
 Run ``aggregate_slicer_comparison.py`` in the terminal. The script will output Table 3.
@@ -249,7 +234,6 @@ Algorithms
 #. ``benchmark_slicer_pump.py`` -- runs a benchmark on various lattices for [sum25] slicer (the installation process is described above);
 #. ``cvpp_exp.py`` -- investigates CVP success rate w.r.t. the approximation factor and the number of rerandomizations;
 #. ``tailBDD.sage`` -- investigates Batch-Tail-BDD success rate for our slicer; 
-#. ``primal_kyber.py`` -- primal attack on LWE;
 #. ``preprocessing.py`` -- preprocessing for the hybrid attack on LWE;
 #. ``run_prog_hybrid.py`` -- hybrid attack on LWE (won't launch without preprocessing stage).
 #. ``lwe_g6k.py`` -- automated two-step primal attack on lwe.
@@ -260,6 +244,7 @@ Helper scripts
 #. ``global_consts.py`` -- global constants used in algorithms;
 #. ``sample.py`` -- various distributions and samplers;
 #. ``discretegauss.py`` -- discrete Gaussian sampler
+#. ``smart_install.sh`` -- automated installer for [sum25]
 
 
 -----------------------------------------------------------------------------------------------------------------

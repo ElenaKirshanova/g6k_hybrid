@@ -62,7 +62,7 @@ def gen_cvpp_g6k(n,betamax=None,k=None,bits=11.705,seed=0,threads=1,verbose=Fals
     if verbose: print(f"BKZ-{betamax} done in {perf_counter()-then}", flush=True)
 
     int_type = LR.gso.B.int_type
-    ft = "ld" if n<145 else ( "dd" if config.have_qd else "mpfr")
+    ft = "double" if n<145 else ( "dd" if config.have_qd else "mpfr")
     G = GSO.Mat( LR.gso.B, U=IntegerMatrix.identity(n,int_type=int_type), UinvT=IntegerMatrix.identity(n,int_type=int_type), float_type=ft )
     param_sieve = SieverParams()
     param_sieve['threads'] = threads
