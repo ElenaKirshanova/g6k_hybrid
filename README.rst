@@ -97,7 +97,7 @@ Run the hybrid attack after the preprocessing step above is finished like so
 
     python run_prog_hyb.py --n 130 --q 3329 --dist "ternary" --dist_param 0.0833 --n_guess_coord 4
 
-The parameter ``--n_guess_coord`` should be identical to the second parameter in ``--params`` for ``preprocessing.py``.
+The parameter ``--n_guess_coord`` should be identical to the second parameter in ``--params`` for ``preprocessing.py``. Same applies to the ``--lats_per_dim`` parameter (default: 1).
 
 Optional parameters:
 

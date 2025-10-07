@@ -158,7 +158,7 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
             sli_succ = all(answer==v2)
             if sli_succ:
                 succ_cntr+=1
-                print(f"Success in experiment! @{guess_cntr} guess - - - - - - - - - - - - - - - - - - - - - - !!!")
+                print(f"Success in experiment!")
                 break
         if not sli_succ:
             print(f"Fail @{lat_index, ex_cntr}")
@@ -183,8 +183,8 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
             "overhead_tsieve": overhead_tsieve,
         }
 
-        print(f"walltime (hybrid): {walltime} | walltime (total): {walltime_observed}")
-        print(f" - - - {all(answer==v2)} - - - ")
+    if(verbose):
+        print(f"walltime (hybrid): {walltime} | walltime (total-CPU): {walltime_observed}")
     return stats_dict
 
 def get_parser():
