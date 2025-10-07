@@ -11,9 +11,6 @@ sec_type = "binomial"
 sec_param = 3
 dist = sec_type
 dist_param = sec_param
-
-with open("./lwe_instances/reduced_lattices/exp_[140, 150, 160, 170]_3329_binomial_3.pkl", "rb") as file:
-    out = pickle.load( file )
     
 lwe_inst = [ 
     {"n": 140, "q": 3329, "dist": 'binomial', "dist_param": 3},
