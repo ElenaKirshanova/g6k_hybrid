@@ -147,9 +147,8 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
     unsigned long const N = start+n_per_target;
 
     if(!uid_hash_table_t.insert_uid(input_t.uid)){
-        std::cerr << "The original target is already in db" << std::endl;
+        // std::cerr << "The original target is already in db" << std::endl;
         statistics.inc_stats_collisions_r();
-        // exit(0);
         return;
     }
 
@@ -201,7 +200,6 @@ void RandomizedSlicer::grow_db_with_target(const double t_yr[], size_t n_per_tar
 
             if (tmp.len < 0.99*input_t.len){
                 statistics.inc_stats_reds_during_randomization();
-                std::cout << "reduced the target during randomization" << std::endl;
             }
 
             break;

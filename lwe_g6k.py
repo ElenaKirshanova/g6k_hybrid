@@ -5,6 +5,10 @@ python lwe_g6k.py --nthreads 2 --nworkers 2 --inst_per_lat 2 --lats_per_dim 2 --
 
 from __future__ import absolute_import
 from __future__ import print_function
+import warnings
+
+warnings.filterwarnings("ignore", message=".*Dimension of lattice is larger than.*")
+warnings.filterwarnings("ignore", message=".*pkg_resources is deprecated as an API..*")
 import copy
 import re
 import sys, os
@@ -170,7 +174,7 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
     verbose = params["verbose"]
 
     print("-------------------------")
-    print("Primal attack, LWE challenge n=%d, alpha=%.4f" % (n, alpha))
+    print("Primal attack, LWE instance n=%df" % (n,))
 
     if m is None:
         try:
@@ -481,7 +485,7 @@ if __name__ == "__main__":
                 "goal_margin": args.goal_margin,
                 "seed": [latnum,tstnum],
                 "nthreads": nthreads,
-                "verbose": True
+                "verbose": args.verbose,
                 }
                 tasks.append( pool.apply_async(
                     lwe_kernel, ( params,None )

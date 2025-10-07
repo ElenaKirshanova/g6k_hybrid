@@ -1,5 +1,4 @@
 import warnings
-import re
 
 warnings.filterwarnings("ignore", message=".*Dimension of lattice is larger than.*")
 warnings.filterwarnings("ignore", message=".*pkg_resources is deprecated as an API..*")
@@ -46,7 +45,6 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
     FPLLL.set_precision(210)
     dim = 2*n
 
-    print(f"float_type: {ft}")
     succ_cntr = 0
     ex_cntr = 0
 
@@ -84,7 +82,6 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
             dist_param = int(dist_param)
             distrib = centeredBinomial(dist_param)
         case "ternary":
-            print(f"dist_param: {dist_param}")
             distrib = ternaryDist(dist_param)
         case "ternary_sparse":
             distrib = sparse_distribution(n,n_guess_coord,int(dist_param),Distribution({-1:0.5,1:0.5}))
@@ -186,7 +183,7 @@ def run_experiment(lat_index, params, stats_dict, delta_slicer_coord=0):
             "overhead_tsieve": overhead_tsieve,
         }
 
-        print(f"walltime: {walltime} | walltime_observed: {walltime_observed}")
+        print(f"walltime (hybrid): {walltime} | walltime (total): {walltime_observed}")
         print(f" - - - {all(answer==v2)} - - - ")
     return stats_dict
 

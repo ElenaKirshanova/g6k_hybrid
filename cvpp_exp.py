@@ -7,6 +7,11 @@ python cvpp_exp.py --n 70 --betamax 60 --ntests 50 --nlats 50 --nthreads 5 --nwo
 python cvpp_exp.py --n 80 --betamax 70 --ntests 50 --nlats 50 --nthreads 5 --nworkers 5
 """
 
+import warnings
+
+warnings.filterwarnings("ignore", message=".*Dimension of lattice is larger than.*")
+warnings.filterwarnings("ignore", message=".*pkg_resources is deprecated as an API..*")
+
 from fpylll import FPLLL
 
 FPLLL.set_random_seed(0x1337)
@@ -189,7 +194,6 @@ def run_exp(n,cntr,ntests,approx_facts,max_slicer_interations=300, nthreads=1, n
 
                     except Exception as excpt: #if slicer fails for some reason,
                         #then pray, this is not a devastating segfault
-                        print(excpt)
                         raise excpt
 
             D[(n,approx_fact)] = (0, 1.0*nsucc_slic / ntests, 1.0*nsucc_bab / ntests, 1.0*nsucc_slic_apprcvp / ntests)
@@ -246,7 +250,6 @@ if __name__=="__main__":
         tasks.append( pool.apply_async(
             run_exp, (n,cntr,ntests,approx_facts,max_slicer_interations, nthreads, nrand_params, verbose)
             ) )
-        print(cntr)
 
     for t in tasks:
         aggregated_data += [ t.get() ]
@@ -254,5 +257,5 @@ if __name__=="__main__":
 
     filename = f"slicsucc_{n}.pkl"
     with open(filename,"wb") as file:
-        pickle.dump("./lwe_instances/reduced_lattices/"+aggregated_data, file)
+        pickle.dump("./lwe_instances/reduced_lattices/"+filename, file)
     print( f"saved in {filename}" )

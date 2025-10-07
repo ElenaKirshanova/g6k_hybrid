@@ -3,9 +3,12 @@ BKZ-beta reduces Nlats lattice bases. Solves ntests Tail-Batch-BDD instances (wi
 
 python tailBDD.py --n 120 --beta 55 --approx_factor 0.43 --Nlats 5  --ntests 5 --n_uniq_targets 10
 """
+import warnings
+
+warnings.filterwarnings("ignore", message=".*Dimension of lattice is larger than.*")
+warnings.filterwarnings("ignore", message=".*pkg_resources is deprecated as an API..*")
 from experiments.lwe_gen import *
 
-import sys,os
 import argparse
 from time import perf_counter
 from fpylll import *
@@ -144,7 +147,8 @@ def run_experiment( lat_index, params, stats_dict, verbose=False ):
     D = { (n,beta,approx_factor): [] }
     gh_sub = gaussian_heuristic( G.r()[-sieve_dim:] )
     for tstnum in range(ntests):
-        print(f"- - - TSTNUM: {tstnum} LATSEED {seed} - - - ")
+        if verbose:
+            print(f"- - - TSTNUM: {tstnum} SEED: {seed} - - - ")
         Ts, Cs, Bs = [], [], []
         e_gs_mmin = 2**64
         for i in range(n_uniq_targets):
@@ -175,7 +179,6 @@ def run_experiment( lat_index, params, stats_dict, verbose=False ):
         slicer.set_nthreads(nthreads)
         nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
         nrand = ceil(nrand_param*(1./nrand_)**sieve_dim)
-        print(f"total randomizations: {nrand*n_uniq_targets} len(g6k): {len(g6k)}")
 
         for i in range(n_uniq_targets):
             t_gs_reduced = TGSs[i]
@@ -212,7 +215,6 @@ def run_experiment( lat_index, params, stats_dict, verbose=False ):
 
             if succ:
                 D[(n,beta,approx_factor)][tstnum*n_uniq_targets+indx][1] = True #batch no. tstnum*ntests+indx successfull
-                # print(f"SUCC! {indx} | {tstnum*n_uniq_targets+indx}")
     
     return D
 
