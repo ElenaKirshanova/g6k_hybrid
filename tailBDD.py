@@ -81,7 +81,7 @@ def gen_cvpp_g6k(n,betamax=None,n_slicer_coord=None,k=None,bits=11.705,seed=0):
         print(f"BKZ-{beta} done in {perf_counter()-then}", flush=True)
 
     int_type = LR.gso.B.int_type
-    ft = "ld" if n<150 else ( "dd" if config.have_qd else "mpfr")
+    ft = ("dd" if config.have_qd else "mpfr")
     G = GSO.Mat( LR.gso.B, U=IntegerMatrix.identity(n,int_type=int_type), UinvT=IntegerMatrix.identity(n,int_type=int_type), float_type=ft )
     param_sieve = SieverParams()
     param_sieve['threads'] = 1
@@ -133,7 +133,7 @@ def run_experiment( lat_index, params, stats_dict, verbose=False ):
     G = g6k.M
     B = G.B
 
-    ft = "ld" if n<50 else ( "dd" if config.have_qd else "mpfr")
+    ft = ( "dd" if config.have_qd else "mpfr")
     if verbose: print(f"launching n, beta, sieve_dim = {n, beta, n_slicer_coord}")
     sieve_dim = beta
     gh = gaussian_heuristic(G.r())

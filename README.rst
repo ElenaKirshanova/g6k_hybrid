@@ -267,7 +267,8 @@ If you have  g++ compiler installed from homebrew you may have issues building t
 
 5. In case a compiler other than Apple’s clang is used and building fails, use Apple’s clang. Otherwise, skip the following three steps and execute tests
 
-.. code-block:: bash
+.. code-block:: 
+
     make clean
     ./configure CXX=/usr/bin/g++
     python setup.py build_ext --inplace
