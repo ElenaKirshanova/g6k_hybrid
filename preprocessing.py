@@ -13,7 +13,6 @@ from g6k.siever_params import SieverParams
 from utils import *
 from lattice_reduction import LatticeReduction
 from copy import deepcopy
-from primal_kyber import gen_and_dump_lwe
 
 try:
     from multiprocess import Pool  # you might need pip install multiprocess
@@ -22,6 +21,7 @@ except ModuleNotFoundError:
 
 import pickle
 from global_consts import *
+from experiments.lwe_gen import generateLWEInstances
 from utils import get_filename
 
 inp_path = "lwe_instances/saved_lattices/"
@@ -32,6 +32,36 @@ if not does_exist:
 
 os.makedirs(out_path,exist_ok=True)
 
+def gen_and_dump_lwe(params):
+    # n, q, dist, dist_param,  ntar, seed=0
+    n = params["n"]
+    q = params["q"]
+    ntar = params["ntar"]
+    dist = params["dist"] 
+    dist_param = params["dist_param"] if dist=="ternary" else int(params["dist_param"])
+    seed = params["seed"][0]
+    print(f"- - - n,seed={n,seed} - - - gen")
+    A,q,bse= generateLWEInstances(n, q, dist, dist_param, ntar)
+
+    # filename = f"lwe_instance_{dist}_{n}_{q}_{dist_param:.04f}_{seed}"
+    filename = get_filename( "lwe_instance", params )
+    with open(inp_path + filename, "wb") as fl:
+        pickle.dump({"A": A, "q": q, "dist": dist, "dist_param":dist_param,  "bse": bse}, fl)
+
+def load_lwe(params):
+    # n,q,dist,dist_param,seed=0
+    n = params["n"]
+    q = params["q"]
+    dist = params["dist"]
+    dist_param = params["dist_param"]
+    seed = params["seed"][0]
+    print(f"- - - n,seed={n,seed} - - - load")
+    filename = f"lwe_instance_{dist}_{n}_{q}_{dist_param:.04f}_{seed}"
+    filename = get_filename( "lwe_instance", params )
+    with open(inp_path + filename, "rb") as fl:
+        D = pickle.load(fl)
+    A_, q_,  bse_ = D["A"], D["q"], D["bse"]
+    return A_, q_, bse_
 
 def load_lwe(params):
     n = params["n"]

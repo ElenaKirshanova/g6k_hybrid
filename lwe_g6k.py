@@ -32,7 +32,7 @@ from six.moves import range
 import numpy as np
 
 from sample import Distribution, centeredBinomial, ternaryDist
-from primal_kyber import gen_and_dump_lwe, load_lwe
+from preprocessing import gen_and_dump_lwe, load_lwe
 from utils import get_filename
 from pnj_strat import strats_kyber
 
@@ -392,10 +392,7 @@ def get_parser():
     "--dist_param", default=2.0, type=float, help="LWE distribution's parameter (as float)"
     )
     parser.add_argument(
-    "--betapre", default=45, type=int, help="Preprocessing BKZ blocksize."
-    )
-    parser.add_argument(
-    "--blocksizes", default="50:61:5", type=str, help="Upper bound on the BKZ blocksize."
+    "--blocksizes", default="50:61:5", type=str, help="Bounds on the BKZ blocksize."
     )
     parser.add_argument(
     "--tours", default=5, type=int, help="BKZ tours"

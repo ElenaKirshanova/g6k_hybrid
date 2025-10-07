@@ -192,7 +192,7 @@ The script will output the name of the .png file with a plot.
 
 Reproducing Figure 3
 ---------------------
-To reproduce Figure 1 perform the hybrid attack as describe above (for an appropriate distribution (binomial and/or ternary)). The experiments are done over 10 ``lats_per_dim`` with 10 ``inst_per lat`` in the following dimensions:
+To reproduce Figure 1 perform the hybrid attack as describe above (for an appropriate distribution (binomial and/or ternary)). The experiments are done over 10 ``lats_per_dim`` with 10 ``inst_per lat`` in the following dimensions (values of ``n``):
 
 * [140,150,160,170] for the **binomial distribution** (``--dist \"binomial\" --dist_param 3``);
 * [160,170,180,190,200,210] for the **ternary distribution** (``--dist \"ternary\" --dist_param 0.1667``);
