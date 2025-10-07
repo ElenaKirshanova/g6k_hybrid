@@ -115,7 +115,7 @@ To generate an instance and run the attack on LWE with parameters ``n=130, q=332
     
     python lwe_g6k.py --n 130 --q 3329 --dist "ternary" --dist_param 0.0833 --blocksizes "50:60:1" --recompute_instance
 
-The experiments will terminate in a several minutes on a laptop with the output dumped in a file ``lwe_instances/reduced_lattices/exp_130.pkl``.
+The experiments will terminate in a several minutes on a laptop with the output dumped to a file ``lwe_instances/reduced_lattices/exp_130.pkl``.
 
 To parallelize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``. For central binomial secrets and errors with parameter X use ``--dist "binomial" --dist_param X``.
 
@@ -140,7 +140,7 @@ Reproducing the experiments from the paper
 
 Reproducing Figure 1
 ---------------------
-To get the necessary data for figure reproduction, run ``cvpp_exp.py`` as:
+To recompute the necessary data for figure reproduction, run ``cvpp_exp.py`` as:
 
 .. code-block:: bash 
     
@@ -160,13 +160,13 @@ The script will output the name of the .png file with a plot.
 
 Reproducing Figure 2
 ---------------------
-To get the necessary data for figure reproduction, run
+To recompute the necessary data for figure reproduction, run
 
 .. code-block:: bash 
     
-    python tailBDD.py --n 120 --beta 55 --Nlats 5 --ntests 5 --n_uniq_targets 10  --approx_factor 0.43 
+    python tailBDD.py --n 120 --beta 55 --Nlats 5 --ntests 5 --n_uniq_targets 10  --approx_factor 0.43 --nworkers 5 --nthreads 5
 
-This will BKZ reduce 5 dimension-120 lattices and solve 5 Batch-Tail-BDD instances each consisting of 10 BDD instances. This will create a file named ``tail_bdd_n{n}_b{beta}.pkl`` needed for the next step. 
+This will BKZ reduce 5 dimension-120 lattices and solve 5 Batch-Tail-BDD instances each consisting of 10 BDD instances (occupying 25 logical CPU cores). Note: the computations may take several hours. This will create a file named ``tail_bdd_n{n}_b{beta}.pkl`` needed for the next step. 
 
 To get Figure 2, run:
 
