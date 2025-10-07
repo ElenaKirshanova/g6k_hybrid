@@ -13,7 +13,9 @@ Building the library
 This code has been tested on Ubuntu-\{22,24\}.04 and Windows 11 (via WSL, same distributions) which are the target platform for the code in this repository. MacOS is not supported but may work (see the instructions at the bottom of the README).
 
 You will need the `G6K library <https://github.com/fplll/g6k>`_. 
-The following prerequisites are required:
+
+Steps specific to Ubuntu
+---------------------
 
 First, install autotools, automake, libtool and other dependencies:
 
@@ -28,18 +30,45 @@ Then make sure the python has development headers installed:
 
     sudo apt install -y build-essential python3-dev
 
-Building on Linux usually works by running ``bootstrap.sh`` (see comprehensive instruction at the `G6K repository <https://github.com/fplll/g6k>`_):
+Further steps for both Ubuntu and MacOS
+---------------------
+
+If you have Ubuntu, proceed with the steps below.
+If you have  g++ compiler installed from homebrew you may have issues building the code. If your only compiler is the one provided by Apple, you should be able to skip some of the steps.
+
+1. Create conda environment
 
 .. code-block:: bash
 
-    # once only: creates local python env, builds fplll, fpylll and G6K
-    ./bootstrap.sh [ -j # ]
-    
-    # for every new shell: activates local python env
-    source ./activate                   
+    conda create --name g6x
+    conda activate g6x
 
-On systems with co-existing python2 and 3, you can force a specific version installation using ``PYTHON=<pythoncmd> ./boostrap.sh`` instead.
-The number of parallel compilation jobs can be controlled with `-j #`.
+2. Install required packages (see requirements.txt)
+
+.. code-block:: bash
+
+    conda install fpylll cython cysignals flake8 ipython numpy begins pytest requests scipy multiprocessing-logging matplotlib autoconf automake libtool
+
+3. Attempt to build the code
+
+.. code-block:: bash
+
+    python setup.py build_ext --inplace
+
+4. In case a compiler other than Apple’s clang is used and building fails, use Apple’s clang. Otherwise, skip the following three steps and execute tests
+
+.. code-block:: 
+
+    make clean
+    ./configure CXX=/usr/bin/g++
+    python setup.py build_ext --inplace
+
+5. Check is building succeeded by executing tests
+
+.. code-block:: bash
+
+    python -m pytest
+
 
 Running RandomizedSlicer
 ====================
@@ -168,11 +197,11 @@ To recompute the necessary data for figure reproduction, run
 
 This will BKZ reduce 5 dimension-120 lattices and solve 5 Batch-Tail-BDD instances each consisting of 10 BDD instances (occupying 25 logical CPU cores). Note: the computations may take several hours. This will create a file named ``tail_bdd_n{n}_b{beta}.pkl`` needed for the next step. 
 
-To get Figure 2, run:
+To get Figure 2, copy ``tailbdd.sage`` from ``gen_gigures`` to root and run:
 
 .. code-block:: bash 
     
-    sage tailBDD.sage
+    sage tailbdd.sage
 
 The script will output the name of the .png file with a plot. 
 
@@ -233,51 +262,6 @@ Helper scripts
 
 
 -----------------------------------------------------------------------------------------------------------------
-
-A workaround to solve issues building on ARM-Macs (also see `Issue #128 <https://github.com/fplll/g6k/issues/128>`_)
------------------------------------------------------------------------------------------------------------------
-
-
-If you have  g++ compiler installed from homebrew you may have issues building the code. If your only compiler is the one provided by Apple, you should be able to skip some of the steps.
-
-1. Create conda environment
-
-.. code-block:: bash
-
-    conda create --name g6x
-    conda activate g6x
-
-2. Install required packages (see requirements.txt)
-
-.. code-block:: bash
-
-    conda install fpylll cython cysignals flake8 ipython numpy begins pytest requests scipy multiprocessing-logging matplotlib autoconf automake libtool
-
-3. Clone the g6x git repo
-
-.. code-block:: bash
-
-    git clone git@github.com:fplll/g6k.git
-
-4. Attempt to build the code
-
-.. code-block:: bash
-
-    python setup.py build_ext --inplace
-
-5. In case a compiler other than Apple’s clang is used and building fails, use Apple’s clang. Otherwise, skip the following three steps and execute tests
-
-.. code-block:: 
-
-    make clean
-    ./configure CXX=/usr/bin/g++
-    python setup.py build_ext --inplace
-
-6. Check is building succeeded by executing tests
-
-.. code-block:: bash
-
-    python -m pytest
 
 
 
