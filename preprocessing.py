@@ -138,7 +138,7 @@ def run_preprocessing(params):
         #---------run sieving------------
         int_type = H11.int_type
         FPLLL.set_precision(210)
-        ft = "dd" if config.have_qd else "mpfr"
+        ft = ld if B.n<150 else( "dd" if config.have_qd else "mpfr" )
         G = GSO.Mat( H11, U=IntegerMatrix.identity(H11r,int_type=int_type), UinvT=IntegerMatrix.identity(H11r,int_type=int_type), float_type=ft )
         G.update_gso()
         param_sieve = SieverParams()
