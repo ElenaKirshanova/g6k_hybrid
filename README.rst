@@ -115,7 +115,7 @@ To generate an instance and run the attack on LWE with parameters ``n=130, q=332
     
     python lwe_g6k.py --n 130 --q 3329 --dist "ternary" --dist_param 0.0833 --blocksizes "50:60:1" --recompute_instance
 
-The experiments will terminate in a several minutes on a laptop with the output dumped to a file ``lwe_instances/reduced_lattices/exp_130.pkl``.
+The experiments will terminate in a several minutes on a laptop with the output dumped to a file ``lwe_instances/reduced_lattices/exp_130.pkl``. If the attack is successful, the user will see the solution vector.
 
 To parallelize BKZ reduction, add flag ``--nthreads``, to parallelize over different experiments add flag ``--nworkers``. For central binomial secrets and errors with parameter X use ``--dist "binomial" --dist_param X``.
 

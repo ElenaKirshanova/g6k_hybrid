@@ -352,6 +352,7 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
         cntr+=1
         if g6k.M.get_r(0, 0) <= target_norm:
             print("Finished! TT=%.2f sec" % (time.time() - T0))
+            print(f"Solution: {g6k.B[0]}")
             alpha_ = int(alpha*1000)
             T_overall = time.time() - T_overall_0
             my_tracer["succ"] = True
