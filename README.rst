@@ -28,7 +28,7 @@ Then make sure the python has development headers installed:
 
     sudo apt install -y build-essential python3-dev
 
-Building on Lunix usually works by running ``bootstrap.sh`` (see comprehensive instruction at the `G6K repository <https://github.com/fplll/g6k>`_):
+Building on Linux usually works by running ``bootstrap.sh`` (see comprehensive instruction at the `G6K repository <https://github.com/fplll/g6k>`_):
 
 .. code-block:: bash
 
