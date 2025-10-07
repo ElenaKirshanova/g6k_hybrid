@@ -174,7 +174,7 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
     verbose = params["verbose"]
 
     print("-------------------------")
-    print("Primal attack, LWE instance n=%df" % (n,))
+    print("Primal attack, LWE instance n=%d" % (n,))
 
     if m is None:
         try:
@@ -261,7 +261,7 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
                 bkz(par)
 
             else:
-                if verbose:
+                if verbose or blocksize>69:
                     print("Starting a pnjBKZ-%d-%d tour. " % (blocksize,jump))
 
                 pump_n_jump_bkz_tour(g6k, tracer, blocksize, jump=jump,
@@ -308,7 +308,8 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
             #     print(f"Solution unlikely: {1.02 * gaussian_heuristic(rr[d-n_expected:])} < {x}")
             #     continue
 
-            print("Without otf, would expect solution at pump-%d. n_max=%d in the given time." % (n_expected, n_max)) # noqa
+            if verbose:
+                print("Without otf, would expect solution at pump-%d. n_max=%d in the given time." % (n_expected, n_max)) # noqa
             if (n_expected >= n_max - 1 and not cntr>=len(iter_strat)-1) or n_expected<45:
                 continue
 
