@@ -10,6 +10,8 @@ The code is based on BDGL implementation from Ducas-Stevens-van Woerden `"Advanc
 Building the library
 ====================
 
+This code has been tested on Ubuntu-\{22,24\}.04 and Windows 11 (via WSL, same distributions) which are the target platform for the code in this repository. MacOS is not supported but may work (see :ref:`macos-fix` for details).
+
 You will need the `G6K library <https://github.com/fplll/g6k>`_. 
 The following prerequisites are required:
 
@@ -232,10 +234,12 @@ Helper scripts
 #. ``smart_install.sh`` -- automated installer for [sum25]
 
 
+.. _macos-fix:
 -----------------------------------------------------------------------------------------------------------------
 
 A workaround to solve issues building on ARM-Macs (also see `Issue #128 <https://github.com/fplll/g6k/issues/128>`_)
 -----------------------------------------------------------------------------------------------------------------
+
 
 If you have  g++ compiler installed from homebrew you may have issues building the code. If your only compiler is the one provided by Apple, you should be able to skip some of the steps.
 
