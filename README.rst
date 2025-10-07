@@ -10,7 +10,7 @@ The code is based on BDGL implementation from Ducas-Stevens-van Woerden `"Advanc
 Building the library
 ====================
 
-This code has been tested on Ubuntu-\{22,24\}.04 and Windows 11 (via WSL, same distributions) which are the target platform for the code in this repository. MacOS is not supported but may work (see :ref:`macos-fix` for details).
+This code has been tested on Ubuntu-\{22,24\}.04 and Windows 11 (via WSL, same distributions) which are the target platform for the code in this repository. MacOS is not supported but may work (see the instructions at the bottom of the README).
 
 You will need the `G6K library <https://github.com/fplll/g6k>`_. 
 The following prerequisites are required:
@@ -218,7 +218,6 @@ Algorithms
 #. ``lattice_reduction.py`` -- implementation of pump'n'jump BKZ;
 #. ``benchmark_slicer_our.py`` -- runs a benchmark on various lattices for our slicer;
 #. ``benchmark_slicer_ww.py`` -- runs a benchmark on various lattices for WW slicer;
-#. ``benchmark_slicer_pump.py`` -- runs a benchmark on various lattices for [sum25] slicer (the installation process is described above);
 #. ``cvpp_exp.py`` -- investigates CVP success rate w.r.t. the approximation factor and the number of rerandomizations;
 #. ``tailBDD.sage`` -- investigates Batch-Tail-BDD success rate for our slicer; 
 #. ``preprocessing.py`` -- preprocessing for the hybrid attack on LWE;
@@ -231,10 +230,8 @@ Helper scripts
 #. ``global_consts.py`` -- global constants used in algorithms;
 #. ``sample.py`` -- various distributions and samplers;
 #. ``discretegauss.py`` -- discrete Gaussian sampler
-#. ``smart_install.sh`` -- automated installer for [sum25]
 
 
-.. _macos-fix:
 -----------------------------------------------------------------------------------------------------------------
 
 A workaround to solve issues building on ARM-Macs (also see `Issue #128 <https://github.com/fplll/g6k/issues/128>`_)
