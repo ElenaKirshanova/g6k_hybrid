@@ -98,10 +98,9 @@ def gen_cvpp_g6k(n,betamax=None,n_slicer_coord=None,k=None,bits=11.705,seed=0):
         g6k(alg="bdgl2")
     except SaturationError:
         pass
-    print(f"bdgl2-{n} done in {perf_counter()-then}")
+    print(f"bdgl2-{n_slicer_coord} done in {perf_counter()-then}")
     g6k.M.update_gso()
 
-    print(f"dbsize: {len(g6k)}")
     g6k.dump_on_disk(f"cvppg6k_n{n}_b{betamax}_d{n_slicer_coord}_{seed}_test.pkl")
 
 def run_experiment( lat_index, params, stats_dict, verbose=False ):
@@ -252,8 +251,8 @@ if __name__ == '__main__':
         tmp = t.get()
         output.append(tmp)
 
-    print(f"output: \n {output}")
-
     filename=f"tail_bdd_n{args.n}_b{args.beta}.pkl"
     with open("./lwe_instances/reduced_lattices/"+filename,"wb") as file:
         pickle.dump(output,file)
+
+    print( "Results dumped to ./lwe_instances/reduced_lattices/"+filename )

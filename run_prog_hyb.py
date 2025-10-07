@@ -274,7 +274,8 @@ if __name__=="__main__":
     print(stats_dict_agr)
 
     filename = f"tph_{n}_{dist}_{dist_param:0.4f}_{n_guess_coord}_{beta_pre}_{n_slicer_coord+delta_slicer_coord}.pkl"
-    print(f"saving results to {filename}")
+    
     with open(filename, "wb") as file:
         pickle.dump( stats_dict_agr, file )
+    print( "Results dumped to " + filename ) 
     pool.close()

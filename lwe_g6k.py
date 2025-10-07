@@ -501,5 +501,6 @@ if __name__ == "__main__":
     with open(out_path + filename,"wb") as file:
         pickle.dump(my_tracers,file)
 
+    print( "Results dumped to "+ out_path + filename )
     print( my_tracers )
     

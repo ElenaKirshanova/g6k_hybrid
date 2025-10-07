@@ -166,7 +166,7 @@ To get the necessary data for figure reproduction, run
     
     python tailBDD.py --n 120 --beta 55 --Nlats 5 --ntests 5 --n_uniq_targets 10  --approx_factor 0.43 
 
-This will BKZ reduce 5 dimension-120 lattices and solve 5 Batch-Tail-BDD instances each consisting of 10 BDD instances. This will create a file named ``tail_bdd_n{n}_b{beta}.pkl`` needed for the next step.
+This will BKZ reduce 5 dimension-120 lattices and solve 5 Batch-Tail-BDD instances each consisting of 10 BDD instances. This will create a file named ``tail_bdd_n{n}_b{beta}.pkl`` needed for the next step. 
 
 To get Figure 2, run:
 
