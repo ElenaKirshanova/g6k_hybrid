@@ -10,7 +10,21 @@ The code is based on BDGL implementation from Ducas-Stevens-van Woerden `"Advanc
 Building the library
 ====================
 
-You will need the `G6K library <https://github.com/fplll/g6k>`_. Building on Lunix usually works by running ``bootstrap.sh`` (see comprehensive instruction at the `G6K repository <https://github.com/fplll/g6k>`_):
+You will need the `G6K library <https://github.com/fplll/g6k>`_. 
+The following prerequisites are required:
+
+First, install autotools, automake, libtool and other dependencies:
+
+.. code-block:: bash
+    sudo apt-get install make pkg-config autoconf autotools-dev libtool automake gcc g++ libgmp3-dev libqd-dev libmpfr-dev
+
+
+Then make sure the python has development headers installed:
+
+.. code-block:: bash
+    sudo apt install -y build-essential python3-dev
+
+Building on Lunix usually works by running ``bootstrap.sh`` (see comprehensive instruction at the `G6K repository <https://github.com/fplll/g6k>`_):
 
 .. code-block:: bash
 

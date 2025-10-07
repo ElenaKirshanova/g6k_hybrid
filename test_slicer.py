@@ -68,7 +68,6 @@ if __name__ == "__main__":
         nothing_to_load = False
         if verbose: print(f"Load seems to succeed...")
     except Exception as excpt:
-        print(excpt)
         pass
     # - - - end try load a lattice - - -
 

@@ -305,7 +305,7 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
             #     continue
 
             print("Without otf, would expect solution at pump-%d. n_max=%d in the given time." % (n_expected, n_max)) # noqa
-            if n_expected >= n_max - 1 and not cntr>=len(iter_strat)-1:
+            if (n_expected >= n_max - 1 and not cntr>=len(iter_strat)-1) or n_expected<45:
                 continue
 
             n_max += 1
@@ -347,7 +347,6 @@ def lwe_kernel(params=None, seed=None, my_tracer={}):
         cntr+=1
         if g6k.M.get_r(0, 0) <= target_norm:
             print("Finished! TT=%.2f sec" % (time.time() - T0))
-            print(g6k.M.B[0])
             alpha_ = int(alpha*1000)
             T_overall = time.time() - T_overall_0
             my_tracer["succ"] = True
