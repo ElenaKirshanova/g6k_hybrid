@@ -180,7 +180,6 @@ if __name__ == "__main__":
 
             nrand_, _ = batchCVPP_cost(sieve_dim,100,len(g6k)**(1./sieve_dim),1)
             nrand = ceil(nrand_param*(1./nrand_)**sieve_dim)
-            print(f"nrand:{nrand}")
             slicer.grow_db_with_target([float(tt) for tt in t_gs_reduced], n_per_target=nrand)
 
             blocks = 2 # should be the same as in siever
@@ -200,7 +199,7 @@ if __name__ == "__main__":
             filename = ("cdbt_dim_n"+str(n)+"_beta"+str(betamax)+"_sdim"+str(sieve_dim)+"_"+str(ctr_experiment)+"_").encode('utf-8')
 
             then = time.perf_counter()
-            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], True, True)
+            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False, False)
             endtime = time.perf_counter()-then
             if verbose: print(f"slicer w. nthreads: {nthreads} done in {endtime}")
             runtimes.append( endtime )

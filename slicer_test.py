@@ -145,7 +145,7 @@ def cvp_test(A,t, params, myparams):
             slicer.set_max_slicer_interations(myparams["max_slicer_interations"])
             slicer.set_Nt(1)
             slicer.set_saturation_scalar(myparams["saturation_scalar"])
-            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], True) #slicer_verbosity
+            slicer.bdgl_like_sieve(buckets, blocks, sp["bdgl_multi_hash"], False) #slicer_verbosity
 
             iterator = slicer.itervalues_cdb_t()
             out_gs_reduced = None
