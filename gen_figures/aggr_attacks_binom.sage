@@ -266,8 +266,6 @@ for n in L_two_step.keys():
 P += list_plot_semilogy(L_two_step_, plotjoined=True, base=10, axes_labels=["$n$", "$log(T)$"], color="orange", legend_label="Two-step total")
 
 print(f"succs: {succs}")
-print(f"ltot_hyb_att: {ltot_hyb_att}")
-print(f"primal_timings: {primal_timings}")
 print(f"two_step_timings: {L_two_step_}")
 # - - -
 

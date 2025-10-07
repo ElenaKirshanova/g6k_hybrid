@@ -15,9 +15,6 @@ sec_param = float(1/6)
 q = 3329
 dist=sec_type
 dist_param=sec_param
-
-with open("./lwe_instances/reduced_lattices/exp_[160, 170, 180, 190, 200]_3329_ternary_0.1667.pkl", "rb") as file:
-    out = pickle.load( file )
     
 lwe_inst = [ #do we need lats_per_dim and inst_per_lat?
     {"n": 160, "q": 3329, "dist": 'ternary', "dist_param": 0.16666666666666666},
@@ -37,83 +34,11 @@ hparams = { #n_guess_coord's, n_slicer_coord from preprocessing.py
     210: (6,90),
 }
 
-outpre = []
-corresponding_blocksizes = {160:50, 170:50, 180:60, 190: 60, 200: 65}
-for n in range(160,201,10):
-    betapre = corresponding_blocksizes[n]
-    for seed in range(10):
-        filename = f"report_pre_{n}_{q}_{sec_type}_{dist_param:0.4f}_{seed}_{betapre}.pkl"
-        with open( out_path + filename, "rb" ) as file:
-            outpre.append( pickle.load( file ) )
-
-maxbeta = 0
-for oo in out:
-    if oo["beta"] > maxbeta:
-        maxbeta = oo["beta"]
-
-l = {}
-ddl = {}
-
-#extracting the mean blocksize
-for oo in out:
-    if not oo["kyb"][0] in l.keys():
-        l[oo["kyb"][0]] = [ oo["beta"], 1 ]
-        ddl[oo["kyb"][0]] = [ oo["beta"] ]
-    else:
-        l[oo["kyb"][0]][0] += oo["beta"]
-        l[oo["kyb"][0]][1] += 1
-        ddl[oo["kyb"][0]].append( oo["beta"] )
-
-for key in l.keys():
-    l[key] = l[key][0]/l[key][1].n()
-    ddl[key] = np.std(ddl[key])
-
-l_primal = l
-
-P = list_plot(l, plotjoined=True, marker='.',color="red", legend_label="Experiment")
-
-filename = f"betaprimal_d_{sec_type}_{dist_param:0.4f}.png"
-P.save_image( filename, axes_labels=['$n$', '$\\beta$'], title=f'$\\beta$ sufficient to solve uSVP, Kyber-$n$. 5 tours progressive BKZ. 100 experiments.', figsize=12 )
-print(f"Saved figure to {filename}")
-
 
 if sec_type=="binomial":
     distrib = centeredBinomial(sec_param)
 elif sec_type=="ternary":
      distrib = ternaryDist(sec_param)
-
-# extracting the primal preprocessing timing
-r = {}
-for oo in outpre:
-    n, seed = oo['kyb'][0], oo['kyb'][4][0]
-    if not n in r.keys(): 
-        r[n] = [ oo["time"], 1 ]
-    else:
-        r[n][0] += oo["time"]
-        r[n][1] += 1
-
-
-#averaging the timing
-for key in r.keys():
-    r[key] = r[key][0]/r[key][1].n()
-
-# extracting the primal attack timing
-l = {}
-for oo in out:
-    if not oo["kyb"][0] in l.keys():
-        l[oo["kyb"][0]] = [ oo["time"], 1 ]
-    else:
-        l[oo["kyb"][0]][0] += oo["time"]
-        l[oo["kyb"][0]][1] += 1
-
-# averaging it
-for key in l.keys():
-    l[key] = l[key][0]/l[key][1].n() + r[key]
-    ddl[key] = np.std(ddl[key])
-
-primal_timings = deepcopy(l)
-# - - - 
-P = list_plot_semilogy(l, plotjoined=True, legend_label="Primal attack")
 
 data = []
 path = "./lwe_instances/reduced_lattices/"
@@ -209,7 +134,7 @@ for (n,k,sievedim) in aggrigated_data.keys():
 
 preprocess_hyb_time = deepcopy(l0)
 
-P += list_plot_semilogy(l0, plotjoined=True, base=10, axes_labels=["$n$", "$log(T)$"], color="green", legend_label="Hybrid preprocessing")
+P = list_plot_semilogy(l0, plotjoined=True, base=10, axes_labels=["$n$", "$log(T)$"], color="green", legend_label="Hybrid preprocessing")
 
 # - - - processing the hybrid attack
 L = {}
@@ -355,7 +280,6 @@ P += list_plot_semilogy(L_two_step_, plotjoined=True, base=10, axes_labels=["$n$
 
 print(f"succs: {succs}")
 print(f"ltot_hyb_att: {ltot_hyb_att}")
-print(f"primal_timings: {primal_timings}")
 print(f"two_step_timings: {L_two_step_}")
 # - - -
 filename = f"hybVSprima_d_{dist}_{dist_param:0.4f}.png"

@@ -156,19 +156,21 @@ Reproducing the experiments from the paper
 
 Reproducing Figure 1
 ---------------------
-To reproduce Figure 1:
+To reproduce Figure 1 perform the hybrid attack as describe above (for an appropriate distribution (binomial and/or ternary)). The experiments are done over 10 ``lats_per_dim`` with 10 ``inst_per lat`` in the following dimensions:
 
-* perform the primal attack as described above,
-* perform the hybrid attack as describe above (for an appropriate distribution (binomial and/or ternary).
+* [140,150,160,170] for the **binomial distribution** (``--dist \"binomial\" --dist_param 3``);
+* [160,170,180,190,200,210] for the **ternary distribution** (``--dist \"ternary\" --dist_param 0.1667``);
+* [170,180,190,200,210] for the **sparse distribution** (``--dist \"ternary\" --dist_param 0.0833``);
 
-Depending on the distribution considered, copy ``gen_figures/aggr_attacks_dist.sage`` to the root directory where dist is ``binom`` for binomial distribution, ``sparse`` for Ternary(1/6) and ``ternary`` for Ternary(1/3).
+Depending on the distribution considered, copy ``gen_figures/aggr_attacks_XXX.sage`` to the root directory where ``XXX`` is ``binom`` for binomial distribution, ``sparse`` for sparse distribution and ``ternary`` for the ternary distribution.
 
 Run the corresponding script:
 
 .. code-block:: bash 
     
-    sage aggr_attacks_{XXX}.sage
+    sage aggr_attacks_XXX.sage
 
+for an appropriate value of ``XXX``.
 The script will output the name of the .png file with the plot. 
 
 Reproducing Figure 2
