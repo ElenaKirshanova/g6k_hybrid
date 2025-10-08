@@ -77,10 +77,8 @@ for path, directories, files in os.walk(path):
                         with open( path+candidate, "rb" ) as file:
                             data.append( pickle.load(file) )
                 except KeyError as err:
-                    print( err )
                     pass
             except ValueError as expt:
-                print(expt)
                 pass
 
 processed_data = {}
@@ -115,7 +113,6 @@ for (n,k,sievedim,latdim) in processed_data.keys():
     
     aggrigated_data[ (n,k,sievedim) ] =  bkz_runtime + np.zeros(len(bdgl_runtime))
 
-print(processed_data)
 
 l0, l1 = {}, {}
 
@@ -263,6 +260,7 @@ for n in L_two_step.keys():
 P += list_plot_semilogy(L_two_step_, plotjoined=True, base=10, axes_labels=["$n$", "$log(T)$"], color="orange", legend_label="Two-step total")
 
 print(f"succs: {succs}")
+print(f"ltot_hyb_att: {ltot_hyb_att}")
 print(f"two_step_timings: {L_two_step_}")
 # - - -
 
