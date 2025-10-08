@@ -12,12 +12,16 @@ Building the library
 
 This code has been tested on Ubuntu-\{22,24\}.04 and Windows 11 (via WSL, same distributions) which are the target platform for the code in this repository. MacOS is not supported but may work (see the instructions at the bottom of the README).
 
-You will need the `G6K library <https://github.com/fplll/g6k>`_. For reproducing figures you would also need `SageMath <https://www.sagemath.org/>`_. 
+You will need the `G6K library <https://github.com/fplll/g6k>`_. For reproducing figures you would also need `SageMath <https://www.sagemath.org/>`_ and conda with conda-forge channel enabled. Enabling the channel can be done with the following command:
+
+.. code-block:: bash
+
+    conda config --add channels conda-forge
 
 Steps specific to Ubuntu
 ---------------------
 
-First, install autotools, automake, libtool and other dependencies:
+First, uptate the packages on your system ``sudo apt-get update`` and install autotools, automake, libtool and other dependencies:
 
 .. code-block:: bash
 
