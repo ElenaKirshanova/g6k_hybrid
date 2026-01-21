@@ -2,6 +2,13 @@ from math import factorial as fac
 from math import ceil, erf, sqrt, exp
 
 
+def build_ternary_law(n, hw):
+    D = {}
+    D[-1] = hw/(2*n)
+    D[1] = hw/(2*n)
+    D[0] = 1 - D[-1] - D[1]
+    return sqrt(hw/n), D
+
 def build_Gaussian_law(sigma, t):
     D = {}
     for i in range(0, t + 1):
@@ -11,7 +18,7 @@ def build_Gaussian_law(sigma, t):
     for i in D:
         D[i] = D[i] / normalization
     assert abs(sum([D[i] for i in range(-t, t + 1)]) - 1.) <= 10 ** -10
-    return D
+    return sigma, D
 
 
 def gaussian_center_weight(sigma, t):
@@ -54,7 +61,7 @@ def build_centered_binomial_law(k):
     D = {}
     for i in range(-k, k + 1):
         D[i] = centered_binomial_pdf(k, i)
-    return D
+    return sqrt(k/2.0), D
 
 
 def build_uniform_law(p):

@@ -4,9 +4,9 @@ from fpylll import *
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-load("../framework/proba_utils.sage")
-load("../framework/utils.sage")
-load("../framework/geometry.sage")
+load("framework/proba_utils.sage")
+load("framework/utils.sage")
+load("framework/geometry.sage")
 
 
 # Issues with hint that are caught, and only raise a warning

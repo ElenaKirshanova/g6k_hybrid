@@ -4,7 +4,7 @@
 import json
 from fpylll.fplll.bkz_param import Strategy
 
-with open("../framework/bkz_strat.json") as json_data:
+with open("framework/bkz_strat.json") as json_data:
     data = json.load(json_data)
 
 strategies = 91 * [None]

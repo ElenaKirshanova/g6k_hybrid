@@ -8,24 +8,8 @@ from zgsa_nonsym import ZGSA, ZGSA_old
 from batchCVP import batchCVPP_cost
 from parser import HelpException, parse_all
 from utils import st_dev_central_binomial, H, CB2, CB3
+import matplotlib.pyplot as plt
 
-def plot_gso(r, *args, **kwds):
-    return line([(i, r_,) for i, r_ in enumerate(r)], *args, **kwds)
-
-#Thm. 4.1
-def find_beta(d, n, q, st_dev_e, approx_fact=1.0):
-    minbeta = 50 if d<513 else n//2
-    for beta in range(minbeta, d//2, 1): #90, 450, 1
-        r_log = ZGSA(d, n, q, beta)
-        #r_log = ZGSA_old(d, n, q, beta)
-        # if beta%32==0:
-        #     plot_gso(r_log).save(f"bkz{beta}.png")
-        lhs  = 0.5*log(beta)+log(st_dev_e)
-        rhs  = r_log[2*n-beta] + log(approx_fact) #counting from 0
-        if lhs < rhs:
-            return beta
-        #print(beta, lhs.n(), rhs.n())
-    return infinity
 
 #core-SVP
 def svp_cost(beta, d, alg="BDGL16_real"):
@@ -39,11 +23,29 @@ def svp_cost(beta, d, alg="BDGL16_real"):
 
 if __name__=="__main__":
     try:
-        n, q, kappa, st_dev_e, dist = parse_all()
+        #n, q, kappa, st_dev_e, dist = parse_all()
+        n = 160
+        q = 3329
         dim = 2*n
 
+        logvol = log(q)*n
 
-        # kappa = 45  #max number of guessed coordiantes
+        for beta in range(50, n, 10):
+            r_log = ZGSA(dim, n, q, beta)
+            #r_log_old =ZGSA_old(dim, n, q, beta)
+            r_dbdd = [log(bkzgsa_gso_len(logvol, i, dim, beta)) for i in range(dim)]
+
+            print(logvol.n(), sum(r_log), sum(r_dbdd))
+
+            plt.plot(r_log, linestyle = 'dashed', color='green', linewidth=2)
+            #plt.plot(r_log_old, linestyle = 'dotted', color='red')
+            plt.plot(r_dbdd, linestyle = 'dotted', color='red')
+            plt.legend([str(beta)])
+            plt.show()
+
+
+        beta = find_beta(dim, n, q, st_dev_e)
+
         min_rt = infinity
         minTbkz = 0
         minTcvp = 0
@@ -62,7 +64,7 @@ if __name__=="__main__":
                 minTcvp = Tcvp
                 minbeta = beta
                 minkappa = kappa_
-                print(RR(min_rt), RR(minTbkz), RR(minTcvp), minbeta, minkappa)
+                #print(RR(min_rt), RR(minTbkz), RR(minTcvp), minbeta, minkappa)
 
         print()
         print(f"n={n}, q={q}")

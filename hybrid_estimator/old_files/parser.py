@@ -1,7 +1,6 @@
 from sys import argv
-from math import sqrt
-from utils import st_dev_central_binomial, CB2, CB3
-from sample import centeredBinomial
+from hybrid_estimator.old_files.utils import st_dev_central_binomial, CB2, CB3
+from hybrid_estimator.old_files.sample import centeredBinomial
 
 help_msg ="""Usage:
 sage hybrid_cost.sage -h

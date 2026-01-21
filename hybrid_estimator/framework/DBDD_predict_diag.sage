@@ -2,10 +2,10 @@ from fpylll import *
 from math import log
 from copy import copy
 
-load("../framework/proba_utils.sage")
-load("../framework/utils.sage")
-load("../framework/geometry.sage")
-load("../framework/DBDD_generic.sage")
+load("framework/proba_utils.sage")
+load("framework/utils.sage")
+load("framework/geometry.sage")
+load("framework/DBDD_generic.sage")
 
 
 def cannonical_direction_only(fn):

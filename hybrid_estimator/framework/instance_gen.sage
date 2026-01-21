@@ -1,11 +1,11 @@
 from random import shuffle, randint
 
-load("../framework/proba_utils.sage")
-load("../framework/DBDD_predict_diag.sage")
-load("../framework/DBDD_predict.sage")
-load("../framework/DBDD.sage")
-load("../framework/DBDD_optimized.sage")
-load("../framework/ntru.sage")
+load("framework/proba_utils.sage")
+load("framework/DBDD_predict_diag.sage")
+load("framework/DBDD_predict.sage")
+load("framework/DBDD.sage")
+load("framework/DBDD_optimized.sage")
+load("framework/ntru.sage")
 
 
 def initialize_from_LWE_instance(dbdd_class, n, q, m, D_e,

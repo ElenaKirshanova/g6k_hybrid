@@ -1,9 +1,9 @@
 from fpylll import *
 from fpylll.algorithms.bkz2 import BKZReduction
 
-load("../framework/load_strategies.sage")
-load("../framework/DBDD_generic.sage")
-load("../framework/proba_utils.sage")
+load("framework/load_strategies.sage")
+load("framework/DBDD_generic.sage")
+load("framework/proba_utils.sage")
 
 
 class DBDD(DBDD_generic):
